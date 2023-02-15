@@ -1,0 +1,3 @@
+[submodule "odin-build"]
+	path = odin-build
+	url = https://github.com/DragosPopse/odin-build.git

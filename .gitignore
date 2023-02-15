@@ -1,0 +1,16 @@
+# Ignore everything
+*
+# But descend into directories
+!*/
+
+!.gitignore
+!.gitmodules
+
+!build-samples/**
+
+!mlw/**
+!samples/**
+
+!odin-build/**
+
+!README.md
