@@ -1,7 +1,7 @@
 package build_samples
 
 import "core:fmt"
-import "../odin-build/shared/build"
+import "../odin-build/build"
 import "core:os"
 import "core:strings"
 import "core:path/filepath"
@@ -28,10 +28,8 @@ modes := [][]build.Default_Target_Mode {
 copy_dll :: proc(config: build.Config) -> int {
     out_dir := filepath.dir(config.out, context.temp_allocator)
 
-    cmd := fmt.ctprintf("xcopy /y /i \"%svendor\\sdl2\\SDL2.dll\" \"%s\\SDL2.dll\"", ODIN_ROOT, out_dir)
-    fmt.printf("Running: %s\n", cmd)
-    result := libc.system(cmd)
-    return cast(int)result
+    cmd := fmt.tprintf("xcopy /y /i \"%svendor\\sdl2\\SDL2.dll\" \"%s\\SDL2.dll\"", ODIN_ROOT, out_dir)
+    return build.syscall(cmd, true)
 }
 
 add_targets :: proc(project: ^Project) {
