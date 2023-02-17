@@ -6,7 +6,7 @@
 !.gitignore
 !.gitmodules
 
-!build-samples/**
+!build/**
 
 !mlw/**
 !samples/**
