@@ -37,3 +37,5 @@ destroy_pipeline : Backend_Destroy_Pipeline : backend.destroy_pipeline
 apply_pipeline : Backend_Apply_Pipeline : backend.apply_pipeline
 
 draw : Backend_Draw : backend.draw
+
+create_graphics_context: Backend_Create_Graphics_Context : backend.create_graphics_context

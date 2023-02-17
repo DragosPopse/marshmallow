@@ -11,13 +11,12 @@ when BACKEND == .sdl2 {
 }
 
 
-init: Backend_Init
-teardown: Backend_Teardown
+init: Backend_Init : backend.init
+teardown: Backend_Teardown : backend.teardown
 
-create_window: Backend_Create_Window
-destroy_window: Backend_Destroy_Window 
-swap_buffers: Backend_Swap_Buffers
-window_is_open: Backend_Window_Is_Open
-poll_events: Backend_Poll_Events
+create_window: Backend_Create_Window : backend.create_window
+destroy_window: Backend_Destroy_Window : backend.destroy_window
+swap_buffers: Backend_Swap_Buffers : backend.swap_buffers
+poll_event: Backend_Poll_Event : backend.poll_event
 
-create_graphics_context: Backend_Create_Graphics_Context
+create_graphics_context: Backend_Create_Graphics_Context : backend.create_graphics_context

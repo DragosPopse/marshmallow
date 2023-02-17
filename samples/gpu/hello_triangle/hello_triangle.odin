@@ -94,7 +94,10 @@ indices := [?]u32 {
 
 main :: proc() {
     platform.init()
-    window := platform.create_window("Test", 600, 600) // create window before gpu.init
+    window_info: platform.Window_Info
+    window_info.title = "Test"
+    window_info.size = {600, 600}
+    window := platform.create_window(window_info) // create window before gpu.init
     gpu.init()
 
     shader := create_test_shader()
@@ -189,8 +192,11 @@ main :: proc() {
     input_textures.textures[.Fragment][1] = tex2
 
     gl.ClearColor(0.012, 0.533, 0.988, 1.0)
-    for !platform.window_should_close() {
-        platform.poll_events(window)
+    running := true
+    for running {
+        for event in platform.poll_event(window) {
+
+        }
         frag_uniforms: Frag_Uniforms
         frag_uniforms.u_Color = {1, 1, 1}
         gpu.apply_pipeline(pipeline)

@@ -106,16 +106,33 @@ Key_Event_Action :: enum {
 }
 
 Key_Event :: struct {
-    using common: Event_Base,
+    using _: Event_Base,
     action: Key_Event_Action,
     key: Key,
 }
 
-Mouse_Event :: struct {
+Mouse_Event_Base :: struct {
+    using _: Event_Base,
+    position: [2]int,
+}
 
+Mouse_Button_Event :: struct {
+    using _: Mouse_Event_Base,
+    button: Mouse_Button,
+}
+
+Mouse_Wheel_Event :: struct {
+    using _: Mouse_Event_Base,
+    scroll: [2]int,
+}
+
+Quit_Event :: struct {
+    
 }
 
 Event :: union {
     Key_Event,
-    Mouse_Event,
+    Mouse_Button_Event,
+    Mouse_Wheel_Event,
+    Quit_Event,
 }

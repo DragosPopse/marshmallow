@@ -12,3 +12,7 @@ _close_window := false
 init :: proc() {
     core.gl_set_proc_address = sdl.gl_set_proc_address
 }
+
+teardown :: proc() {
+    
+}
