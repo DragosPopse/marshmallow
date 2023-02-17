@@ -31,24 +31,6 @@ _get_sdl2_window :: #force_inline proc(window: core.Window) -> ^SDL2_Window {
     return cast(^SDL2_Window)window
 }
 
-poll_event :: proc(window: core.Window) -> (event: core.Event, ok: bool) {
-    sdlwin := _get_sdl2_window(window)
-    ev: sdl.Event 
-    if sdl.PollEvent(&ev) {
-        #partial switch ev.type {
-            case .QUIT: {
-                res: core.Quit_Event
-                return res, true
-            }
-        }
-    } else {
-        return nil, false
-    }
-
-    // Unhandled event, but there are still some in the queue
-    return nil, true
-}
-
 create_window :: proc(info: core.Window_Info) -> (win: core.Window) {
     ctitle := strings.clone_to_cstring(info.title, context.temp_allocator)
     
