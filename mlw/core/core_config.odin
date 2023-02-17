@@ -4,14 +4,19 @@ STR_UNDEFINED_CONFIG :: "UNDEFINED"
 
 GPU_Backend_Family :: enum {
     OpenGL,
+    DirectX,
 }
 
 GPU_Backend_Type :: enum {
     glcore3,
+    glcore4,
+    gles2,
+    d3d11,
 }
 
 Platform_Backend_Type :: enum {
-    sdl2,
+    SDL2,
+    Native,
 }
 
 @(private = "file")
@@ -22,9 +27,11 @@ GPU_BACKEND_CONFIG :: #config(MLW_GPU_BACKEND, STR_UNDEFINED_CONFIG)
 
 when PLATFORM_BACKEND_CONFIG == STR_UNDEFINED_CONFIG {
     //Todo(Dragos): This should be ODIN_OS specific
-    PLATFORM_BACKEND :: Platform_Backend_Type.sdl2 
+    PLATFORM_BACKEND :: Platform_Backend_Type.SDL2 
 } else when PLATFORM_BACKEND_CONFIG == "sdl2" {
-    PLATFORM_BACKEND :: Platform_Backend_Type.sdl2 
+    PLATFORM_BACKEND :: Platform_Backend_Type.SDL2 
+} else when PLATFORM_BACKEND_CONFIG == "native" {
+    PLATFORM_BACKEND :: Platform_Backend_Type.Native 
 } else {
     #panic("PLATFORM_BACKEND not available.")
 }

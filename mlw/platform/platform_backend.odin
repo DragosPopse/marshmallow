@@ -4,7 +4,7 @@ import "../core"
 
 BACKEND :: core.PLATFORM_BACKEND
 
-when BACKEND == .sdl2 {
+when BACKEND == .SDL2 {
     import backend "backend/sdl2"
 } else {
     #panic("Unsupported PLATFORM_BACKEND")
