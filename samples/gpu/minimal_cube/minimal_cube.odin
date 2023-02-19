@@ -93,11 +93,12 @@ indices := [?]u32 {
 }
 
 main :: proc() {
-    platform_info: platform.Init_Info
-    platform_info.window.title = "Test"
-    platform_info.window.size = {600, 600}
-    platform_info.graphics = gpu.default_graphics_info()
-    platform.init(platform_info)
+    platform.init()
+    window_info: platform.Window_Info
+    window_info.title = "Test"
+    window_info.size = {600, 600}
+    window := platform.create_window(window_info) 
+    gpu.create_graphics_context(window)
     gpu.init()
 
     shader := create_test_shader()
@@ -158,7 +159,7 @@ main :: proc() {
     tex1, tex2: gpu.Texture
     {
         texture_info: gpu.Texture_Info
-        img, _ := image.load_image_from_file("assets/textures/coin.png")
+        img, _ := image.load_image_from_file("samples/assets/textures/coin.png")
         defer image.delete_image(img)
         texture_info.type = .Texture2D
         texture_info.data = slice.to_bytes(img.pixels)
@@ -172,7 +173,7 @@ main :: proc() {
 
     {
         texture_info: gpu.Texture_Info
-        img, _ := image.load_image_from_file("assets/textures/hero.png")
+        img, _ := image.load_image_from_file("samples/assets/textures/hero.png")
         defer image.delete_image(img)
         texture_info.type = .Texture2D
         texture_info.data = slice.to_bytes(img.pixels)
@@ -182,7 +183,6 @@ main :: proc() {
         tex2 = gpu.create_texture(texture_info)
     }
     
-
     input_buffers: gpu.Input_Buffers
     input_buffers.buffers[0] = vert_buff
     input_buffers.index = ind_buff
@@ -194,7 +194,7 @@ main :: proc() {
     gl.ClearColor(0.012, 0.533, 0.988, 1.0)
     running := true
     for running {
-        for event in platform.poll_event() {
+        for event in platform.poll_event(window) {
             #partial switch ev in event {
                 case core.Quit_Event: {
                     running = false
@@ -211,6 +211,6 @@ main :: proc() {
         gpu.apply_uniforms_raw(.Fragment, 0, &frag_uniforms, size_of(frag_uniforms))
         gl.Clear(gl.COLOR_BUFFER_BIT)
         gpu.draw(0, 6)
-        platform.update_window()
+        platform.swap_buffers(window)
     }
 }

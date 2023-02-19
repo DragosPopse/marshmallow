@@ -14,9 +14,7 @@ when BACKEND == .SDL2 {
 init: Backend_Init : backend.init
 teardown: Backend_Teardown : backend.teardown
 
-create_window: Backend_Create_Window : backend.create_window
-destroy_window: Backend_Destroy_Window : backend.destroy_window
-swap_buffers: Backend_Swap_Buffers : backend.swap_buffers
+update_window: Backend_Update_Window : backend.update_window
 poll_event: Backend_Poll_Event : backend.poll_event
 
-create_graphics_context: Backend_Create_Graphics_Context : backend.create_graphics_context
+get_backend_window: Backend_Get_Backend_Window : backend.get_backend_window

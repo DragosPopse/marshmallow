@@ -38,4 +38,4 @@ apply_pipeline : Backend_Apply_Pipeline : backend.apply_pipeline
 
 draw : Backend_Draw : backend.draw
 
-create_graphics_context: Backend_Create_Graphics_Context : backend.create_graphics_context
+default_graphics_info: Backend_Default_Graphics_Info : backend.default_graphics_info

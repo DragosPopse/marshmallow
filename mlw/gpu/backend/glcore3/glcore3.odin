@@ -7,11 +7,14 @@ import glcache "../glcached"
 // Note(Dragos): Now gpu is dependent on platform
 import "../../../platform"
 
+import "core:fmt"
+
 
 init :: proc() {
     gl.load_up_to(3, 3, core.gl_set_proc_address)
     glcache.init()
     _init_vaos() 
+    fmt.printf("OpenGL Version: %s\n", gl.GetString(gl.VERSION))
 }
 
 teardown :: proc() {
@@ -19,12 +22,21 @@ teardown :: proc() {
 }
 
 
-create_graphics_context :: proc(window: core.Window) {
-    ctx_info: core.OpenGL_Context_Info
-    ctx_info.major = 3
-    ctx_info.minor = 3
-    ctx_info.profile = .Core
-    platform.create_graphics_context(window, ctx_info)
+default_graphics_info :: proc() -> core.Graphics_Info {
+    gfx_info: core.Graphics_Info
+    gl_info: core.OpenGL_Info
+
+    gl_info.major = 3
+    gl_info.minor = 3
+    gl_info.profile = .Core
+
+    gfx_info.color_bits = 32
+    gfx_info.debug = true when ODIN_DEBUG else false
+    gfx_info.depth_bits = 0
+    gfx_info.stencil_bits = 0
+    gfx_info.variant = gl_info
+    
+    return gfx_info
 }
 
 

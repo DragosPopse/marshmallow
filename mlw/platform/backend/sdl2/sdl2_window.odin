@@ -9,38 +9,12 @@ when ODIN_OS == .Windows {
     import win32 "core:sys/windows"
 }
 
-SDL2_GL_Context :: struct {
-    handle: rawptr,
-}
 
-SDL2_Graphics_Context :: union {
-    SDL2_GL_Context,
-}
 
-// Note(Dragos): Maybe this should be a handle too
-SDL2_Window :: struct {
-    handle: ^sdl.Window,
-    graphics_context: SDL2_Graphics_Context,
-}
 
-// Note(Dragos): We only support a single window for now
-_window: SDL2_Window
-
-// This is a nice utility if we ever want to change the way we handle windows
-_get_sdl2_window :: #force_inline proc(window: core.Window) -> ^SDL2_Window {
-    return cast(^SDL2_Window)window
-}
-
-create_window :: proc(info: core.Window_Info) -> (win: core.Window) {
-    ctitle := strings.clone_to_cstring(info.title, context.temp_allocator)
-    
-    _window.handle = sdl.CreateWindow(ctitle, sdl.WINDOWPOS_CENTERED, sdl.WINDOWPOS_CENTERED, cast(c.int)info.size.x, cast(c.int)info.size.y, window_flags)
-    win = cast(core.Window)&_window
-    return
-}
-
+/*
 // Note(Dragos): The new dynamic context system makes the startup more complicated. We should avoid this
-create_graphics_context :: proc(window: core.Window, info: core.Graphics_Context_Info) -> (ctx: core.Graphics_Context, err: Maybe(string)) {
+create_graphics_context :: proc(info: core.Graphics_Info) {
     sdlwin := _get_sdl2_window(window)
     width, height: i32
     window_flags: sdl.WindowFlags
@@ -105,20 +79,5 @@ create_graphics_context :: proc(window: core.Window, info: core.Graphics_Context
     }
 
     sdl.DestroyWindow(last_handle)
-    return nil, nil
 }
-
-destroy_window :: proc(win: core.Window) {
-    sdlwin := _get_sdl2_window(win)
-    sdl.DestroyWindow(sdlwin.handle)
-}
-
-// Note(Dragos): Should this be in the gfx backend?
-swap_buffers :: proc(win: core.Window) {
-    sdlwin := _get_sdl2_window(win)
-    when core.GPU_BACKEND_FAMILY == .OpenGL {
-        sdl.GL_SwapWindow(sdlwin.handle) 
-    } else {
-        #panic("Unsupported GPU_BACKEND_FAMILY")
-    }
-}
+*/
