@@ -86,6 +86,10 @@ Framebuffer_Target :: enum u32 {
     READ_FRAMEBUFFER = gl.READ_FRAMEBUFFER,
 }
 
+Renderbuffer_Target :: enum u32 {
+    RENDERBUFFER = gl.RENDERBUFFER,
+}
+
 Capability :: enum u32 {
     ALPHA_TEST = gl.ALPHA_TEST,
     AUTO_NORMAL = gl.AUTO_NORMAL,
@@ -185,6 +189,7 @@ Cache :: struct {
 
     draw_framebuffer: u32,
     read_framebuffer: u32,
+    renderbuffer: u32,
 }
 
 cache: Cache
@@ -339,4 +344,14 @@ BindFramebuffer :: proc(target: Framebuffer_Target, framebuffer: u32) -> (last_d
     }
     
     return last_draw_framebuffer, last_read_framebuffer
+}
+
+BindRenderbuffer :: proc(target: Renderbuffer_Target, renderbuffer: u32) -> (last_renderbuffer: u32) {
+    last_renderbuffer = cache.renderbuffer
+    if last_renderbuffer != renderbuffer {
+        gl.BindRenderbuffer(cast(u32)target, renderbuffer)
+        cache.renderbuffer = renderbuffer
+    }
+
+    return last_renderbuffer
 }
