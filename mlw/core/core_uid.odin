@@ -5,7 +5,7 @@ package mmlow_core
 @(private = "file") _next_pipeline_id: Pipeline = 1
 @(private = "file") _next_shader_stage_id: Shader_Stage = 1
 @(private = "file") _next_shader_id: Shader = 1
-@(private = "file") _next_pass_id: Pass = 1
+@(private = "file") _next_render_pass_id: Render_Pass = 1
 
 new_buffer_id :: proc() -> (uid: Buffer) {
     uid = _next_buffer_id
@@ -37,9 +37,9 @@ new_shader_id :: proc() -> (uid: Shader) {
     return
 }
 
-new_pass_id :: proc() -> (uid: Pass) {
-    uid = _next_pass_id 
-    _next_pass_id += 1
+new_render_pass_id :: proc() -> (uid: Render_Pass) {
+    uid = _next_render_pass_id 
+    _next_render_pass_id += 1
     return
 }
 
@@ -65,6 +65,6 @@ delete_shader_id :: proc(uid: Shader) {
 
 }
 
-delete_pass_id :: proc(uid: Pass) {
+delete_render_pass_id :: proc(uid: Render_Pass) {
     
 }

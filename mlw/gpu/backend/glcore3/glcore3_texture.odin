@@ -41,6 +41,7 @@ GLCore3_Texture :: struct {
     handle: u32,
     id: core.Texture,
     target: u32,
+    render_target: bool,
 }
 
 _textures: map[core.Texture]GLCore3_Texture 
@@ -76,6 +77,7 @@ create_texture :: proc(desc: core.Texture_Info) -> (texture: core.Texture) {
     gltex.handle = handle
     gltex.id = core.new_texture_id()
     gltex.target = target
+    gltex.render_target = desc.render_target
     _textures[gltex.id] = gltex
     return gltex.id
 }
