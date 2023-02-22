@@ -5,6 +5,7 @@ import "../math"
 Render_Pass :: distinct u32
 
 MAX_COLOR_ATTACHMENTS :: 4
+DEFAULT_CLEAR_COLOR :: math.fBLACK
 
 Attachment_Info :: struct {
     texture: Texture,
@@ -41,4 +42,11 @@ Render_Pass_Action :: struct {
 Render_Pass_Info :: struct {
     colors: [4]Attachment_Info,
     depth_stencil: Attachment_Info,
+}
+
+default_pass_action :: proc() -> (action: Render_Pass_Action) {
+    for color in &action.colors {
+        color.value = DEFAULT_CLEAR_COLOR
+    }
+    return
 }

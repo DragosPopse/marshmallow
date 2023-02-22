@@ -191,7 +191,9 @@ main :: proc() {
     input_textures.textures[.Fragment][0] = tex1
     input_textures.textures[.Fragment][1] = tex2
 
-    gl.ClearColor(0.012, 0.533, 0.988, 1.0)
+    pass_action := gpu.default_pass_action()
+    pass_action.colors[0].value = math.Colorf{0.012, 0.533, 0.988, 1.0}
+
     running := true
     for running {
         for event in platform.poll_event() {
@@ -203,14 +205,19 @@ main :: proc() {
         }
         frag_uniforms: Frag_Uniforms
         frag_uniforms.u_Color = {1, 1, 1}
+
+        gpu.begin_default_pass(pass_action, 600, 600)
+
         gpu.apply_pipeline(pipeline)
-        //gl.Enable(gl.BLEND)
-        //gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+
         gpu.apply_input_buffers(input_buffers)
         gpu.apply_input_textures(input_textures)
         gpu.apply_uniforms_raw(.Fragment, 0, &frag_uniforms, size_of(frag_uniforms))
-        gl.Clear(gl.COLOR_BUFFER_BIT)
+
         gpu.draw(0, 6)
+
+        gpu.end_pass()
+
         platform.update_window()
     }
 }

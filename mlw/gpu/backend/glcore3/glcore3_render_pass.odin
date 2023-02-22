@@ -11,14 +11,16 @@ Render_Pass :: struct {
     framebuffer: u32,
     colors_count: int,
     fb_size: [2]i32,
+    num_colors: int,
     colors: [core.MAX_COLOR_ATTACHMENTS]^GLCore3_Texture,
     stencil_depth: ^GLCore3_Texture,
 }
 
+_default_pass: Render_Pass
 _current_pass: ^Render_Pass
 _passes: map[core.Render_Pass]Render_Pass
 
-create_render_pass :: proc(info: core.Render_Pass_Info) -> (pass: core.Render_Pass) {
+create_pass :: proc(info: core.Render_Pass_Info) -> (pass: core.Render_Pass) {
     assert(info.colors[0].texture != 0, "A pass needs to have at least 1 color attachment")
     glpass: Render_Pass
     pass = core.new_render_pass_id()
@@ -28,6 +30,7 @@ create_render_pass :: proc(info: core.Render_Pass_Info) -> (pass: core.Render_Pa
     gl.GenFramebuffers(1, &glpass.framebuffer)
     last_fb, _ := glcache.BindFramebuffer(.FRAMEBUFFER, glpass.framebuffer)
     for attach, i in info.colors do if attach.texture != 0 {
+        glpass.num_colors += 1
         assert(attach.texture in _textures, "Texture was not found")
         gltex := &_textures[attach.texture]
         assert(gltex.render_target, "Texture must be created with info.render_target = true")
@@ -47,6 +50,7 @@ create_render_pass :: proc(info: core.Render_Pass_Info) -> (pass: core.Render_Pa
     } else do break
 
     if info.depth_stencil.texture != 0 {
+        
         panic("Not implemented")
     }
     assert(gl.CheckFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE, "Framebuffer creation failed.")
@@ -56,30 +60,46 @@ create_render_pass :: proc(info: core.Render_Pass_Info) -> (pass: core.Render_Pa
     return pass
 }
 
-destroy_render_pass :: proc(pass: core.Render_Pass) {
+destroy_pass :: proc(pass: core.Render_Pass) {
     assert(pass in _passes, "Render pass not found.")
     glpass := &_passes[pass]
     gl.DeleteFramebuffers(1, &glpass.framebuffer)
     delete_key(&_passes, pass)
 }
 
-begin_render_pass :: proc(pass: core.Render_Pass, action: core.Render_Pass_Action) {
+begin_pass :: proc(pass: core.Render_Pass, action: core.Render_Pass_Action) {
     assert(_current_pass == nil, "Pass currently in progress")
     assert(pass in _passes, "Pass not found.")
     _current_pass = &_passes[pass]
     glcache.BindFramebuffer(.FRAMEBUFFER, _current_pass.framebuffer)
     gl.Viewport(0, 0, _current_pass.fb_size.x, _current_pass.fb_size.y)
     gl.Scissor(0, 0, _current_pass.fb_size.x, _current_pass.fb_size.y) // Note(Dragos): What does this do?
+    
 }
 
-begin_default_render_pass :: proc(action: core.Render_Pass_Action, width, height: int) {
+begin_default_pass :: proc(action: core.Render_Pass_Action, width, height: int) {
+    assert(_current_pass == nil, "Cannot being a pass while in another pass")
     w, h := cast(i32)width, cast(i32)height
+    glcache.BindFramebuffer(.FRAMEBUFFER, 0)
     gl.Viewport(0, 0, w, h)
     gl.Scissor(0, 0, w, h)
-    glcache.BindFramebuffer(.FRAMEBUFFER, 0)
+    clear_color := action.colors[0].action == .Clear
+    clear_depth := action.depth.action == .Clear
+    clear_stencil := action.stencil.action == .Clear
+    clear_mask := u32(0)
+    if clear_color {
+        val := action.colors[0].value
+        gl.ClearColor(val.r, val.g, val.b, val.a)
+        clear_mask |= gl.COLOR_BUFFER_BIT
+    }
+    // Todo(Dragos): Implement depth/stencil clear
+    if clear_mask != 0 do gl.Clear(clear_mask)
+
+    _current_pass = &_default_pass
 }
 
-end_render_pass :: proc() {
+end_pass :: proc() {
     assert(_current_pass != nil, "No current pass")
     _current_pass = nil
+    glcache.BindFramebuffer(.FRAMEBUFFER, 0)
 }

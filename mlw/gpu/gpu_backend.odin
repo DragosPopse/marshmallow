@@ -10,6 +10,7 @@ when BACKEND == .glcore3 {
     #panic("Unsupported GPU_BACKEND")
 }
 
+default_pass_action :: core.default_pass_action
 
 // Procedures
 init     : Backend_Init     : backend.init
@@ -31,6 +32,12 @@ apply_input_buffers : Backend_Apply_Input_Buffers : backend.apply_input_buffers
 create_texture  : Backend_Create_Texture : backend.create_texture
 destroy_texture : Backend_Destroy_Texture : backend.destroy_texture
 apply_input_textures : Backend_Apply_Input_Textures : backend.apply_input_textures
+
+create_pass: Backend_Create_Pass : backend.create_pass
+destroy_pass: Backend_Destroy_Pass : backend.destroy_pass
+begin_default_pass: Backend_Begin_Default_Pass : backend.begin_default_pass
+begin_pass: Backend_Begin_Pass : backend.begin_pass
+end_pass: Backend_End_Pass : backend.end_pass 
 
 create_pipeline  : Backend_Create_Pipeline : backend.create_pipeline
 destroy_pipeline : Backend_Destroy_Pipeline : backend.destroy_pipeline
