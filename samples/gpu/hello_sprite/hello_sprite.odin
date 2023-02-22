@@ -22,14 +22,14 @@ create_test_shader :: proc() -> (shader: gpu.Shader) {
     vert, frag: gpu.Shader_Stage
     err: Maybe(string)
 
-    vert_info.src = #load("../../../mlw/gpu/backend/glcore3/shaders/basic.vert", string) 
+    vert_info.src = #load("shaders/basic.vert", string) 
     vert_info.type = .Vertex
     if vert, err = gpu.create_shader_stage(vert_info); err != nil {
         fmt.printf("VERT_ERR: %v\n", err)
         return
     }
     defer gpu.destroy_shader_stage(vert)
-    frag_info.src = #load("../../../mlw/gpu/backend/glcore3/shaders/basic.frag", string)
+    frag_info.src = #load("shaders/basic.frag", string)
     frag_info.type = .Fragment
 
     frag_info.uniform_blocks[0].size = size_of(Frag_Uniforms)
