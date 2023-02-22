@@ -29,6 +29,7 @@ Input_Textures :: core.Input_Textures
 Render_Pass :: core.Render_Pass
 Render_Pass_Info :: core.Render_Pass_Info
 Attachment_Info :: core.Attachment_Info
+Render_Pass_Action :: core.Render_Pass_Action
 
 // Helpful for backend interface errors
 
@@ -48,7 +49,10 @@ Backend_Apply_Input_Textures :: #type proc(textures: Input_Textures)
 // Pass
 Backend_Create_Render_Pass :: #type proc(info: Render_Pass_Info) -> Render_Pass
 Backend_Destroy_Render_Pass :: #type proc(pass: Render_Pass)
-Backend_Begin_Render_Pass :: #type proc(pass: Render_Pass, width, height: int)
+Backend_Begin_Render_Pass :: #type proc(pass: Render_Pass, action: Render_Pass_Action)
+Backend_Begin_Default_Render_Pass :: #type proc(action: Render_Pass_Action, width, height: int)
+Backend_End_Render_Pass :: #type proc()
+//
 
 // Note(Dragos): Maybe these are not needed?
 Backend_Create_Shader_Stage :: #type proc(desc: Shader_Stage_Info) -> (stage: Shader_Stage, temp_error: Maybe(string))
