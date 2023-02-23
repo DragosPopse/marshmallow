@@ -27,7 +27,7 @@ Uniform_Info :: struct {
 }
 
 Uniform_Block_Info :: struct {
-    size: uint,
+    size: int,
     uniforms: [MAX_UNIFORM_BLOCK_ELEMENTS]Uniform_Info,
 }
 

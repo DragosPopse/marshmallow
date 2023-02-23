@@ -9,6 +9,22 @@ import "../../../mlw/image"
 import "../../../mlw/math"
 import "../../../mlw/gpu"
 
+import "core:math/linalg"
+import glm "core:math/linalg/glsl"
+
+// Note(Dragos): distinct types not supported by layout_from_struct. It's a bug
+Vertex :: struct {
+    pos: [3]f32,
+    tex: [2]f32,
+}
+
+Vertex_Uniforms :: struct {
+    model, view, projection: math.Mat4f,
+}
+
+WIDTH :: 600
+HEIGHT :: 600
+
 cube_vertices := [?]Vertex {
     {{-0.5, -0.5, -0.5}, {0.0, 0.0}},
     {{ 0.5, -0.5, -0.5}, {1.0, 0.0}},
@@ -53,8 +69,7 @@ cube_vertices := [?]Vertex {
     {{-0.5,  0.5, -0.5}, {0.0, 1.0}},
 }
 
-WIDTH :: 600
-HEIGHT :: 600
+
 
 init_platform :: proc() {
     info: platform.Init_Info
@@ -68,6 +83,14 @@ create_default_shader :: proc() -> (shader: gpu.Shader, err: Maybe(string)) {
     vert: gpu.Shader_Stage
     vert_info.src = #load("shaders/basic.vert", string)
     vert_info.type = .Vertex
+
+    vert_info.uniform_blocks[0].size = size_of(Vertex_Uniforms)
+    vert_info.uniform_blocks[0].uniforms[0].name = "model"
+    vert_info.uniform_blocks[0].uniforms[0].type = .mat4f32
+    vert_info.uniform_blocks[0].uniforms[1].name = "view"
+    vert_info.uniform_blocks[0].uniforms[1].type = .mat4f32
+    vert_info.uniform_blocks[0].uniforms[2].name = "projection"
+    vert_info.uniform_blocks[0].uniforms[2].type = .mat4f32
 
     if vert, err = gpu.create_shader_stage(vert_info); err != nil {
         return 0, err
@@ -134,11 +157,7 @@ create_texture_from_file :: proc(filename: string) -> (texture: gpu.Texture) {
     return gpu.create_texture(info)
 }
 
-// Note(Dragos): distinct types not supported by layout_from_struct. It's a bug
-Vertex :: struct {
-    pos: [3]f32,
-    tex: [2]f32,
-}
+
 
 
 
@@ -168,6 +187,20 @@ main :: proc() {
     input_textures: gpu.Input_Textures
     input_textures.textures[.Fragment][0] = texture
 
+    projection := math.Mat4f(1)
+    //projection = linalg.matrix4_perspective_f32(linalg.radians(cast(f32)45), f32(WIDTH) / HEIGHT, 0.1, 100)
+    
+    model := math.Mat4f(1)
+    //model = linalg.matrix4_rotate_f32(linalg.radians(cast(f32)-55), {1.0, 0.0, 0.0})
+
+    view := math.Mat4f(1)
+    //view = linalg.matrix4_translate_f32({0, 0, -3})
+
+    input_uniforms: Vertex_Uniforms
+    input_uniforms.model = model
+    input_uniforms.view = view
+    input_uniforms.projection = projection
+
     running := true
     for running {
         for event in platform.poll_event() {
@@ -182,6 +215,8 @@ main :: proc() {
         gpu.apply_pipeline(pipeline)
         gpu.apply_input_buffers(input_buffers)
         gpu.apply_input_textures(input_textures)
+        // Todo(Dragos): Remove all uint and change it to int
+        gpu.apply_uniforms_raw(.Vertex, 0, &input_uniforms, size_of(input_uniforms))
         gpu.draw(0, 36)
         gpu.end_pass()
 

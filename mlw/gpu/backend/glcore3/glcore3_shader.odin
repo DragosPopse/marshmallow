@@ -13,7 +13,7 @@ _SHADER_STAGE_TYPE_CONV := [core.Shader_Stage_Type]u32 {
     .Fragment = gl.FRAGMENT_SHADER,
 }
 
-_UNIFORM_SIZES := [core.Uniform_Type]uint {
+_UNIFORM_SIZES := [core.Uniform_Type]int {
     .i32 = size_of(i32),
     .u32 = size_of(u32),
     .f32 = size_of(f32),
@@ -25,8 +25,8 @@ _UNIFORM_SIZES := [core.Uniform_Type]uint {
 }
 
 GLCore3_Uniform_Block :: struct {
-    size: uint,
-    uniform_count: uint,
+    size: int,
+    uniform_count: int,
     uniforms: [core.MAX_UNIFORM_BLOCK_ELEMENTS]GLCore3_Uniform,
 }
 
@@ -46,8 +46,8 @@ GLCore3_Shader_Texture :: struct {
 
 // Note(Dragos): This data is for the GLCore3_Shader. It will still be valid when the stage is deleted
 GLCore3_Shader_Stage_Info :: struct {
-    uniform_blocks_count: uint,
-    textures_count: uint,
+    uniform_blocks_count: int,
+    textures_count: int,
     uniform_blocks: [core.MAX_UNIFORM_BLOCKS]GLCore3_Uniform_Block,
     textures: [core.MAX_SHADERSTAGE_TEXTURES]GLCore3_Shader_Texture,
 }
@@ -113,8 +113,9 @@ create_shader_stage :: proc(desc: core.Shader_Stage_Info) -> (stage: core.Shader
         gl_stage.info.uniform_blocks_count += 1
         block_info := &gl_stage.info.uniform_blocks[i]
         block_info.size = block.size
-        current_size: uint = 0
-        uniform_count: uint = 0
+        current_size: int = 0
+        uniform_count: int = 0
+        // Note(Dragos): This is not a healthy loop 
         for uniform, i in block.uniforms do if current_size < block.size {
             block_info.uniform_count += 1
             type_size := _UNIFORM_SIZES[uniform.type]
@@ -123,9 +124,9 @@ create_shader_stage :: proc(desc: core.Shader_Stage_Info) -> (stage: core.Shader
             uniform_info.name = uniform.name
             uniform_info.type = uniform.type
             uniform_info.offset = cast(uintptr)current_size
-            current_size += type_size * cast(uint)uniform_info.count
+            current_size += type_size * cast(int)uniform_info.count
         }
-        assert(current_size == block.size, "Block size mismatch.")
+        fmt.assertf(current_size == block.size, "Block size mismatch. Got %v, expected %v.", current_size, block.size)
     }
 
     for texture, i in desc.textures do if texture.type != .Invalid {
@@ -180,9 +181,9 @@ create_shader :: proc(desc: core.Shader_Info, destroy_stages_on_success: bool) -
     current_tex_unit := i32(0)
     for stage, type in gl_shader.stages {
         if stage_info, ok := stage.?; ok {
-            for block_i := uint(0); block_i < stage_info.uniform_blocks_count; block_i += 1 {
+            for block_i := 0; block_i < stage_info.uniform_blocks_count; block_i += 1 {
                 block := &stage_info.uniform_blocks[block_i]
-                for uniform_i := uint(0); uniform_i < stage_info.uniform_blocks_count; uniform_i += 1 {
+                for uniform_i := 0; uniform_i < stage_info.uniform_blocks_count; uniform_i += 1 {
                     uniform := &block.uniforms[uniform_i]
                     cname := strings.clone_to_cstring(uniform.name, context.temp_allocator)
                     uniform.location = gl.GetUniformLocation(program, cname)
@@ -190,7 +191,7 @@ create_shader :: proc(desc: core.Shader_Info, destroy_stages_on_success: bool) -
                 } 
             }
 
-            for texture_i := uint(0); texture_i < stage_info.textures_count; texture_i += 1 {
+            for texture_i := 0; texture_i < stage_info.textures_count; texture_i += 1 {
                 tex := &stage_info.textures[texture_i]
                 cname := strings.clone_to_cstring(tex.name, context.temp_allocator)
                 tex.location = gl.GetUniformLocation(program, cname)
@@ -223,7 +224,7 @@ destroy_shader :: proc(shader: core.Shader) {
     delete_key(&_shaders, shader)
 }
 
-apply_uniforms_raw :: proc(stage: core.Shader_Stage_Type, block_index: uint, data: rawptr, size: uint) {
+apply_uniforms_raw :: proc(stage: core.Shader_Stage_Type, block_index: int, data: rawptr, size: int) {
     pipeline := &_current_pipeline
     shader := _current_pipeline.shader
     gl_stage, stage_found := &shader.stages[stage].?
@@ -233,7 +234,7 @@ apply_uniforms_raw :: proc(stage: core.Shader_Stage_Type, block_index: uint, dat
 
     block := &gl_stage.uniform_blocks[block_index]
     assert(block.size == size, "Size mismatch for uniform block.")
-    for uniform_i := uint(0); uniform_i < block.uniform_count; uniform_i += 1 {
+    for uniform_i := 0; uniform_i < block.uniform_count; uniform_i += 1 {
         uniform := &block.uniforms[uniform_i]
         assert(uniform.count > 0, "Uniform count cannot be 0.")
         addr := cast(rawptr)(uintptr(data) + uniform.offset)

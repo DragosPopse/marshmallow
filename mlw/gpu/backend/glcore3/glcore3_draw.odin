@@ -6,7 +6,7 @@ import "../../../math"
 
 import glcache "../glcached"
 
-draw :: proc(base_elem: uint, elem_count: uint) {
+draw :: proc(base_elem: int, elem_count: int) {
     assert(_current_pipeline != nil)
     
     if glcache.cache.buffers[.ELEMENT_ARRAY_BUFFER] != 0 { // Note(Dragos): This can be cached as a bool locally. But it's good for cache testing

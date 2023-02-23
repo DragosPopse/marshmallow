@@ -98,7 +98,7 @@ apply_input_textures :: proc(textures: core.Input_Textures) {
     current_tex_unit := u32(0)
     for s, stage_i in shader.stages {
         if stage, valid := s.?; valid {
-            for i := uint(0); i < stage.textures_count; i += 1 {
+            for i := 0; i < stage.textures_count; i += 1 {
                 tex := &stage.textures[i]
                 gltex := &_textures[textures.textures[stage_i][i]]
 

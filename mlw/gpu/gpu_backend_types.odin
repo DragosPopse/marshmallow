@@ -62,7 +62,7 @@ Backend_Destroy_Shader_Stage :: #type proc(stage: Shader_Stage)
 // Shader
 Backend_Create_Shader :: #type proc(desc: Shader_Info, destroy_stages_on_success: bool) -> (shader: Shader, temp_error: Maybe(string))
 Backend_Destroy_Shader :: #type proc(shader: Shader)
-Backend_Apply_Uniforms_Raw :: #type proc(stage: Shader_Stage_Type, block_index: uint, data: rawptr, size: uint)
+Backend_Apply_Uniforms_Raw :: #type proc(stage: Shader_Stage_Type, block_index: int, data: rawptr, size: int)
 //
 
 // Buffer
@@ -77,6 +77,6 @@ Backend_Destroy_Texture :: #type proc(texture: Texture)
 //
 
 // Drawing
-Backend_Draw :: #type proc(base_elem: uint, elem_count: uint)
+Backend_Draw :: #type proc(base_elem: int, elem_count: int)
 
 Backend_Default_Graphics_Info :: #type proc() -> core.Graphics_Info
