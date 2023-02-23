@@ -188,13 +188,13 @@ main :: proc() {
     input_textures.textures[.Fragment][0] = texture
 
     projection := math.Mat4f(1)
-    //projection = linalg.matrix4_perspective_f32(linalg.radians(cast(f32)45), f32(WIDTH) / HEIGHT, 0.1, 100)
+    projection = linalg.matrix4_perspective_f32(linalg.radians(cast(f32)45), f32(WIDTH) / HEIGHT, 0.1, 100)
     
     model := math.Mat4f(1)
-    //model = linalg.matrix4_rotate_f32(linalg.radians(cast(f32)-55), {1.0, 0.0, 0.0})
+    model = linalg.matrix4_rotate_f32(linalg.radians(cast(f32)-55), {1.0, 0.0, 0.0})
 
     view := math.Mat4f(1)
-    //view = linalg.matrix4_translate_f32({0, 0, -3})
+    view = linalg.matrix4_translate_f32({0, 0, -3})
 
     input_uniforms: Vertex_Uniforms
     input_uniforms.model = model

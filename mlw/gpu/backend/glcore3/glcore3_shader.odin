@@ -183,7 +183,7 @@ create_shader :: proc(desc: core.Shader_Info, destroy_stages_on_success: bool) -
         if stage_info, ok := stage.?; ok {
             for block_i := 0; block_i < stage_info.uniform_blocks_count; block_i += 1 {
                 block := &stage_info.uniform_blocks[block_i]
-                for uniform_i := 0; uniform_i < stage_info.uniform_blocks_count; uniform_i += 1 {
+                for uniform_i := 0; uniform_i < block.uniform_count; uniform_i += 1 {
                     uniform := &block.uniforms[uniform_i]
                     cname := strings.clone_to_cstring(uniform.name, context.temp_allocator)
                     uniform.location = gl.GetUniformLocation(program, cname)
@@ -198,6 +198,7 @@ create_shader :: proc(desc: core.Shader_Info, destroy_stages_on_success: bool) -
                 //gl.Uniform1i(tex.location, current_tex_unit)
                 current_tex_unit += 1
             }
+            gl_shader.stages[type] = stage_info
         }
     }
     glcache.UseProgram(last_program)
