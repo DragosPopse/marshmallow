@@ -84,13 +84,17 @@ begin_default_pass :: proc(action: core.Render_Pass_Action, width, height: int) 
     gl.Viewport(0, 0, w, h)
     gl.Scissor(0, 0, w, h)
     clear_color := action.colors[0].action == .Clear
-    clear_depth := action.depth.action == .Clear
+    // Note(Dragos): Does this mean taht the pipeline needs to not be nil when beginning a pass?
+    clear_depth := action.depth.action == .Clear && _current_pipeline.blend != nil // Note(Dragos): Not fully implemented
     clear_stencil := action.stencil.action == .Clear
     clear_mask := u32(0)
     if clear_color {
         val := action.colors[0].value
         gl.ClearColor(val.r, val.g, val.b, val.a)
         clear_mask |= gl.COLOR_BUFFER_BIT
+    }
+    if clear_depth {
+        clear_mask |= gl.DEPTH_BUFFER_BIT
     }
     // Todo(Dragos): Implement depth/stencil clear
     if clear_mask != 0 do gl.Clear(clear_mask)

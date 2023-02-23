@@ -70,6 +70,7 @@ GLCore3_Pipeline :: struct {
     primitive_type: u32,
     layout: core.Layout_Info,
     index_type: u32,
+    depth: Maybe(core.Depth_State), // This is a small workaround until fully supported
     blend: Maybe(GLCore3_Blend), // Note(Dragos): This is weird rn
 }
 
@@ -91,6 +92,7 @@ create_pipeline :: proc(desc: core.Pipeline_Info) -> (pipeline: core.Pipeline) {
     glpipe.polygon_mode = _POLYGON_CONV[desc.polygon_mode]
     glpipe.primitive_type = _PRIMITIVE_CONV[desc.primitive_type]
     glpipe.index_type = _INDEX_CONV[desc.index_type]
+    glpipe.depth = desc.depth
     if blend, found := desc.color.blend.?; found {
         glpipe.blend = GLCore3_Blend {
             rgb_src = _BLEND_FACTOR_CONV[blend.rgb.src_factor],
@@ -134,6 +136,7 @@ apply_pipeline :: proc(pipeline: core.Pipeline) {
     } else {
         glcache.Disable(.BLEND)
     }
+    glcache.enable_or_disable(.DEPTH_TEST, _current_pipeline.depth != nil)
 }
 
 destroy_pipeline :: proc(pipeline: core.Pipeline) {

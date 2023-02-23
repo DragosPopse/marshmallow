@@ -128,6 +128,8 @@ create_default_pipeline :: proc(shader: gpu.Shader) -> (pipeline: gpu.Pipeline) 
     pipe_info.shader = shader
     pipe_info.index_type = .u32 
     pipe_info.primitive_type = .Triangles
+    depth: core.Depth_State
+    pipe_info.depth = depth // Note(Dragos): not fully implemented
     pipe_info.layout = core.layout_from_structs([]core.Struct_Layout_Info{
         0 = {Vertex, .Per_Vertex},
     })
@@ -211,8 +213,10 @@ main :: proc() {
             }
         }
 
+        gpu.apply_pipeline(pipeline) // Pipeline should be after pass, but now we workaround a bit not make things work
+
         gpu.begin_default_pass(pass_action, WIDTH, HEIGHT)
-        gpu.apply_pipeline(pipeline)
+    
         gpu.apply_input_buffers(input_buffers)
         gpu.apply_input_textures(input_textures)
         // Todo(Dragos): Remove all uint and change it to int
