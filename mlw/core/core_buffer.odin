@@ -17,7 +17,7 @@ Buffer_Usage_Hint :: enum {
 
 Buffer_Info :: struct {
     type: Buffer_Type,
-    size: uint,
+    size: int,
     data: []u8, // Optional unless usage_hint == .Immutable
     usage_hint: Buffer_Usage_Hint,
 }
