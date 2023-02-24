@@ -67,39 +67,69 @@ destroy_pass :: proc(pass: core.Render_Pass) {
     delete_key(&_passes, pass)
 }
 
-begin_pass :: proc(pass: core.Render_Pass, action: core.Render_Pass_Action) {
-    assert(_current_pass == nil, "Pass currently in progress")
-    assert(pass in _passes, "Pass not found.")
-    _current_pass = &_passes[pass]
-    glcache.BindFramebuffer(.FRAMEBUFFER, _current_pass.framebuffer)
-    gl.Viewport(0, 0, _current_pass.fb_size.x, _current_pass.fb_size.y)
-    gl.Scissor(0, 0, _current_pass.fb_size.x, _current_pass.fb_size.y) // Note(Dragos): What does this do?
-    
-}
-
 begin_default_pass :: proc(action: core.Render_Pass_Action, width, height: int) {
     assert(_current_pass == nil, "Cannot being a pass while in another pass")
+
     w, h := cast(i32)width, cast(i32)height
+    _current_pass = &_default_pass
+    
     glcache.BindFramebuffer(.FRAMEBUFFER, 0)
+
     gl.Viewport(0, 0, w, h)
     gl.Scissor(0, 0, w, h)
+
     clear_color := action.colors[0].action == .Clear
-    // Note(Dragos): Does this mean taht the pipeline needs to not be nil when beginning a pass?
-    clear_depth := action.depth.action == .Clear && _current_pipeline.blend != nil // Note(Dragos): Not fully implemented
+    clear_depth := action.depth.action == .Clear
     clear_stencil := action.stencil.action == .Clear
+
     clear_mask := u32(0)
+
     if clear_color {
         val := action.colors[0].value
         gl.ClearColor(val.r, val.g, val.b, val.a)
         clear_mask |= gl.COLOR_BUFFER_BIT
     }
+
     if clear_depth {
         clear_mask |= gl.DEPTH_BUFFER_BIT
+        gl.ClearDepth(cast(f64)action.depth.value)
     }
-    // Todo(Dragos): Implement depth/stencil clear
-    if clear_mask != 0 do gl.Clear(clear_mask)
 
-    _current_pass = &_default_pass
+    if clear_stencil {
+        clear_mask |= gl.STENCIL_BUFFER_BIT
+        gl.ClearStencil(cast(i32)action.stencil.value)
+    }
+
+    if clear_mask != 0 do gl.Clear(clear_mask)  
+}
+
+begin_pass :: proc(pass: core.Render_Pass, action: core.Render_Pass_Action) {
+    assert(_current_pass == nil, "Pass currently in progress")
+    assert(pass in _passes, "Pass not found.")
+
+    _current_pass = &_passes[pass]
+
+    glcache.BindFramebuffer(.FRAMEBUFFER, _current_pass.framebuffer)
+
+    gl.Viewport(0, 0, _current_pass.fb_size.x, _current_pass.fb_size.y)
+    gl.Scissor(0, 0, _current_pass.fb_size.x, _current_pass.fb_size.y)
+
+    clear_depth := action.depth.action == .Clear
+    clear_stencil := action.depth.action == .Clear
+
+    for i := 0; i < _current_pass.num_colors; i += 1 {
+        clear_color := action.colors[i].action == .Clear
+        color := action.colors[i].value
+        if clear_color do gl.ClearBufferfv(gl.COLOR, i32(i), &color[0])
+    }
+
+    if _current_pass.stencil_depth != nil {
+        depth_value := action.depth.value
+        stencil_value := i32(action.stencil.value)
+        if clear_depth && clear_stencil do gl.ClearBufferfi(gl.DEPTH_STENCIL, 0, depth_value, stencil_value)
+        else if clear_depth do gl.ClearBufferfv(gl.DEPTH, 0, &depth_value)
+        else if clear_stencil do gl.ClearBufferiv(gl.STENCIL, 0, &stencil_value)
+    }
 }
 
 end_pass :: proc() {

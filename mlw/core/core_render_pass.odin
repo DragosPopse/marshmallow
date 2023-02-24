@@ -6,6 +6,8 @@ Render_Pass :: distinct u32
 
 MAX_COLOR_ATTACHMENTS :: 4
 DEFAULT_CLEAR_COLOR :: math.fBLACK
+DEFAULT_CLEAR_DEPTH :: 1
+DEFAULT_CLEAR_STENCIL :: 0
 
 Attachment_Info :: struct {
     texture: Texture,
@@ -48,5 +50,7 @@ default_pass_action :: proc() -> (action: Render_Pass_Action) {
     for color in &action.colors {
         color.value = DEFAULT_CLEAR_COLOR
     }
-    return
+    action.depth.value = DEFAULT_CLEAR_DEPTH
+    action.stencil.value = DEFAULT_CLEAR_STENCIL
+    return action
 }

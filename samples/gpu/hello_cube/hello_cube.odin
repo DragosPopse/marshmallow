@@ -160,9 +160,6 @@ create_texture_from_file :: proc(filename: string) -> (texture: gpu.Texture) {
 }
 
 
-
-
-
 main :: proc() {
     init_platform()
     gpu.init()
@@ -213,15 +210,16 @@ main :: proc() {
             }
         }
 
-        gpu.apply_pipeline(pipeline) // Pipeline should be after pass, but now we workaround a bit not make things work
+        input_uniforms.model *= linalg.matrix4_rotate_f32(linalg.radians(cast(f32)-1), {1.0, 1.0, 0.0})
 
         gpu.begin_default_pass(pass_action, WIDTH, HEIGHT)
-    
+
+        gpu.apply_pipeline(pipeline)
         gpu.apply_input_buffers(input_buffers)
         gpu.apply_input_textures(input_textures)
-        // Todo(Dragos): Remove all uint and change it to int
         gpu.apply_uniforms_raw(.Vertex, 0, &input_uniforms, size_of(input_uniforms))
         gpu.draw(0, 36)
+
         gpu.end_pass()
 
         platform.update_window()
