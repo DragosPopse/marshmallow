@@ -102,6 +102,8 @@ create_postfx_shader :: proc() -> (shader: gpu.Shader, err: Maybe(string)) {
     frag: gpu.Shader_Stage
     frag_info.src = #load("shaders/postfx.frag", string)
     frag_info.type = .Fragment
+    frag_info.textures[0].name = "u_Tex1"
+    frag_info.textures[0].type = .Texture2D
 
     if frag, err = gpu.create_shader_stage(frag_info); err != nil {
         return 0, err
@@ -306,7 +308,7 @@ main :: proc() {
 
         input_uniforms.model *= linalg.matrix4_rotate_f32(linalg.radians(cast(f32)-1), {1.0, 1.0, 0.0})
 
-        /*
+        // Render the cube onto a texture
         gpu.begin_pass(frame_pass, pass_action)
         gpu.apply_pipeline(pipeline)
         gpu.apply_input_buffers(input_buffers)
@@ -315,14 +317,15 @@ main :: proc() {
         gpu.draw(0, 36)
         gpu.end_pass()
 
+        // Render the output texture onto a quad and apply postfx
         gpu.begin_default_pass(pass_action, WIDTH, HEIGHT)
         gpu.apply_pipeline(postfx_pipeline)
         gpu.apply_input_buffers(postfx_input_buffers)
         gpu.apply_input_textures(postfx_input_textures)
         gpu.draw(0, 6)
         gpu.end_pass()
-        */
-
+        
+        /*
         gpu.begin_default_pass(pass_action, WIDTH, HEIGHT)
         gpu.apply_pipeline(pipeline)
         gpu.apply_input_buffers(input_buffers)
@@ -330,7 +333,7 @@ main :: proc() {
         gpu.apply_uniforms_raw(.Vertex, 0, &input_uniforms, size_of(input_uniforms))
         gpu.draw(0, 36)
         gpu.end_pass()
-
+        */
         platform.update_window()
     }
 

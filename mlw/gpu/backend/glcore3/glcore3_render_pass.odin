@@ -12,8 +12,7 @@ Render_Pass :: struct {
     colors_count: int,
     fb_size: [2]i32,
     num_colors: int,
-    colors: [core.MAX_COLOR_ATTACHMENTS]^GLCore3_Texture,
-    stencil_depth: ^GLCore3_Texture,
+    depth_stencil: bool,
 }
 
 _default_pass: Render_Pass
@@ -43,15 +42,13 @@ create_pass :: proc(info: core.Render_Pass_Info) -> (pass: core.Render_Pass) {
         } else {
             // Note(Dragos): Figure this out
             panic("Not supported texture type for render target.")
-        }
-
-        glpass.colors[i] = gltex
-        
+        }     
     } else do break
 
     if info.depth_stencil.texture != 0 {
         assert(info.depth_stencil.texture in _textures, "Texture not found.")
         gltex := _textures[info.depth_stencil.texture]
+        glpass.depth_stencil = true
         gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.TEXTURE_2D, gltex.handle, 0)
     }
     assert(gl.CheckFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE, "Framebuffer creation failed.")
@@ -125,7 +122,7 @@ begin_pass :: proc(pass: core.Render_Pass, action: core.Render_Pass_Action) {
         if clear_color do gl.ClearBufferfv(gl.COLOR, i32(i), &color[0])
     }
 
-    if _current_pass.stencil_depth != nil {
+    if _current_pass.depth_stencil {
         depth_value := action.depth.value
         stencil_value := i32(action.stencil.value)
         if clear_depth && clear_stencil do gl.ClearBufferfi(gl.DEPTH_STENCIL, 0, depth_value, stencil_value)
