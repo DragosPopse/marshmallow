@@ -48,9 +48,10 @@ copy_assets :: proc(config: build.Config) -> int {
 
 add_targets :: proc(project: ^Project) {
     // Note(Dragos): Add wildcards for configs. Like "build samp.*". This will mean that we can use "build *" instead of "build all"
-    add_sample_target(project, "samp.gpu.hello_triangle", "samples/gpu/hello_triangle", "out/samples/gpu/hello_triangle")
+    //add_sample_target(project, "samp.gpu.hello_triangle", "samples/gpu/hello_triangle", "out/samples/gpu/hello_triangle")
     add_sample_target(project, "samp.gpu.hello_cube", "samples/gpu/hello_cube", "out/samples/gpu/hello_cube")
     add_sample_target(project, "samp.gpu.hello_sprite", "samples/gpu/hello_sprite", "out/samples/gpu/hello_sprite")
+    add_sample_target(project, "samp.gpu.post_effects", "samples/gpu/post_effects", "out/samples/gpu/post_effects")
 }
 
 configure_target :: proc(project: Project, target: Target) -> (config: build.Config) {
