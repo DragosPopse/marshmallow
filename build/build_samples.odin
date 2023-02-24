@@ -37,7 +37,12 @@ copy_assets :: proc(config: build.Config) -> int {
     src_dir := config.src
     assets_dir := strings.concatenate({src_dir, "/assets"}, context.temp_allocator)
     if os.exists(assets_dir) {
-        cmd := fmt.tprintf("xcopy /y /i /s /e \"%s\\assets\" \"%s\\assets\"", src_dir, out_dir)
+        when ODIN_OS == .Windows {
+            cmd := fmt.tprintf("xcopy /y /i /s /e \"%s\\assets\" \"%s\\assets\"", src_dir, out_dir)
+        } else {
+            cmd := fmt.tprintf("cp -a \"%s/assets\" \"%s/assets\"", src_dir, out_dir)
+        }
+        
         return build.syscall(cmd, true)
     } else {
         fmt.printf("Couldn't find %s. Ignoring copying assets.\n", assets_dir)
