@@ -142,6 +142,8 @@ create_default_shader :: proc() -> (shader: gpu.Shader, err: Maybe(string)) {
     frag: gpu.Shader_Stage
     frag_info.src = #load("shaders/basic.frag", string)
     frag_info.type = .Fragment
+    frag_info.textures[0].name = "u_Tex1"
+    frag_info.textures[0].type = .Texture2D
 
     if frag, err = gpu.create_shader_stage(frag_info); err != nil {
         return 0, err
@@ -189,7 +191,10 @@ create_vertex_buffer :: proc(vertices: []$T, size: int) -> (buffer: gpu.Buffer) 
 
 create_texture_from_file :: proc(filename: string) -> (texture: gpu.Texture) {
     info: gpu.Texture_Info
-    img, _ := image.load_image_from_file(filename)
+    img, ok := image.load_image_from_file(filename)
+    if !ok {
+        fmt.printf("Error loading image\n")
+    }
     defer image.delete_image(img)
     info.data = slice.to_bytes(img.pixels)
     info.generate_mipmap = false 
@@ -237,20 +242,27 @@ main :: proc() {
     
     shader: gpu.Shader
     err: Maybe(string)
+    postfx_shader: gpu.Shader
 
     if shader, err = create_default_shader(); err != nil {
         fmt.printf("Shader Error: %s\n", err.(string))
         return
     }
+
+    if postfx_shader, err = create_postfx_shader(); err != nil {
+        fmt.printf("Shader Error: %s\n", err.(string))
+        return
+    }
     
     pipeline := create_default_pipeline(shader)
+    postfx_pipeline := create_default_pipeline(postfx_shader)
     cube_buffer := create_vertex_buffer(cube_vertices[:], size_of(cube_vertices))
     quad_buffer := create_vertex_buffer(quad_vertices[:], size_of(quad_vertices))
 
     pass_action := gpu.default_pass_action()
     pass_action.colors[0].value = math.Colorf{0.012, 0.533, 0.988, 1.0}
     
-    cube_texture := create_texture_from_file("assets/container.png")
+    
     frame_texture, depth_stencil_texture := create_framebuffer_texture(WIDTH, HEIGHT)
     frame_pass := create_frame_pass(frame_texture, depth_stencil_texture)
 
@@ -259,8 +271,10 @@ main :: proc() {
     postfx_input_buffers: gpu.Input_Buffers
     postfx_input_buffers.buffers[0] = quad_buffer
 
+    cube_texture := create_texture_from_file("assets/container.png")
     input_textures: gpu.Input_Textures
     input_textures.textures[.Fragment][0] = cube_texture
+
     postfx_input_textures: gpu.Input_Textures
     postfx_input_textures.textures[.Fragment][0] = frame_texture
 
@@ -292,6 +306,7 @@ main :: proc() {
 
         input_uniforms.model *= linalg.matrix4_rotate_f32(linalg.radians(cast(f32)-1), {1.0, 1.0, 0.0})
 
+        /*
         gpu.begin_pass(frame_pass, pass_action)
         gpu.apply_pipeline(pipeline)
         gpu.apply_input_buffers(input_buffers)
@@ -301,10 +316,19 @@ main :: proc() {
         gpu.end_pass()
 
         gpu.begin_default_pass(pass_action, WIDTH, HEIGHT)
-        gpu.apply_pipeline(pipeline)
+        gpu.apply_pipeline(postfx_pipeline)
         gpu.apply_input_buffers(postfx_input_buffers)
         gpu.apply_input_textures(postfx_input_textures)
         gpu.draw(0, 6)
+        gpu.end_pass()
+        */
+
+        gpu.begin_default_pass(pass_action, WIDTH, HEIGHT)
+        gpu.apply_pipeline(pipeline)
+        gpu.apply_input_buffers(input_buffers)
+        gpu.apply_input_textures(input_textures)
+        gpu.apply_uniforms_raw(.Vertex, 0, &input_uniforms, size_of(input_uniforms))
+        gpu.draw(0, 36)
         gpu.end_pass()
 
         platform.update_window()

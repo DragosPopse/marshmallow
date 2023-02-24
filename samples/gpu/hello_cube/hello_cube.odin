@@ -101,6 +101,8 @@ create_default_shader :: proc() -> (shader: gpu.Shader, err: Maybe(string)) {
     frag: gpu.Shader_Stage
     frag_info.src = #load("shaders/basic.frag", string)
     frag_info.type = .Fragment
+    frag_info.textures[0].name = "u_Tex1"
+    frag_info.textures[0].type = .Texture2D
 
     if frag, err = gpu.create_shader_stage(frag_info); err != nil {
         return 0, err
@@ -156,6 +158,7 @@ create_texture_from_file :: proc(filename: string) -> (texture: gpu.Texture) {
     info.min_filter = .Nearest
     info.mag_filter = .Nearest
     info.type = .Texture2D
+    info.format = .RGBA8
     return gpu.create_texture(info)
 }
 
