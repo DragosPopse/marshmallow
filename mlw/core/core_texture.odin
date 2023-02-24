@@ -35,9 +35,18 @@ Texture_Type :: enum {
     Cubemap,
 }
 
+Pixel_Format :: enum {
+    Invalid,
+    RGBA8,
+    RGB8,
+    DEPTH_STENCIL,
+}
+
+
 Texture_Info :: struct {
     size: [3]int,
     data: []byte,
+    format: Pixel_Format,
     type: Texture_Type,
     min_filter: Texture_Min_Filter,
     mag_filter: Texture_Mag_Filter,

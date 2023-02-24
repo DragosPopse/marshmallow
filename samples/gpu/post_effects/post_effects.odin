@@ -25,6 +25,15 @@ Vertex_Uniforms :: struct {
 WIDTH :: 600
 HEIGHT :: 600
 
+quad_vertices := [?]Vertex {
+    {{-1, -1, 0}, {0.0, 0.0}},
+    {{ 1, -1, 0}, {1.0, 0.0}},
+    {{ 1,  1, 0}, {1.0, 1.0}},
+    {{ 1,  1, 0}, {1.0, 1.0}},
+    {{-1,  1, 0}, {0.0, 1.0}},
+    {{-1, -1, 0}, {0.0, 0.0}},
+}
+
 cube_vertices := [?]Vertex {
     {{-0.5, -0.5, -0.5}, {0.0, 0.0}},
     {{ 0.5, -0.5, -0.5}, {1.0, 0.0}},
@@ -76,6 +85,38 @@ init_platform :: proc() {
     info.window.size = {WIDTH, HEIGHT}
     info.graphics = gpu.default_graphics_info()
     platform.init(info)
+}
+
+create_postfx_shader :: proc() -> (shader: gpu.Shader, err: Maybe(string)) {
+    vert_info: gpu.Shader_Stage_Info
+    vert: gpu.Shader_Stage
+    vert_info.src = #load("shaders/postfx.vert", string)
+    vert_info.type = .Vertex
+
+    if vert, err = gpu.create_shader_stage(vert_info); err != nil {
+        return 0, err
+    }
+    defer gpu.destroy_shader_stage(vert)
+
+    frag_info: gpu.Shader_Stage_Info
+    frag: gpu.Shader_Stage
+    frag_info.src = #load("shaders/postfx.frag", string)
+    frag_info.type = .Fragment
+
+    if frag, err = gpu.create_shader_stage(frag_info); err != nil {
+        return 0, err
+    }
+    defer gpu.destroy_shader_stage(frag)
+
+    shader_info: gpu.Shader_Info
+    shader_info.stages[.Vertex] = vert
+    shader_info.stages[.Fragment] = frag
+
+    if shader, err = gpu.create_shader(shader_info, false); err != nil {
+        return 0, err
+    }
+
+    return shader, nil
 }
 
 create_default_shader :: proc() -> (shader: gpu.Shader, err: Maybe(string)) {
@@ -155,8 +196,38 @@ create_texture_from_file :: proc(filename: string) -> (texture: gpu.Texture) {
     info.size.xy = img.size.xy
     info.min_filter = .Nearest
     info.mag_filter = .Nearest
+    info.format = .RGBA8
     info.type = .Texture2D
     return gpu.create_texture(info)
+}
+
+create_framebuffer_texture :: proc(width, height: int) -> (color: gpu.Texture, depth_stencil: gpu.Texture) {
+    cinfo: gpu.Texture_Info
+    cinfo.render_target = true // needs to be a render target
+    cinfo.generate_mipmap = false 
+    cinfo.size.xy = {width, height}
+    cinfo.min_filter = .Nearest
+    cinfo.mag_filter = .Nearest
+    cinfo.format = .RGB8
+    cinfo.type = .Texture2D
+
+    dsinfo: gpu.Texture_Info
+    dsinfo.render_target = true // needs to be a render target
+    dsinfo.generate_mipmap = false 
+    dsinfo.size.xy = {width, height}
+    dsinfo.min_filter = .Nearest
+    dsinfo.mag_filter = .Nearest
+    dsinfo.format = .DEPTH_STENCIL
+    dsinfo.type = .Texture2D
+
+    return gpu.create_texture(cinfo), gpu.create_texture(dsinfo)
+}
+
+create_frame_pass :: proc(texture: gpu.Texture, depth_stencil: gpu.Texture) -> (pass: gpu.Pass) {
+    info: gpu.Pass_Info
+    info.colors[0].texture = texture
+    info.depth_stencil.texture = depth_stencil
+    return gpu.create_pass(info)
 }
 
 
@@ -174,17 +245,24 @@ main :: proc() {
     
     pipeline := create_default_pipeline(shader)
     cube_buffer := create_vertex_buffer(cube_vertices[:], size_of(cube_vertices))
+    quad_buffer := create_vertex_buffer(quad_vertices[:], size_of(quad_vertices))
 
     pass_action := gpu.default_pass_action()
     pass_action.colors[0].value = math.Colorf{0.012, 0.533, 0.988, 1.0}
     
-    texture := create_texture_from_file("assets/container.png")
+    cube_texture := create_texture_from_file("assets/container.png")
+    frame_texture, depth_stencil_texture := create_framebuffer_texture(WIDTH, HEIGHT)
+    frame_pass := create_frame_pass(frame_texture, depth_stencil_texture)
 
     input_buffers: gpu.Input_Buffers
     input_buffers.buffers[0] = cube_buffer
+    postfx_input_buffers: gpu.Input_Buffers
+    postfx_input_buffers.buffers[0] = quad_buffer
 
     input_textures: gpu.Input_Textures
-    input_textures.textures[.Fragment][0] = texture
+    input_textures.textures[.Fragment][0] = cube_texture
+    postfx_input_textures: gpu.Input_Textures
+    postfx_input_textures.textures[.Fragment][0] = frame_texture
 
     projection := math.Mat4f(1)
     projection = linalg.matrix4_perspective_f32(linalg.radians(cast(f32)45), f32(WIDTH) / HEIGHT, 0.1, 100)
@@ -200,6 +278,8 @@ main :: proc() {
     input_uniforms.view = view
     input_uniforms.projection = projection
 
+    
+
     running := true
     for running {
         for event in platform.poll_event() {
@@ -212,14 +292,19 @@ main :: proc() {
 
         input_uniforms.model *= linalg.matrix4_rotate_f32(linalg.radians(cast(f32)-1), {1.0, 1.0, 0.0})
 
-        gpu.begin_default_pass(pass_action, WIDTH, HEIGHT)
-
+        gpu.begin_pass(frame_pass, pass_action)
         gpu.apply_pipeline(pipeline)
         gpu.apply_input_buffers(input_buffers)
         gpu.apply_input_textures(input_textures)
         gpu.apply_uniforms_raw(.Vertex, 0, &input_uniforms, size_of(input_uniforms))
         gpu.draw(0, 36)
+        gpu.end_pass()
 
+        gpu.begin_default_pass(pass_action, WIDTH, HEIGHT)
+        gpu.apply_pipeline(pipeline)
+        gpu.apply_input_buffers(postfx_input_buffers)
+        gpu.apply_input_textures(postfx_input_textures)
+        gpu.draw(0, 6)
         gpu.end_pass()
 
         platform.update_window()

@@ -50,13 +50,15 @@ create_pass :: proc(info: core.Render_Pass_Info) -> (pass: core.Render_Pass) {
     } else do break
 
     if info.depth_stencil.texture != 0 {
-        
-        panic("Not implemented")
+        assert(info.depth_stencil.texture in _textures, "Texture not found.")
+        gltex := _textures[info.depth_stencil.texture]
+        gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.TEXTURE_2D, gltex.handle, 0)
     }
-    assert(gl.CheckFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE, "Framebuffer creation failed.")
+    assert(gl.CheckFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE, "Framebuffer creation failed.")
     glcache.BindFramebuffer(.FRAMEBUFFER, last_fb)
     glpass.fb_size.x = cast(i32)fb_size.x
     glpass.fb_size.y = cast(i32)fb_size.y
+    _passes[pass] = glpass
     return pass
 }
 

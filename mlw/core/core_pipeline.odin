@@ -29,9 +29,7 @@ Color_State :: struct {
 
 Color :: [4]byte // Note(Dragos): This should be a distinct type somewhere i think
 
-Pixel_Format :: struct {
-    
-}
+
 
 Cull_Mode :: enum {
     None,

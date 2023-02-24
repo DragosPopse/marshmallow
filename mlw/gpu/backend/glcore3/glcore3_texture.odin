@@ -58,13 +58,31 @@ create_texture :: proc(desc: core.Texture_Info) -> (texture: core.Texture) {
     // Note(Dragos): Implement the other types
     assert(desc.type == .Texture2D, "Only Texture2D implemented.")
     if desc.type == .Texture2D {
-        assert(len(desc.data) == desc.size.x * desc.size.y * 4, "Texture size and data mismatch")
+        assert(len(desc.data) == desc.size.x * desc.size.y * 4 || desc.data == nil, "Texture size and data mismatch")
+        assert(desc.format != .Invalid, "Invalid pixel format. Did you forget to set up texture_info.format?")
+        internal_format: i32
+        format, data_type: u32
+        switch desc.format {
+            case .Invalid: // already asserted
+            case .RGBA8: 
+                internal_format = gl.RGBA
+                format = gl.RGBA
+                data_type = gl.UNSIGNED_BYTE
+            case .RGB8: 
+                internal_format = gl.RGB
+                format = gl.RGB
+                data_type = gl.UNSIGNED_BYTE
+            case .DEPTH_STENCIL: 
+                internal_format = gl.DEPTH24_STENCIL8
+                format = gl.DEPTH_STENCIL
+                data_type = gl.UNSIGNED_INT_24_8
+        }
         gl.TexImage2D(target, 0, 
-            gl.RGBA, 
+            internal_format, 
             cast(i32)desc.size.x, cast(i32)desc.size.y, 
             0,
-            gl.RGBA, 
-            gl.UNSIGNED_BYTE, raw_data(desc.data),
+            format, 
+            data_type, raw_data(desc.data),
         )
     }
     
