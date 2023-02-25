@@ -325,15 +325,6 @@ main :: proc() {
         gpu.draw(0, 6)
         gpu.end_pass()
         
-        /*
-        gpu.begin_default_pass(pass_action, WIDTH, HEIGHT)
-        gpu.apply_pipeline(pipeline)
-        gpu.apply_input_buffers(input_buffers)
-        gpu.apply_input_textures(input_textures)
-        gpu.apply_uniforms_raw(.Vertex, 0, &input_uniforms, size_of(input_uniforms))
-        gpu.draw(0, 36)
-        gpu.end_pass()
-        */
         platform.update_window()
     }
 
