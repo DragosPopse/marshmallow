@@ -1,23 +1,27 @@
-package highland_gfx_command
+package mmlow_imdraw
+
+import "../math" 
+import "../core"
+import "../gpu"
 
 Command_Base :: struct {
-    color: Color,
+    color: math.Colorf,
 }
 
 Command_Line :: struct {
     using base: Command_Base,
-    start, end: Vec3f,
+    start, end: math.Vec3f,
 }
 
 Command_Quad :: struct {
     using base: Command_Base,
-    transform: Transform3D,
+    transform: math.Transform,
 }
 
 Command_Sprite :: struct {
     using base: Command_Base,
-    transform: Transform3D,
-    texture: ^Texture,
+    transform: math.Transform,
+    texture: gpu.Texture,
 }
 
 Command_Vertex_Array :: struct {

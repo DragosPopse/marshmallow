@@ -39,7 +39,7 @@ Pixel_Format :: enum {
     Invalid,
     RGBA8,
     RGB8,
-    DEPTH_STENCIL,
+    DEPTH24_STENCIL8,
 }
 
 

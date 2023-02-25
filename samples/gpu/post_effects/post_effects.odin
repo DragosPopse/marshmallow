@@ -224,7 +224,7 @@ create_framebuffer_texture :: proc(width, height: int) -> (color: gpu.Texture, d
     dsinfo.size.xy = {width, height}
     dsinfo.min_filter = .Nearest
     dsinfo.mag_filter = .Nearest
-    dsinfo.format = .DEPTH_STENCIL
+    dsinfo.format = .DEPTH24_STENCIL8
     dsinfo.type = .Texture2D
 
     return gpu.create_texture(cinfo), gpu.create_texture(dsinfo)

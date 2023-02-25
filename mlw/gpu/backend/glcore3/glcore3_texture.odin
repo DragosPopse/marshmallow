@@ -72,7 +72,7 @@ create_texture :: proc(desc: core.Texture_Info) -> (texture: core.Texture) {
                 internal_format = gl.RGB
                 format = gl.RGB
                 data_type = gl.UNSIGNED_BYTE
-            case .DEPTH_STENCIL: 
+            case .DEPTH24_STENCIL8: 
                 internal_format = gl.DEPTH24_STENCIL8
                 format = gl.DEPTH_STENCIL
                 data_type = gl.UNSIGNED_INT_24_8
