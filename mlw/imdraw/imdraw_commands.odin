@@ -4,8 +4,46 @@ import "../math"
 import "../core"
 import "../gpu"
 
+Textured_Vertex :: struct {
+    pos: math.Vec3f,
+    tex: math.Vec2f,
+}
+
+Simple_Vertex :: struct {
+    pos: math.Vec3f,
+}
+
+Sprite_Uniforms :: struct {
+    model: math.Mat4f,
+    color: math.Colorf,
+}
+
+Camera_Uniforms :: struct {
+    view: math.Mat4f,
+    projection: math.Mat4f,
+}
+
+SPRITE_VERTICES := [?]Textured_Vertex {
+    {{-0.5, -0.5, -0.5}, {0.0, 0.0}},
+    {{ 0.5, -0.5, -0.5}, {1.0, 0.0}},
+    {{ 0.5,  0.5, -0.5}, {1.0, 1.0}},
+    {{ 0.5,  0.5, -0.5}, {1.0, 1.0}},
+    {{-0.5,  0.5, -0.5}, {0.0, 1.0}},
+    {{-0.5, -0.5, -0.5}, {0.0, 0.0}},
+}
+
+SQUAD_VERTICES := [?]Simple_Vertex {
+    {{-0.5, -0.5, -0.5}},
+    {{ 0.5, -0.5, -0.5}},
+    {{ 0.5,  0.5, -0.5}},
+    {{ 0.5,  0.5, -0.5}},
+    {{-0.5,  0.5, -0.5}},
+    {{-0.5, -0.5, -0.5}},
+}
+
 Command_Base :: struct {
     color: math.Colorf,
+    camera: ^math.Camera, // Maybe this can be a pointer
 }
 
 Command_Line :: struct {
