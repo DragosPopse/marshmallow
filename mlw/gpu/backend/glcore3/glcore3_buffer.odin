@@ -65,9 +65,7 @@ buffer_data :: proc(buffer: core.Buffer, data: []byte) {
     glbuf := &_buffers[buffer]
     assert(glbuf != nil, "Invalid buffer.")
     assert(len(data) <= glbuf.size, "Data size exceeds the buffer size.")
-    // Todo(Dragos): Cache the gl calls and shit...
-    // Note(Dragos): We do this to not disturb the already configured vaos
-    last_vao := glcache.BindVertexArray(_naked_vao)
+    last_vao := glcache.BindVertexArray(_naked_vao) // Note(Dragos): We do this to not disturb the already configured vaos
     last_buf := glcache.BindBuffer(cast(glcache.Buffer_Target)glbuf.target, glbuf.handle)
     gl.BufferSubData(glbuf.target, 0, len(data), raw_data(data))
     glcache.BindBuffer(auto_cast(glbuf.target), last_buf)
