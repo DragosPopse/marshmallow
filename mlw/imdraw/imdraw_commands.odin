@@ -11,6 +11,7 @@ Textured_Vertex :: struct {
 
 Simple_Vertex :: struct {
     pos: math.Vec3f,
+    tex: math.Vec2f,
 }
 
 Sprite_Uniforms :: struct {
@@ -32,14 +33,6 @@ SPRITE_VERTICES := [?]Textured_Vertex {
     {{-0.5, -0.5, -0.5}, {0.0, 0.0}},
 }
 
-SQUAD_VERTICES := [?]Simple_Vertex {
-    {{-0.5, -0.5, -0.5}},
-    {{ 0.5, -0.5, -0.5}},
-    {{ 0.5,  0.5, -0.5}},
-    {{ 0.5,  0.5, -0.5}},
-    {{-0.5,  0.5, -0.5}},
-    {{-0.5, -0.5, -0.5}},
-}
 
 Command_Base :: struct {
     color: math.Colorf,

@@ -22,5 +22,12 @@ transform_to_mat4f :: proc(t: Transform) -> (m: Mat4f) {
     m *= alg.matrix4_translate(t.pos)
     m *= alg.matrix4_from_euler_angles_xyz_f32(t.rot.x, t.rot.y, t.rot.z)
     m *= alg.matrix4_scale(t.scale)
-    return
+    return m
+}
+
+// Calculate the ModelViewProjection matrix
+mvp :: proc(transform: Transform, camera: Camera) -> (m: Mat4f) {
+    model := transform_to_mat4f(transform)
+    view, projection := camera_to_mat4f(camera)
+    return projection * view * model
 }

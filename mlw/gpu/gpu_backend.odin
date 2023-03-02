@@ -12,7 +12,7 @@ when BACKEND == .glcore3 {
 
 default_pass_action :: core.default_pass_action
 
-// Procedures
+// Procedures 
 init     : Backend_Init     : backend.init
 teardown : Backend_Teardown : backend.teardown
 

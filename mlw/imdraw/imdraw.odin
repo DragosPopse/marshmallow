@@ -16,6 +16,8 @@ _sprite_shader: gpu.Shader
 
 _current_camera: ^math.Camera
 
+_white_texture: gpu.Texture
+
 create_sprite_pipeline :: proc(shader: gpu.Shader) -> (pipeline: gpu.Pipeline) {
     info: gpu.Pipeline_Info
     blend: core.Blend_State
@@ -85,6 +87,18 @@ init :: proc() {
     _draw_list = make_command_buffer()
     _sprite_shader, _ = create_sprite_shader() 
     _sprite_pipeline = create_sprite_pipeline(_sprite_shader)
+
+    {
+        texture_info: gpu.Texture_Info
+        texture_info.format = .RGBA8
+        texture_info.type = .Texture2D
+        texture_info.min_filter = .Nearest
+        texture_info.mag_filter = .Nearest
+        texture_info.size.xy = {1, 1}
+        color := []u8{255, 255, 255, 255}
+        texture_info.data = color
+        _white_texture = gpu.create_texture(texture_info)
+    }
 }
 
 teardown :: proc() {
@@ -159,4 +173,3 @@ sprite :: proc {
     sprite_vec3,
     sprite_transform,
 }
-
