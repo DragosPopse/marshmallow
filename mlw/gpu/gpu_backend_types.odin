@@ -77,6 +77,6 @@ Backend_Destroy_Texture :: #type proc(texture: Texture)
 //
 
 // Drawing
-Backend_Draw :: #type proc(base_elem: int, elem_count: int)
+Backend_Draw :: #type proc(base_elem: int, elem_count: int, instance_count: int)
 
 Backend_Default_Graphics_Info :: #type proc() -> core.Graphics_Info

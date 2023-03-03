@@ -57,6 +57,7 @@ add_targets :: proc(project: ^Project) {
     //add_sample_target(project, "samp.gpu.hello_sprite", "samples/gpu/hello_sprite", "out/samples/gpu/hello_sprite")
     add_sample_target(project, "samp.gpu.hello_cube", "samples/gpu/hello_cube", "out/samples/gpu/hello_cube")
     add_sample_target(project, "samp.gpu.post_effects", "samples/gpu/post_effects", "out/samples/gpu/post_effects")
+    add_sample_target(project, "samp.gpu.instancing", "samples/gpu/instancing", "out/samples/gpu/instancing")
 }
 
 configure_target :: proc(project: Project, target: Target) -> (config: build.Config) {

@@ -85,7 +85,7 @@ _add_configurable_vao :: #force_inline proc(key: core.Input_Buffers) -> (vao: u3
     return
 }
 
-_get_or_configure_vao :: proc(key: core.Input_Buffers) -> (vao: u32) {
+_get_or_configure_vao :: proc(key: core.Input_Buffers) -> (vao: u32, instanced: bool) {
     assert(_current_pipeline != nil, "Invalid pipeline.")
     if key in _configured_vaos do return _configured_vaos[key]
 
@@ -110,8 +110,17 @@ _get_or_configure_vao :: proc(key: core.Input_Buffers) -> (vao: u32) {
     for attr, i in layout.attrs do if attr.format != .Invalid {
         buf := key.buffers[attr.buffer_index]
         assert(buf in _buffers, "Cannot find buffer.")
-        vbo := _buffers[buf].handle
+        glbuf := &_buffers[buf]
+        vbo := glbuf.handle
         buffer_layout := layout.buffers[attr.buffer_index]
+        divisor: u32
+        switch buffer_layout.step {
+            case .Per_Vertex: 
+                divisor = 0
+            case .Per_Instance: 
+                divisor = 1
+                instanced = true
+        }
         if current_vbo != vbo do gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
         current_vbo = vbo
         gl.VertexAttribPointer(
@@ -121,11 +130,12 @@ _get_or_configure_vao :: proc(key: core.Input_Buffers) -> (vao: u32) {
             cast(i32)buffer_layout.stride, attr.offset)
 
         gl.EnableVertexAttribArray(u32(i)) // Note(Dragos): This call should also be cached
+        gl.VertexAttribDivisor(u32(i), divisor)
     } else do break
 
     glcache.BindVertexArray(last_vao)
 
-    return vao
+    return vao, instanced
 }
 
 _remove_configured_vao :: proc(key: core.Input_Buffers) {

@@ -95,8 +95,7 @@ init :: proc() {
         texture_info.min_filter = .Nearest
         texture_info.mag_filter = .Nearest
         texture_info.size.xy = {1, 1}
-        color := []u8{255, 255, 255, 255}
-        texture_info.data = color
+        texture_info.data = []u8{255, 255, 255, 255}
         _white_texture = gpu.create_texture(texture_info)
     }
 }

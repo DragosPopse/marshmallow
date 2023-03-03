@@ -27,6 +27,7 @@ GLCore3_Buffer :: struct {
 }
 
 _buffers: map[core.Buffer]GLCore3_Buffer
+_instanced_call := false
 
 create_buffer :: proc(desc: core.Buffer_Info) ->(buffer: core.Buffer) {
     vbo: u32
@@ -57,7 +58,8 @@ destroy_buffer :: proc(buffer: core.Buffer) {
 }
 
 apply_input_buffers :: proc(buffers: core.Input_Buffers) {
-    vao := _get_or_configure_vao(buffers)
+    vao, instanced := _get_or_configure_vao(buffers)
+    _instanced_call = instanced
     glcache.BindVertexArray(vao)
 }
 

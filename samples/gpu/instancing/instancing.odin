@@ -18,6 +18,10 @@ Vertex :: struct {
     tex: [2]f32,
 }
 
+Cube_Offset :: struct {
+    pos: [3]f32,
+}
+
 Vertex_Uniforms :: struct {
     model, view, projection: math.Mat4f,
 }
@@ -68,6 +72,7 @@ cube_vertices := [?]Vertex {
     {{-0.5,  0.5,  0.5}, {0.0, 0.0}},
     {{-0.5,  0.5, -0.5}, {0.0, 1.0}},
 }
+
 
 
 
@@ -134,6 +139,7 @@ create_default_pipeline :: proc(shader: gpu.Shader) -> (pipeline: gpu.Pipeline) 
     pipe_info.depth = depth // Note(Dragos): not fully implemented
     pipe_info.layout = core.layout_from_structs([]core.Struct_Layout_Info{
         0 = {Vertex, .Per_Vertex},
+        1 = {Cube_Offset, .Per_Instance},
     })
     pipeline = gpu.create_pipeline(pipe_info)
     return pipeline
@@ -162,7 +168,6 @@ create_texture_from_file :: proc(filename: string) -> (texture: gpu.Texture) {
     return gpu.create_texture(info)
 }
 
-
 main :: proc() {
     init_platform()
     gpu.init()
@@ -175,8 +180,18 @@ main :: proc() {
         return
     }
     
+    offsets: [dynamic]Cube_Offset
+    offset := f32(0.1)
+    for y := -10; y < 10; y += 2 {
+        for x := -10; x < 10; x += 2 {
+            append(&offsets, Cube_Offset{{cast(f32)x / 10.0 + offset, cast(f32)y / 10.0 + offset, 0}})
+        }
+    }  
+
+    
     pipeline := create_default_pipeline(shader)
     cube_buffer := create_vertex_buffer(cube_vertices[:], size_of(cube_vertices))
+    offset_buffer := create_vertex_buffer(offsets[:], len(offsets[:]) * size_of(Cube_Offset))
 
     pass_action := gpu.default_pass_action()
     pass_action.colors[0].value = math.Colorf{0.012, 0.533, 0.988, 1.0}
@@ -185,6 +200,7 @@ main :: proc() {
 
     input_buffers: gpu.Input_Buffers
     input_buffers.buffers[0] = cube_buffer
+    input_buffers.buffers[1] = offset_buffer
 
     input_textures: gpu.Input_Textures
     input_textures.textures[.Fragment][0] = texture
@@ -193,7 +209,7 @@ main :: proc() {
     projection = linalg.matrix4_perspective_f32(linalg.radians(cast(f32)45), f32(WIDTH) / HEIGHT, 0.1, 100)
     
     model := math.Mat4f(1)
-    model = linalg.matrix4_rotate_f32(linalg.radians(cast(f32)-55), {1.0, 0.0, 0.0})
+    angle: f32
 
     view := math.Mat4f(1)
     view = linalg.matrix4_translate_f32({0, 0, -3})
@@ -212,8 +228,14 @@ main :: proc() {
                 }
             }
         }
+        angle += 1
+        input_uniforms.model = math.Mat4f(1)
+        input_uniforms.model *= linalg.matrix4_translate_f32({0, 0, 0})
+        input_uniforms.model *= linalg.matrix4_rotate_f32(linalg.radians(angle), {1.0, 1.0, 0.0})
+        input_uniforms.model *= linalg.matrix4_scale_f32({0.4, 0.4, 0.4})
 
-        input_uniforms.model *= linalg.matrix4_rotate_f32(linalg.radians(cast(f32)-1), {1.0, 1.0, 0.0})
+   
+        //input_uniforms.model *= linalg.matrix4_scale_f32({0.5, 0.5, 0.5})
 
         gpu.begin_default_pass(pass_action, WIDTH, HEIGHT)
 
@@ -221,7 +243,7 @@ main :: proc() {
         gpu.apply_input_buffers(input_buffers)
         gpu.apply_input_textures(input_textures)
         gpu.apply_uniforms_raw(.Vertex, 0, &input_uniforms, size_of(input_uniforms))
-        gpu.draw(0, 36, 1)
+        gpu.draw(0, 36, len(offsets))
 
         gpu.end_pass()
 
