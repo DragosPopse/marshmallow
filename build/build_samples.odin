@@ -58,7 +58,8 @@ add_targets :: proc(project: ^Project) {
     add_sample_target(project, "samp.gpu.hello_cube", "samples/gpu/hello_cube", "out/samples/gpu/hello_cube")
     add_sample_target(project, "samp.gpu.post_effects", "samples/gpu/post_effects", "out/samples/gpu/post_effects")
     add_sample_target(project, "samp.gpu.instancing", "samples/gpu/instancing", "out/samples/gpu/instancing")
-    add_sample_target(project, "planeteer", "samples/planeteer", "out/samples/planeteer")
+    add_sample_target(project, "samp.planeteer", "samples/planeteer", "out/samples/planeteer")
+    add_sample_target(project, "samp.imdraw.sprites", "samples/imdraw/sprites", "out/samples/imdraw/sprites")
 }
 
 configure_target :: proc(project: Project, target: Target) -> (config: build.Config) {
