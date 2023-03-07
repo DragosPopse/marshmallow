@@ -62,6 +62,7 @@ construct_terrain_face_mesh :: proc(face: ^Terrain_Face) {
             percent := math.Vec2f{fx, fy} / f32(face.resolution - 1)
             unit_cube_point: math.Vec3f
             unit_cube_point.xyz = face.local_up + (percent.x - 0.5) * 2 * face.axis_a + (percent.y - 0.5) * 2 * face.axis_b
+            unit_cube_point = linalg.normalize(unit_cube_point)
             face.mesh.vertices[i] = unit_cube_point
             
             if x != face.resolution - 1 && y != face.resolution - 1 {
@@ -84,6 +85,7 @@ delete_terrain_face :: proc(face: Terrain_Face) {
     
 }
 
+// Note(Dragos): This is currently wrong
 merge_planet_meshes :: proc(planet: Planet, allocator := context.allocator) -> (vertices: []math.Vec3f, indices: []u32) {
     context.allocator = allocator
     vertex_list: [dynamic]math.Vec3f

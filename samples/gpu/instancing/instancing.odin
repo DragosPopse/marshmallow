@@ -181,7 +181,7 @@ main :: proc() {
     }
     
     offsets: [dynamic]Cube_Offset
-    offset := f32(0.1)
+    offset := f32(0)
     for y := -10; y < 10; y += 2 {
         for x := -10; x < 10; x += 2 {
             append(&offsets, Cube_Offset{{cast(f32)x / 10.0 + offset, cast(f32)y / 10.0 + offset, 0}})

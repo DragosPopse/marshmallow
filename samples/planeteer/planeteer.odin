@@ -7,13 +7,26 @@ import "../../mlw/gpu"
 import "../../mlw/image"
 import "../../mlw/math"
 import "../../mlw/platform"
+import linalg "core:math/linalg"
 import "core:slice"
+
+Vertex_Uniforms :: struct {
+    model, view, projection: math.Mat4f,
+}
 
 create_standard_shader :: proc() -> (shader: gpu.Shader, err: Maybe(string)) {
     vert_info: gpu.Shader_Stage_Info
     vert: gpu.Shader_Stage
     vert_info.src = #load("standard.vert.glsl", string)
     vert_info.type = .Vertex
+
+    vert_info.uniform_blocks[0].size = size_of(Vertex_Uniforms)
+    vert_info.uniform_blocks[0].uniforms[0].name = "model"
+    vert_info.uniform_blocks[0].uniforms[0].type = .mat4f32
+    vert_info.uniform_blocks[0].uniforms[1].name = "view"
+    vert_info.uniform_blocks[0].uniforms[1].type = .mat4f32
+    vert_info.uniform_blocks[0].uniforms[2].name = "projection"
+    vert_info.uniform_blocks[0].uniforms[2].type = .mat4f32
 
     if vert, err = gpu.create_shader_stage(vert_info); err != nil {
         return 0, err
@@ -52,6 +65,7 @@ create_standard_pipeline :: proc(shader: gpu.Shader) -> (pipeline: gpu.Pipeline)
     pipe_info.shader = shader
     pipe_info.index_type = .u32 
     pipe_info.primitive_type = .Triangles
+    pipe_info.polygon_mode = .Line
     depth: core.Depth_State
     pipe_info.depth = depth // Note(Dragos): not fully implemented
 
@@ -86,7 +100,7 @@ main :: proc() {
     }
     pipeline := create_standard_pipeline(shader)
     
-    init_planet(&_planet, 20)
+    init_planet(&_planet, 14)
     construct_planet_mesh(&_planet)
     planet_vertices, planet_indices := merge_planet_meshes(_planet)
     planet_vb: gpu.Buffer
@@ -118,6 +132,18 @@ main :: proc() {
     pass_action := gpu.default_pass_action()
     pass_action.colors[0].value = math.Colorf{0.012, 0.533, 0.988, 1.0}
 
+    projection := math.Mat4f(1)
+    projection = linalg.matrix4_perspective_f32(linalg.radians(cast(f32)45), f32(WIDTH) / f32(HEIGHT), 0.1, 100)
+    
+
+    view := math.Mat4f(1)
+    view = linalg.matrix4_translate_f32({0, 0, -10})
+
+    input_uniforms: Vertex_Uniforms
+    input_uniforms.view = view
+    input_uniforms.projection = projection
+
+    angle: f32
     running := true 
     for running {
         for event in platform.poll_event() {
@@ -128,10 +154,23 @@ main :: proc() {
             }
         }
 
+        angle += 1
+        input_uniforms.model = math.Mat4f(1)
+        input_uniforms.model *= linalg.matrix4_translate_f32({0, 0, 0})
+        input_uniforms.model *= linalg.matrix4_rotate_f32(linalg.radians(angle), {1.0, 1.0, 0.0})
+        //input_uniforms.model *= linalg.matrix4_scale_f32({0.4, 0.4, 0.4})
+
         gpu.begin_default_pass(pass_action, WIDTH, HEIGHT)
         gpu.apply_pipeline(pipeline)
         gpu.apply_input_buffers(input_buffers)
-        gpu.draw(0, len(planet_indices), 1)
+        gpu.apply_uniforms_raw(.Vertex, 0, &input_uniforms, size_of(input_uniforms))
+        //gpu.draw(0, len(planet_indices), 1)
+        // This works, but merging is scuffed
+        for face in _planet.terrain_faces {
+            gpu.buffer_data(planet_vb, slice.to_bytes(face.mesh.vertices))
+            gpu.buffer_data(planet_ib, slice.to_bytes(face.mesh.indices))
+            gpu.draw(0, len(face.mesh.indices), 1)
+        }
         gpu.end_pass()
 
         platform.update_window()
