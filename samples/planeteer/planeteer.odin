@@ -10,6 +10,8 @@ import "../../mlw/platform"
 import linalg "core:math/linalg"
 import "core:slice"
 
+
+
 Vertex_Uniforms :: struct {
     model, view, projection: math.Mat4f,
 }

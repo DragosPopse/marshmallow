@@ -3,7 +3,7 @@ package main
 import "../../mlw/math"
 import linalg "core:math/linalg"
 import "../../mlw/gpu"
-import intr "core:intrinsics"
+import "core:math/noise"
 
 Mesh :: struct {
     vertices: []math.Vec3f,
@@ -63,6 +63,8 @@ construct_terrain_face_mesh :: proc(face: ^Terrain_Face) {
             unit_cube_point: math.Vec3f
             unit_cube_point.xyz = face.local_up + (percent.x - 0.5) * 2 * face.axis_a + (percent.y - 0.5) * 2 * face.axis_b
             unit_cube_point = linalg.normalize(unit_cube_point)
+            elevation := noise.noise_3d_improve_xy(100, linalg.to_f64(unit_cube_point))
+            unit_cube_point *= f32(1 + elevation)
             face.mesh.vertices[i] = unit_cube_point
             
             // Setup triangles
