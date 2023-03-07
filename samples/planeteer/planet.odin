@@ -65,6 +65,7 @@ construct_terrain_face_mesh :: proc(face: ^Terrain_Face) {
             unit_cube_point = linalg.normalize(unit_cube_point)
             face.mesh.vertices[i] = unit_cube_point
             
+            // Setup triangles
             if x != face.resolution - 1 && y != face.resolution - 1 {
                 face.mesh.indices[current_index] = u32(i)
                 face.mesh.indices[current_index + 1] = u32(i + face.resolution + 1)
@@ -92,11 +93,11 @@ merge_planet_meshes :: proc(planet: Planet, allocator := context.allocator) -> (
     index_list: [dynamic]u32
     current_index := 0
     for face, i in planet.terrain_faces {
+        last_vertex_len := cast(u32)len(vertex_list)
         append(&vertex_list, ..face.mesh.vertices)
-        last_len := cast(u32)len(index_list)
         append(&index_list, ..face.mesh.indices)
         for idx := current_index; idx < len(index_list); idx += 1 {
-            index_list[idx] += last_len
+            index_list[idx] += last_vertex_len
         }
         current_index = len(index_list)
     }

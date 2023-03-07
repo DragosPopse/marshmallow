@@ -164,13 +164,14 @@ main :: proc() {
         gpu.apply_pipeline(pipeline)
         gpu.apply_input_buffers(input_buffers)
         gpu.apply_uniforms_raw(.Vertex, 0, &input_uniforms, size_of(input_uniforms))
-        //gpu.draw(0, len(planet_indices), 1)
-        // This works, but merging is scuffed
+        gpu.draw(0, len(planet_indices), 1)
+    
+        /*
         for face in _planet.terrain_faces {
             gpu.buffer_data(planet_vb, slice.to_bytes(face.mesh.vertices))
             gpu.buffer_data(planet_ib, slice.to_bytes(face.mesh.indices))
             gpu.draw(0, len(face.mesh.indices), 1)
-        }
+        }*/
         gpu.end_pass()
 
         platform.update_window()
