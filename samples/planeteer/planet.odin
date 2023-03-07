@@ -2,14 +2,39 @@ package main
 
 import "../../mlw/math"
 import linalg "core:math/linalg"
+import "../../mlw/gpu"
+import intr "core:intrinsics"
 
 Mesh :: struct {
     vertices: []math.Vec3f,
-    indices: []i32,
+    indices: []u32,
     normals: []math.Vec3f,
 }
 
+Planet :: struct {
+    terrain_faces: [6]Terrain_Face,
+}
 
+init_planet :: proc(planet: ^Planet, resolution: int) {
+    directions := [6]math.Vec3f{
+        {1, 0, 0},
+        {-1, 0, 0},
+        {0, 1, 0},
+        {0, -1, 0},
+        {0, 0, 1},
+        {0, 0, -1},
+    }
+
+    for face, i in &planet.terrain_faces {
+        init_terrain_face(&face, resolution, directions[i])
+    }
+}
+
+construct_planet_mesh :: proc(planet: ^Planet) {
+    for face in &planet.terrain_faces {
+        construct_terrain_face_mesh(&face)
+    }
+}
 
 Terrain_Face :: struct {
     mesh: Mesh,
@@ -28,7 +53,7 @@ init_terrain_face :: proc(face: ^Terrain_Face, resolution: int, up: math.Vec3f) 
 
 construct_terrain_face_mesh :: proc(face: ^Terrain_Face) {
     face.mesh.vertices = make([]math.Vec3f, face.resolution * face.resolution)
-    face.mesh.indices = make([]i32, (face.resolution - 1) * (face.resolution - 1) * 6)
+    face.mesh.indices = make([]u32, (face.resolution - 1) * (face.resolution - 1) * 6)
     current_index := 0
     for y in 0..<face.resolution {
         for x in 0..<face.resolution {
@@ -38,15 +63,15 @@ construct_terrain_face_mesh :: proc(face: ^Terrain_Face) {
             unit_cube_point: math.Vec3f
             unit_cube_point.xyz = face.local_up + (percent.x - 0.5) * 2 * face.axis_a + (percent.y - 0.5) * 2 * face.axis_b
             face.mesh.vertices[i] = unit_cube_point
-
+            
             if x != face.resolution - 1 && y != face.resolution - 1 {
-                face.mesh.indices[current_index] = i32(i)
-                face.mesh.indices[current_index + 1] = i32(i + face.resolution + 1)
-                face.mesh.indices[current_index + 2] = i32(i + face.resolution)
+                face.mesh.indices[current_index] = u32(i)
+                face.mesh.indices[current_index + 1] = u32(i + face.resolution + 1)
+                face.mesh.indices[current_index + 2] = u32(i + face.resolution)
 
-                face.mesh.indices[current_index + 3] = i32(i)
-                face.mesh.indices[current_index + 4] = i32(i + 1)
-                face.mesh.indices[current_index + 5] = i32(i + face.resolution + 1)
+                face.mesh.indices[current_index + 3] = u32(i)
+                face.mesh.indices[current_index + 4] = u32(i + 1)
+                face.mesh.indices[current_index + 5] = u32(i + face.resolution + 1)
 
                 current_index += 6
             }
@@ -57,4 +82,22 @@ construct_terrain_face_mesh :: proc(face: ^Terrain_Face) {
 
 delete_terrain_face :: proc(face: Terrain_Face) {
     
+}
+
+merge_planet_meshes :: proc(planet: Planet, allocator := context.allocator) -> (vertices: []math.Vec3f, indices: []u32) {
+    context.allocator = allocator
+    vertex_list: [dynamic]math.Vec3f
+    index_list: [dynamic]u32
+    current_index := 0
+    for face, i in planet.terrain_faces {
+        append(&vertex_list, ..face.mesh.vertices)
+        last_len := cast(u32)len(index_list)
+        append(&index_list, ..face.mesh.indices)
+        for idx := current_index; idx < len(index_list); idx += 1 {
+            index_list[idx] += last_len
+        }
+        current_index = len(index_list)
+    }
+
+    return vertex_list[:], index_list[:]
 }
