@@ -37,6 +37,7 @@ Texture_Type :: enum {
 
 Pixel_Format :: enum {
     Invalid,
+    A8,
     RGBA8,
     RGB8,
     DEPTH24_STENCIL8,

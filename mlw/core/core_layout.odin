@@ -82,7 +82,8 @@ layout_from_structs :: proc(structs: []Struct_Layout_Info) -> (desc: Layout_Info
         for type, j in record.types {
             format: Attr_Format
             offset: uintptr
-            #partial switch var in type.variant {
+            base_type := refl.type_info_base(type)
+            #partial switch var in base_type.variant {
                 case: {
                     fmt.assertf(false, "Type %v is unsupported for layout_from_struct.\n", var)
                 }

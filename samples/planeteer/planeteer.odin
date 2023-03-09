@@ -9,6 +9,8 @@ import "../../mlw/math"
 import "../../mlw/platform"
 import linalg "core:math/linalg"
 import "core:slice"
+import mu "vendor:microui"
+import mu_mlw "../../mlw/third/microui"
 
 
 
@@ -67,7 +69,7 @@ create_standard_pipeline :: proc(shader: gpu.Shader) -> (pipeline: gpu.Pipeline)
     pipe_info.shader = shader
     pipe_info.index_type = .u32 
     pipe_info.primitive_type = .Triangles
-    pipe_info.polygon_mode = .Line
+    //pipe_info.polygon_mode = .Line
     depth: core.Depth_State
     pipe_info.depth = depth // Note(Dragos): not fully implemented
 
@@ -89,6 +91,8 @@ initialize :: proc() {
     platform_info.graphics = gpu.default_graphics_info()
     platform.init(platform_info)
     gpu.init()
+
+    mu_mlw.init()
 }
 
 _planet: Planet
@@ -155,6 +159,15 @@ main :: proc() {
                 }
             }
         }
+        mu.begin(&mu_mlw._state.mu_ctx)
+        //mu_mlw.all_windows(&mu_mlw._state.mu_ctx)
+        if mu.window(&mu_mlw._state.mu_ctx, "Hello", {0, 0, 300, 300}) {
+            if .SUBMIT in mu.button(&mu_mlw._state.mu_ctx, "Hello") {
+                fmt.printf("Pressed")
+            }
+        }
+        
+        mu.end(&mu_mlw._state.mu_ctx)
 
         angle += 1
         input_uniforms.model = math.Mat4f(1)
@@ -163,11 +176,11 @@ main :: proc() {
         //input_uniforms.model *= linalg.matrix4_scale_f32({0.4, 0.4, 0.4})
 
         gpu.begin_default_pass(pass_action, WIDTH, HEIGHT)
-        gpu.apply_pipeline(pipeline)
-        gpu.apply_input_buffers(input_buffers)
-        gpu.apply_uniforms_raw(.Vertex, 0, &input_uniforms, size_of(input_uniforms))
-        gpu.draw(0, len(planet_indices), 1)
-    
+        //gpu.apply_pipeline(pipeline)
+        //gpu.apply_input_buffers(input_buffers)
+        //gpu.apply_uniforms_raw(.Vertex, 0, &input_uniforms, size_of(input_uniforms))
+        //gpu.draw(0, len(planet_indices), 1)
+        mu_mlw.render(&mu_mlw._state.mu_ctx, WIDTH, HEIGHT)
         /*
         for face in _planet.terrain_faces {
             gpu.buffer_data(planet_vb, slice.to_bytes(face.mesh.vertices))
@@ -177,5 +190,7 @@ main :: proc() {
         gpu.end_pass()
 
         platform.update_window()
+
+        free_all(context.temp_allocator)
     }
 }

@@ -64,6 +64,13 @@ create_texture :: proc(desc: core.Texture_Info) -> (texture: core.Texture) {
         format, data_type: u32
         switch desc.format {
             case .Invalid: // already asserted
+
+            case .A8: {
+                internal_format = gl.ALPHA
+                format = gl.ALPHA
+                data_type = gl.UNSIGNED_BYTE
+            }
+
             case .RGBA8: 
                 internal_format = gl.RGBA
                 format = gl.RGBA
