@@ -21,7 +21,7 @@ poll_event :: proc() -> (event: core.Event, ok: bool) {
 
             case .KEYUP: {
                 res: core.Key_Event
-                res.action = .Down
+                res.action = .Up
                 res.key = _SCANCODE_TO_KEY[ev.key.keysym.scancode]
                 return res, true
             }

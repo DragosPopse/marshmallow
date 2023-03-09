@@ -19,9 +19,13 @@ bBLUE :: Colorb{0, 0, 255, 255}
 fBLUE :: Colorf{0, 0, 1, 1}
 
 to_colorf :: proc(color: Colorb) -> (result: Colorf) {
-    return
+    result.r = cast(f32)color.r / 255
+    result.g = cast(f32)color.r / 255
+    result.b = cast(f32)color.r / 255
+    result.a = cast(f32)color.r / 255 
+    return result
 }
 
 to_colorb :: proc(color: Colorf) -> (result: Colorb) {
-    return
+    panic("math.to_colorb not implemented")
 }

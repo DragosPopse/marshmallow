@@ -70,17 +70,19 @@ _push_quad :: proc(dst, src: mu.Rect, color: mu.Color) {
     _vertices[vert_idx + 2].pos = {f32(dst.x), f32(dst.y + dst.h)}
     _vertices[vert_idx + 3].pos = {f32(dst.x + dst.w), f32(dst.y + dst.h)}
 
-    _vertices[vert_idx + 0].col = math.to_colorf(math.Colorb{color.r, color.g, color.b, color.a})
-    _vertices[vert_idx + 1].col = math.to_colorf(math.Colorb{color.r, color.g, color.b, color.a})
-    _vertices[vert_idx + 2].col = math.to_colorf(math.Colorb{color.r, color.g, color.b, color.a})
-    _vertices[vert_idx + 3].col = math.to_colorf(math.Colorb{color.r, color.g, color.b, color.a})
+    colorf := math.to_colorf(math.Colorb{color.r, color.g, color.b, color.a})
+    _vertices[vert_idx + 0].col = colorf
+    _vertices[vert_idx + 1].col = colorf
+    _vertices[vert_idx + 2].col = colorf
+    _vertices[vert_idx + 3].col = colorf
+    fmt.printf("%v %v\n", color, colorf)
 
     _indices[index_idx + 0] = u32(element_idx + 0)
     _indices[index_idx + 1] = u32(element_idx + 1)
-    _indices[index_idx + 2] = u32(element_idx + 0)
-    _indices[index_idx + 3] = u32(element_idx + 0)
-    _indices[index_idx + 4] = u32(element_idx + 0)
-    _indices[index_idx + 5] = u32(element_idx + 0)
+    _indices[index_idx + 2] = u32(element_idx + 2)
+    _indices[index_idx + 3] = u32(element_idx + 2)
+    _indices[index_idx + 4] = u32(element_idx + 3)
+    _indices[index_idx + 5] = u32(element_idx + 1)
 }
 
 
@@ -155,11 +157,11 @@ _create_microui_buffers :: proc() -> (vertex_buffer, index_buffer: gpu.Buffer) {
     vert_info, index_info: gpu.Buffer_Info
 
     vert_info.type = .Vertex
-    vert_info.usage_hint = .Stream
+    vert_info.usage_hint = .Dynamic
     vert_info.size = len(_vertices) * size_of(Vertex)
 
     index_info.type = .Index
-    index_info.usage_hint = .Stream
+    index_info.usage_hint = .Dynamic
     index_info.size = len(_indices) * size_of(u32)
 
     return gpu.create_buffer(vert_info), gpu.create_buffer(index_info)

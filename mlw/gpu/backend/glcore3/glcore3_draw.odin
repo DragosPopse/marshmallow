@@ -7,7 +7,7 @@ import "../../../math"
 import glcache "../glcached"
 
 draw :: proc(base_elem: int, elem_count: int, instance_count: int) {
-    assert(_current_pipeline != nil)
+    assert(_current_pipeline != nil, "Pipeline not set.")
 
     if instance_count <= 0 do return
 

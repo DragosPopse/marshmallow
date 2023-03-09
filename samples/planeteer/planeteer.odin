@@ -69,7 +69,7 @@ create_standard_pipeline :: proc(shader: gpu.Shader) -> (pipeline: gpu.Pipeline)
     pipe_info.shader = shader
     pipe_info.index_type = .u32 
     pipe_info.primitive_type = .Triangles
-    //pipe_info.polygon_mode = .Line
+    pipe_info.polygon_mode = .Line
     depth: core.Depth_State
     pipe_info.depth = depth // Note(Dragos): not fully implemented
 
@@ -151,21 +151,29 @@ main :: proc() {
 
     angle: f32
     running := true 
+    draw_ui := false
     for running {
         for event in platform.poll_event() {
-            #partial switch in event {
+            #partial switch var in event {
                 case core.Quit_Event: {
                     running = false
+                }
+
+                case core.Key_Event: {
+                    if var.action == .Up {
+                        draw_ui = !draw_ui
+                    }
                 }
             }
         }
         mu.begin(&mu_mlw._state.mu_ctx)
-        //mu_mlw.all_windows(&mu_mlw._state.mu_ctx)
+        mu_mlw.all_windows(&mu_mlw._state.mu_ctx)
+        /*
         if mu.window(&mu_mlw._state.mu_ctx, "Hello", {0, 0, 300, 300}) {
             if .SUBMIT in mu.button(&mu_mlw._state.mu_ctx, "Hello") {
                 fmt.printf("Pressed")
             }
-        }
+        }*/
         
         mu.end(&mu_mlw._state.mu_ctx)
 
