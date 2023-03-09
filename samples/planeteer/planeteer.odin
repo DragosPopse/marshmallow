@@ -167,13 +167,13 @@ main :: proc() {
             }
         }
         mu.begin(&mu_mlw._state.mu_ctx)
-        mu_mlw.all_windows(&mu_mlw._state.mu_ctx)
-        /*
+        //mu_mlw.all_windows(&mu_mlw._state.mu_ctx)
+        
         if mu.window(&mu_mlw._state.mu_ctx, "Hello", {0, 0, 300, 300}) {
-            if .SUBMIT in mu.button(&mu_mlw._state.mu_ctx, "Hello") {
+            /*if .SUBMIT in mu.button(&mu_mlw._state.mu_ctx, "Hello") {
                 fmt.printf("Pressed")
-            }
-        }*/
+            }*/
+        }
         
         mu.end(&mu_mlw._state.mu_ctx)
 

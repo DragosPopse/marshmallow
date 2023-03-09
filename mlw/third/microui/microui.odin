@@ -11,6 +11,8 @@ import mu "vendor:microui"
 import "core:slice"
 import "core:fmt"
 import linalg "core:math/linalg"
+import gl "vendor:OpenGL" // some debuggin
+import stbi "vendor:stb/image"
 
 Vertex :: struct {
     pos: math.Vec2f,
@@ -56,15 +58,16 @@ _push_quad :: proc(dst, src: mu.Rect, color: mu.Color) {
     _buf_idx += 1
 
     x := cast(f32)src.x / mu.DEFAULT_ATLAS_WIDTH
-    y := cast(f32)src.x / mu.DEFAULT_ATLAS_HEIGHT
+    y := cast(f32)src.y / mu.DEFAULT_ATLAS_HEIGHT
     w := cast(f32)src.w / mu.DEFAULT_ATLAS_WIDTH
     h := cast(f32)src.h / mu.DEFAULT_ATLAS_HEIGHT
 
+    
     _vertices[vert_idx + 0].tex = {x, y}
     _vertices[vert_idx + 1].tex = {x + w, y}
     _vertices[vert_idx + 2].tex = {x, y + h}
     _vertices[vert_idx + 3].tex = {x + w, y + h}
-
+    
     _vertices[vert_idx + 0].pos = {f32(dst.x), f32(dst.y)}
     _vertices[vert_idx + 1].pos = {f32(dst.x + dst.w), f32(y)}
     _vertices[vert_idx + 2].pos = {f32(dst.x), f32(dst.y + dst.h)}
@@ -75,7 +78,6 @@ _push_quad :: proc(dst, src: mu.Rect, color: mu.Color) {
     _vertices[vert_idx + 1].col = colorf
     _vertices[vert_idx + 2].col = colorf
     _vertices[vert_idx + 3].col = colorf
-    fmt.printf("%v %v\n", color, colorf)
 
     _indices[index_idx + 0] = u32(element_idx + 0)
     _indices[index_idx + 1] = u32(element_idx + 1)
@@ -169,19 +171,26 @@ _create_microui_buffers :: proc() -> (vertex_buffer, index_buffer: gpu.Buffer) {
 
 _create_atlas_texture :: proc() -> (gpu.Texture) {
     info: gpu.Texture_Info
-    info.format = .RGBA8
     info.type = .Texture2D
     info.min_filter = .Nearest
     info.mag_filter = .Nearest
 
     info.size.xy = {mu.DEFAULT_ATLAS_WIDTH, mu.DEFAULT_ATLAS_HEIGHT}
+    
+    // Is this the problem?!
+    info.format = .RGBA8
     pixels := make([][4]u8, mu.DEFAULT_ATLAS_WIDTH * mu.DEFAULT_ATLAS_HEIGHT, context.temp_allocator)
+    x, y, channels: i32
+    //stbi.set_flip_vertically_on_load(1)
+    //img := stbi.load_from_memory(&mu.default_atlas_alpha[0], size_of(mu.default_atlas_alpha), &x, &y, &channels, 0)
 	for alpha, i in mu.default_atlas_alpha {
 		pixels[i].rgb = 0xff
 		pixels[i].a   = alpha
 	}
     info.data = slice.to_bytes(pixels)
     
+    //info.format = .A8
+    //info.data = slice.to_bytes(mu.default_atlas[:])
     return gpu.create_texture(info)
 }
 
@@ -213,7 +222,7 @@ process_platform_event :: proc(event: platform.Event) {
 // Render the data
 _flush :: proc() {
     if (_buf_idx == 0) do return 
-    _uniforms.projection = linalg.matrix_ortho3d_f32(0, cast(f32)_viewport_width, 0, cast(f32)_viewport_height, 0.1, 100)
+    _uniforms.projection = linalg.matrix_ortho3d_f32(0, cast(f32)_viewport_width, 0, cast(f32)_viewport_height, -100, 100)
     gpu.apply_uniforms_raw(.Vertex, 0, &_uniforms, size_of(_uniforms))
     vertices := _vertices[:_buf_idx * 4]
     indices := _indices[:_buf_idx * 6]
@@ -230,7 +239,13 @@ _viewport_width, _viewport_height: int
 render :: proc(ctx: ^mu.Context, viewport_width, viewport_height: int) {
     commands: ^mu.Command
     _viewport_width, _viewport_height = viewport_width, viewport_height
+
     gpu.apply_pipeline(_pipeline)
+    gl.Disable(gl.CULL_FACE) 
+    gl.Enable(gl.SCISSOR_TEST)
+    //_draw_rect({0, 0, 300, 300}, {255, 255, 255, 255})
+    //_flush()
+    //if true do return
     for variant in mu.next_command_iterator(ctx, &commands) {
         switch cmd in variant {
             case ^mu.Command_Text: {
@@ -246,6 +261,8 @@ render :: proc(ctx: ^mu.Context, viewport_width, viewport_height: int) {
             }
 
             case ^mu.Command_Clip: {
+                _flush()
+                gl.Scissor(i32(cmd.rect.x), i32(_viewport_height) - i32(cmd.rect.y + cmd.rect.h), i32(cmd.rect.w), i32(cmd.rect.h))
                 fmt.printf("Clip command not implemented\n") // TODO(Dragos): Needs gpu implementation
             }
 

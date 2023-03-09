@@ -58,7 +58,6 @@ create_texture :: proc(desc: core.Texture_Info) -> (texture: core.Texture) {
     // Note(Dragos): Implement the other types
     assert(desc.type == .Texture2D, "Only Texture2D implemented.")
     if desc.type == .Texture2D {
-        assert(len(desc.data) == desc.size.x * desc.size.y * 4 || desc.data == nil, "Texture size and data mismatch")
         assert(desc.format != .Invalid, "Invalid pixel format. Did you forget to set up texture_info.format?")
         internal_format: i32
         format, data_type: u32
@@ -66,20 +65,24 @@ create_texture :: proc(desc: core.Texture_Info) -> (texture: core.Texture) {
             case .Invalid: // already asserted
 
             case .A8: {
+                fmt.assertf(len(desc.data) == desc.size.x * desc.size.y * 1 || desc.data == nil, "Texture size and data mismatch. Expected %v, got %v", desc.size.x * desc.size.y, len(desc.data))
                 internal_format = gl.ALPHA
                 format = gl.ALPHA
                 data_type = gl.UNSIGNED_BYTE
             }
 
-            case .RGBA8: 
+            case .RGBA8:
+                assert(len(desc.data) == desc.size.x * desc.size.y * 4 || desc.data == nil, "Texture size and data mismatch")
                 internal_format = gl.RGBA
                 format = gl.RGBA
                 data_type = gl.UNSIGNED_BYTE
-            case .RGB8: 
+            case .RGB8:
+                assert(len(desc.data) == desc.size.x * desc.size.y * 3 || desc.data == nil, "Texture size and data mismatch")
                 internal_format = gl.RGB
                 format = gl.RGB
                 data_type = gl.UNSIGNED_BYTE
             case .DEPTH24_STENCIL8: 
+                // Todo(Dragos): Assert texture size and data mismatch
                 internal_format = gl.DEPTH24_STENCIL8
                 format = gl.DEPTH_STENCIL
                 data_type = gl.UNSIGNED_INT_24_8
