@@ -69,7 +69,7 @@ _push_quad :: proc(dst, src: mu.Rect, color: mu.Color) {
     _vertices[vert_idx + 3].tex = {x + w, y + h}
     
     _vertices[vert_idx + 0].pos = {f32(dst.x), f32(dst.y)}
-    _vertices[vert_idx + 1].pos = {f32(dst.x + dst.w), f32(y)}
+    _vertices[vert_idx + 1].pos = {f32(dst.x + dst.w), f32(dst.y)}
     _vertices[vert_idx + 2].pos = {f32(dst.x), f32(dst.y + dst.h)}
     _vertices[vert_idx + 3].pos = {f32(dst.x + dst.w), f32(dst.y + dst.h)}
 
@@ -180,17 +180,24 @@ _create_atlas_texture :: proc() -> (gpu.Texture) {
     // Is this the problem?!
     info.format = .RGBA8
     pixels := make([][4]u8, mu.DEFAULT_ATLAS_WIDTH * mu.DEFAULT_ATLAS_HEIGHT, context.temp_allocator)
-    x, y, channels: i32
-    //stbi.set_flip_vertically_on_load(1)
-    //img := stbi.load_from_memory(&mu.default_atlas_alpha[0], size_of(mu.default_atlas_alpha), &x, &y, &channels, 0)
 	for alpha, i in mu.default_atlas_alpha {
-		pixels[i].rgb = 0xff
+		pixels[i].rgb = 255
 		pixels[i].a   = alpha
 	}
+    
+    /*
+    for row := mu.DEFAULT_ATLAS_HEIGHT - 1; row >= 0; row -= 1 {
+        for column := 0; column < mu.DEFAULT_ATLAS_WIDTH; column += 1 {
+            i := row * mu.DEFAULT_ATLAS_WIDTH + column
+            j := mu.DEFAULT_ATLAS_HEIGHT - 1 - row
+            pixels[i].rgb = 255
+            pixels[i].a = mu.default_atlas_alpha[j]
+        }
+    }*/
     info.data = slice.to_bytes(pixels)
     
     //info.format = .A8
-    //info.data = slice.to_bytes(mu.default_atlas[:])
+    //info.data = slice.to_bytes(mu.default_atlas_alpha[:])
     return gpu.create_texture(info)
 }
 
