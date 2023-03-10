@@ -189,9 +189,10 @@ _create_atlas_texture :: proc() -> (gpu.Texture) {
     for row := mu.DEFAULT_ATLAS_HEIGHT - 1; row >= 0; row -= 1 {
         for column := 0; column < mu.DEFAULT_ATLAS_WIDTH; column += 1 {
             i := row * mu.DEFAULT_ATLAS_WIDTH + column
-            j := mu.DEFAULT_ATLAS_HEIGHT - 1 - row
+            j := (mu.DEFAULT_ATLAS_HEIGHT - 1 - row) * mu.DEFAULT_ATLAS_WIDTH + column
             pixels[i].rgb = 255
             pixels[i].a = mu.default_atlas_alpha[j]
+            //fmt.printf("r: %v, c: %v, i: %v, j: %v, a: %v\n", row, column, i, j, (mu.DEFAULT_ATLAS_HEIGHT - 1 - row))
         }
     }*/
     info.data = slice.to_bytes(pixels)
@@ -250,6 +251,8 @@ render :: proc(ctx: ^mu.Context, viewport_width, viewport_height: int) {
     gpu.apply_pipeline(_pipeline)
     gl.Disable(gl.CULL_FACE) 
     gl.Enable(gl.SCISSOR_TEST)
+    gl.Enable(gl.BLEND)
+    gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
     //_draw_rect({0, 0, 300, 300}, {255, 255, 255, 255})
     //_flush()
     //if true do return
