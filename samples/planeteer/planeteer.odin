@@ -167,7 +167,7 @@ main :: proc() {
             }
         }
         mu.begin(&mu_mlw._state.mu_ctx)
-        //mu_mlw.all_windows(&mu_mlw._state.mu_ctx)
+        mu_mlw.all_windows(&mu_mlw._state.mu_ctx)
         
         
         if mu.window(&mu_mlw._state.mu_ctx, "Hello", {0, 0, 300, 300}) {
@@ -185,10 +185,10 @@ main :: proc() {
         //input_uniforms.model *= linalg.matrix4_scale_f32({0.4, 0.4, 0.4})
 
         gpu.begin_default_pass(pass_action, WIDTH, HEIGHT)
-        //gpu.apply_pipeline(pipeline)
-        //gpu.apply_input_buffers(input_buffers)
-        //gpu.apply_uniforms_raw(.Vertex, 0, &input_uniforms, size_of(input_uniforms))
-        //gpu.draw(0, len(planet_indices), 1)
+        gpu.apply_pipeline(pipeline)
+        gpu.apply_input_buffers(input_buffers)
+        gpu.apply_uniforms_raw(.Vertex, 0, &input_uniforms, size_of(input_uniforms))
+        gpu.draw(0, len(planet_indices), 1)
         mu_mlw.render(&mu_mlw._state.mu_ctx, WIDTH, HEIGHT)
         /*
         for face in _planet.terrain_faces {

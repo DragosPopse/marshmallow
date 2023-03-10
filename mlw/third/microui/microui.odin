@@ -68,10 +68,10 @@ _push_quad :: proc(dst, src: mu.Rect, color: mu.Color) {
     _vertices[vert_idx + 2].tex = {x, y + h}
     _vertices[vert_idx + 3].tex = {x + w, y + h}
     
-    _vertices[vert_idx + 0].pos = {f32(dst.x), f32(dst.y)}
-    _vertices[vert_idx + 1].pos = {f32(dst.x + dst.w), f32(dst.y)}
-    _vertices[vert_idx + 2].pos = {f32(dst.x), f32(dst.y + dst.h)}
-    _vertices[vert_idx + 3].pos = {f32(dst.x + dst.w), f32(dst.y + dst.h)}
+    _vertices[vert_idx + 0].pos = {f32(dst.x), f32(_viewport_width) - f32(dst.y)}
+    _vertices[vert_idx + 1].pos = {f32(dst.x + dst.w), f32(_viewport_width) - f32(dst.y)}
+    _vertices[vert_idx + 2].pos = {f32(dst.x), f32(_viewport_width) - f32(dst.y + dst.h)}
+    _vertices[vert_idx + 3].pos = {f32(dst.x + dst.w), f32(_viewport_width) - f32(dst.y + dst.h)}
 
     colorf := math.to_colorf(math.Colorb{color.r, color.g, color.b, color.a})
     _vertices[vert_idx + 0].col = colorf
@@ -174,6 +174,7 @@ _create_atlas_texture :: proc() -> (gpu.Texture) {
     info.type = .Texture2D
     info.min_filter = .Nearest
     info.mag_filter = .Nearest
+    info.generate_mipmap = true
 
     info.size.xy = {mu.DEFAULT_ATLAS_WIDTH, mu.DEFAULT_ATLAS_HEIGHT}
     
@@ -230,7 +231,7 @@ process_platform_event :: proc(event: platform.Event) {
 // Render the data
 _flush :: proc() {
     if (_buf_idx == 0) do return 
-    _uniforms.projection = linalg.matrix_ortho3d_f32(0, cast(f32)_viewport_width, 0, cast(f32)_viewport_height, -100, 100)
+    _uniforms.projection = linalg.matrix_ortho3d_f32(0, cast(f32)_viewport_width, 0, cast(f32)_viewport_height, -100, 100, false)
     gpu.apply_uniforms_raw(.Vertex, 0, &_uniforms, size_of(_uniforms))
     vertices := _vertices[:_buf_idx * 4]
     indices := _indices[:_buf_idx * 6]
@@ -249,7 +250,8 @@ render :: proc(ctx: ^mu.Context, viewport_width, viewport_height: int) {
     _viewport_width, _viewport_height = viewport_width, viewport_height
 
     gpu.apply_pipeline(_pipeline)
-    gl.Disable(gl.CULL_FACE) 
+    gl.Disable(gl.CULL_FACE)
+    gl.Disable(gl.DEPTH_TEST)
     gl.Enable(gl.SCISSOR_TEST)
     gl.Enable(gl.BLEND)
     gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
