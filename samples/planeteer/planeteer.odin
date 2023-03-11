@@ -60,7 +60,7 @@ create_standard_shader :: proc() -> (shader: gpu.Shader, err: Maybe(string)) {
     return shader, nil
 }
 
-create_standard_pipeline :: proc(shader: gpu.Shader) -> (pipeline: gpu.Pipeline) {
+create_standard_pipeline :: proc(shader: gpu.Shader, polygon_mode: core.Polygon_Mode) -> (pipeline: gpu.Pipeline) {
     pipe_info: gpu.Pipeline_Info
     blend: core.Blend_State
     blend.rgb.src_factor = .Src_Alpha
@@ -70,7 +70,7 @@ create_standard_pipeline :: proc(shader: gpu.Shader) -> (pipeline: gpu.Pipeline)
     pipe_info.shader = shader
     pipe_info.index_type = .u32 
     pipe_info.primitive_type = .Triangles
-    pipe_info.polygon_mode = .Line
+    pipe_info.polygon_mode = polygon_mode
     depth: core.Depth_State
     pipe_info.depth = depth // Note(Dragos): not fully implemented
 
@@ -106,20 +106,20 @@ main :: proc() {
     if shader, shader_err = create_standard_shader(); shader_err != nil {
         fmt.panicf("SHADER_ERR: %s\n", shader_err.(string))
     }
-    pipeline := create_standard_pipeline(shader)
+    default_pipeline := create_standard_pipeline(shader, .Fill)
+    wireframe_pipeline := create_standard_pipeline(shader, .Line)
     
+    settings: Settings
+    settings.planet = default_planet_settings()
+    init_planet(&_planet)
+   
     
-
-    init_planet(&_planet, 14)
-    construct_planet_mesh(&_planet)
-    planet_vertices, planet_indices := merge_planet_meshes(_planet)
     planet_vb: gpu.Buffer
     {
         info: gpu.Buffer_Info
         info.type = .Vertex
-        data := slice.to_bytes(planet_vertices)
-        info.data = data
-        info.size = len(data)
+        info.data = nil
+        info.size = VB_SIZE
         info.usage_hint = .Dynamic
         planet_vb = gpu.create_buffer(info)
     }
@@ -128,12 +128,16 @@ main :: proc() {
     {
         info: gpu.Buffer_Info
         info.type = .Index
-        data := slice.to_bytes(planet_indices)
-        info.data = data
-        info.size = len(data)
+        info.data = nil
+        info.size = IB_SIZE
         info.usage_hint = .Dynamic
         planet_ib = gpu.create_buffer(info)
     }
+
+    construct_planet_mesh(&_planet, settings.planet)
+    planet_vertices, planet_indices := merge_planet_meshes(_planet, context.temp_allocator)
+    gpu.buffer_data(planet_vb, slice.to_bytes(planet_vertices))
+    gpu.buffer_data(planet_ib, slice.to_bytes(planet_indices))
 
     input_buffers: gpu.Input_Buffers
     input_buffers.buffers[0] = planet_vb
@@ -166,13 +170,16 @@ main :: proc() {
             }
         }
         mu.begin(ui)
-        
-        if mu.window(ui, "Hello", {0, 0, 300, 300}) {
-            if .SUBMIT in mu.button(ui, "Hello") {
-                fmt.printf("Pressed")
-            }
-        }   
+        graphics_changed, planet_changed := settings_window(ui, &settings)
         mu.end(ui)
+
+        if planet_changed {
+            destroy_planet(_planet)
+            construct_planet_mesh(&_planet, settings.planet)
+            planet_vertices, planet_indices = merge_planet_meshes(_planet, context.temp_allocator)
+            gpu.buffer_data(planet_vb, slice.to_bytes(planet_vertices))
+            gpu.buffer_data(planet_ib, slice.to_bytes(planet_indices))
+        }
 
         angle += 1
         input_uniforms.model = math.Mat4f(1)
@@ -181,7 +188,11 @@ main :: proc() {
         //input_uniforms.model *= linalg.matrix4_scale_f32({0.4, 0.4, 0.4})
 
         gpu.begin_default_pass(pass_action, WIDTH, HEIGHT)
-        gpu.apply_pipeline(pipeline)
+        if settings.graphics.wireframe {
+            gpu.apply_pipeline(wireframe_pipeline)
+        } else {
+            gpu.apply_pipeline(default_pipeline)
+        }  
         gpu.apply_input_buffers(input_buffers)
         gpu.apply_uniforms_raw(.Vertex, 0, &input_uniforms, size_of(input_uniforms))
         gpu.draw(0, len(planet_indices), 1)

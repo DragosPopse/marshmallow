@@ -3,7 +3,6 @@ package main
 import "../../mlw/math"
 import linalg "core:math/linalg"
 import "../../mlw/gpu"
-import "core:math/noise"
 
 Mesh :: struct {
     vertices: []math.Vec3f,
@@ -15,7 +14,7 @@ Planet :: struct {
     terrain_faces: [6]Terrain_Face,
 }
 
-init_planet :: proc(planet: ^Planet, resolution: int) {
+init_planet :: proc(planet: ^Planet) {
     directions := [6]math.Vec3f{
         {1, 0, 0},
         {-1, 0, 0},
@@ -26,13 +25,20 @@ init_planet :: proc(planet: ^Planet, resolution: int) {
     }
 
     for face, i in &planet.terrain_faces {
-        init_terrain_face(&face, resolution, directions[i])
+        init_terrain_face(&face, directions[i])
     }
 }
 
-construct_planet_mesh :: proc(planet: ^Planet) {
+destroy_planet :: proc(planet: Planet, allocator := context.allocator) {
+    context.allocator = allocator
+    for face in planet.terrain_faces {
+        destroy_terrain_face(face)
+    }
+}
+
+construct_planet_mesh :: proc(planet: ^Planet, settings: Planet_Settings, allocator := context.allocator) {
     for face in &planet.terrain_faces {
-        construct_terrain_face_mesh(&face)
+        construct_terrain_face_mesh(&face, settings, allocator)
     }
 }
 
@@ -41,41 +47,41 @@ Terrain_Face :: struct {
     local_up: math.Vec3f,
     axis_a: math.Vec3f,
     axis_b: math.Vec3f,
-    resolution: int,
 }
 
-init_terrain_face :: proc(face: ^Terrain_Face, resolution: int, up: math.Vec3f) {
+init_terrain_face :: proc(face: ^Terrain_Face, up: math.Vec3f) {
     face.local_up = up
-    face.resolution = resolution
     face.axis_a = math.Vec3f{up.y, up.z, up.x}
     face.axis_b = linalg.cross(up, face.axis_a)
 }
 
-construct_terrain_face_mesh :: proc(face: ^Terrain_Face) {
-    face.mesh.vertices = make([]math.Vec3f, face.resolution * face.resolution)
-    face.mesh.indices = make([]u32, (face.resolution - 1) * (face.resolution - 1) * 6)
+construct_terrain_face_mesh :: proc(face: ^Terrain_Face, settings: Planet_Settings, allocator := context.allocator) {
+    using settings
+    context.allocator = allocator
+    face.mesh.vertices = make([]math.Vec3f, settings.resolution * settings.resolution)
+    face.mesh.indices = make([]u32, (settings.resolution - 1) * (settings.resolution - 1) * 6)
     current_index := 0
-    for y in 0..<face.resolution {
-        for x in 0..<face.resolution {
-            i := y * face.resolution + x
+    for y in 0..<settings.resolution {
+        for x in 0..<settings.resolution {
+            i := y * settings.resolution + x
             fx, fy := f32(x), f32(y)
-            percent := math.Vec2f{fx, fy} / f32(face.resolution - 1)
+            percent := math.Vec2f{fx, fy} / f32(settings.resolution - 1)
             unit_cube_point: math.Vec3f
             unit_cube_point.xyz = face.local_up + (percent.x - 0.5) * 2 * face.axis_a + (percent.y - 0.5) * 2 * face.axis_b
             unit_cube_point = linalg.normalize(unit_cube_point)
-            elevation := noise.noise_3d_improve_xy(100, linalg.to_f64(unit_cube_point))
-            unit_cube_point *= f32(1 + elevation)
+            elevation := evaluate_noise(noise, unit_cube_point)
+            unit_cube_point = unit_cube_point * settings.radius * f32(1 + elevation)
             face.mesh.vertices[i] = unit_cube_point
             
             // Setup triangles
-            if x != face.resolution - 1 && y != face.resolution - 1 {
+            if x != settings.resolution - 1 && y != settings.resolution - 1 {
                 face.mesh.indices[current_index] = u32(i)
-                face.mesh.indices[current_index + 1] = u32(i + face.resolution + 1)
-                face.mesh.indices[current_index + 2] = u32(i + face.resolution)
+                face.mesh.indices[current_index + 1] = u32(i + settings.resolution + 1)
+                face.mesh.indices[current_index + 2] = u32(i + settings.resolution)
 
                 face.mesh.indices[current_index + 3] = u32(i)
                 face.mesh.indices[current_index + 4] = u32(i + 1)
-                face.mesh.indices[current_index + 5] = u32(i + face.resolution + 1)
+                face.mesh.indices[current_index + 5] = u32(i + settings.resolution + 1)
 
                 current_index += 6
             }
@@ -84,8 +90,12 @@ construct_terrain_face_mesh :: proc(face: ^Terrain_Face) {
     // TODO(Dragos): Calculate normals
 }
 
-delete_terrain_face :: proc(face: Terrain_Face) {
-    
+destroy_terrain_face :: proc(face: Terrain_Face, allocator := context.allocator) {
+    context.allocator = allocator
+    using face
+    delete(mesh.indices)
+    delete(mesh.vertices)
+    delete(mesh.normals)
 }
 
 // Note(Dragos): This is currently wrong
