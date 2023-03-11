@@ -7,6 +7,7 @@ import "../../core"
 import "../../math" 
 import "../../gpu"
 import "../../platform"
+import "../../platform/event"
 import mu "vendor:microui"
 import "core:slice"
 import "core:fmt"
@@ -224,8 +225,42 @@ init :: proc() {
     _pipeline = _create_microui_pipeline(_shader)
 }
 
-process_platform_event :: proc(event: platform.Event) {
+_button_map := [event.Mouse_Button]mu.Mouse{
+    event.Mouse_Button.Left  =  mu.Mouse.LEFT,
+    event.Mouse_Button.Right =  mu.Mouse.RIGHT,
+    event.Mouse_Button.Wheel =  mu.Mouse.MIDDLE,
+}
+  
+_key_map := [256]mu.Key{
+     cast(int)event.Key.LShift       & 0xff  = mu.Key.SHIFT,
+     cast(int)event.Key.RShift       & 0xff  = mu.Key.SHIFT,
+     cast(int)event.Key.LControl        & 0xff  = mu.Key.CTRL,
+     cast(int)event.Key.RControl        & 0xff  = mu.Key.CTRL,
+     cast(int) event.Key.LAlt         & 0xff  = mu.Key.ALT,
+     cast(int)event.Key.RAlt         & 0xff  = mu.Key.ALT,
+     cast(int)event.Key.Return       & 0xff  = mu.Key.RETURN,
+     cast(int)event.Key.Backspace    & 0xff  = mu.Key.BACKSPACE,
+  };
+  
 
+process_platform_event :: proc(ev: event.Event) {
+    #partial switch ev.type {
+        case .Mouse_Move: mu.input_mouse_move(&_state.mu_ctx, cast(i32)ev.move.position.x, cast(i32)ev.move.position.y)
+        case .Mouse_Wheel: mu.input_mouse_move(&_state.mu_ctx, 0, cast(i32)ev.wheel.scroll.y * -30)
+        case .Text_Input: mu.input_text(&_state.mu_ctx, ev.text.text)
+
+        case .Mouse_Down, .Mouse_Up: {
+            b := _button_map[ev.button.button]
+            if ev.type == .Mouse_Down do mu.input_mouse_down(&_state.mu_ctx, cast(i32)ev.button.position.x, cast(i32)ev.button.position.y, b)
+            else if ev.type == .Mouse_Up do mu.input_mouse_up(&_state.mu_ctx, cast(i32)ev.button.position.x, cast(i32)ev.button.position.y, b)
+        }
+
+        case .Key_Up, .Key_Down: {
+            k := _key_map[cast(int)ev.key.key & 0xff]
+            if cast(int)k != 0 && ev.type == .Key_Down do mu.input_key_down(&_state.mu_ctx, k)
+            else if cast(int)k != 0 && ev.type == .Key_Up do mu.input_key_up(&_state.mu_ctx, k)
+        }
+    }
 }
 
 // Render the data

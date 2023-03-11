@@ -1,4 +1,4 @@
-package mmlow_core
+package mmlow_platform_event
 
 Key :: enum {
     Unknown = 0,
@@ -89,50 +89,64 @@ Key :: enum {
 	RSystem,
 }
 
+Event_Type :: enum {
+    Invalid = 0,
+    Mouse_Down, Mouse_Up,
+    Mouse_Move,
+    Mouse_Wheel,
+    Key_Down, Key_Up, Key_Hold,
+    Text_Input,
+    Quit,
+}
+
 Mouse_Button :: enum {
     Left,
     Right,
     Wheel,
 }
 
-Event_Base :: struct {
-
+Common_Event :: struct {
+    type: Event_Type,
 }
 
-Key_Event_Action :: enum {
-    Down,
-    Up,
-    Hold,
-}
 
 Key_Event :: struct {
-    using _: Event_Base,
-    action: Key_Event_Action,
+    using _: Common_Event,
     key: Key,
 }
 
-Mouse_Event_Base :: struct {
-    using _: Event_Base,
-    position: [2]int,
+Text_Input_Event :: struct {
+    using _: Common_Event,
+    text: string,
 }
 
 Mouse_Button_Event :: struct {
-    using _: Mouse_Event_Base,
+    using _: Common_Event,
+    position: [2]int,
     button: Mouse_Button,
 }
 
 Mouse_Wheel_Event :: struct {
-    using _: Mouse_Event_Base,
+    using _: Common_Event,
     scroll: [2]int,
 }
 
-Quit_Event :: struct {
-    
+Mouse_Move_Event :: struct {
+    using _: Common_Event,
+    position: [2]int,
+    delta: [2]int,
 }
 
-Event :: union {
-    Key_Event,
-    Mouse_Button_Event,
-    Mouse_Wheel_Event,
-    Quit_Event,
+Quit_Event :: struct {
+    using _: Common_Event,
+}
+
+Event :: struct #raw_union {
+    type: Event_Type,
+    key: Key_Event,
+    button: Mouse_Button_Event,
+    move: Mouse_Move_Event,
+    wheel: Mouse_Wheel_Event,
+    quit: Quit_Event,
+    text: Text_Input_Event,
 }

@@ -11,6 +11,7 @@ import linalg "core:math/linalg"
 import "core:slice"
 import mu "vendor:microui"
 import mu_mlw "../../mlw/third/microui"
+import "../../mlw/platform/event"
 
 
 
@@ -82,7 +83,7 @@ create_standard_pipeline :: proc(shader: gpu.Shader) -> (pipeline: gpu.Pipeline)
     return gpu.create_pipeline(pipe_info)
 }
 
-WIDTH, HEIGHT := 600, 600
+WIDTH, HEIGHT := 800, 800
 
 initialize :: proc() {
     platform_info: platform.Init_Info
@@ -153,28 +154,23 @@ main :: proc() {
     running := true 
     draw_ui := false
     for running {
-        for event in platform.poll_event() {
-            #partial switch var in event {
-                case core.Quit_Event: {
+        for ev in platform.poll_event() {
+            mu_mlw.process_platform_event(ev)
+            #partial switch ev.type {
+                case .Quit: {
                     running = false
-                }
-
-                case core.Key_Event: {
-                    if var.action == .Up {
-                        draw_ui = !draw_ui
-                    }
                 }
             }
         }
         mu.begin(&mu_mlw._state.mu_ctx)
         mu_mlw.all_windows(&mu_mlw._state.mu_ctx)
         
-        
+        /*
         if mu.window(&mu_mlw._state.mu_ctx, "Hello", {0, 0, 300, 300}) {
             /*if .SUBMIT in mu.button(&mu_mlw._state.mu_ctx, "Hello") {
                 fmt.printf("Pressed")
             }*/
-        }
+        }*/
         
         mu.end(&mu_mlw._state.mu_ctx)
 
