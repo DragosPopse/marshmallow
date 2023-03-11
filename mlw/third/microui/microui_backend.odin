@@ -26,16 +26,6 @@ Vertex_Uniforms :: struct {
     projection: math.Mat4f,
 }
 
-_state := struct {
-    mu_ctx: mu.Context,
-	log_buf: [1<<16]byte,
-	log_buf_len: int,
-	log_buf_updated: bool,
-	bg: mu.Color,
-	atlas_texture: gpu.Texture,
-} {
-    bg = {90, 95, 100, 255},
-}
 
 BUFFER_SIZE :: 16384
 _buf_idx := 0
@@ -51,6 +41,9 @@ _vert_buf, _ind_buf: gpu.Buffer
 _input_textures: gpu.Input_Textures
 _input_buffers: gpu.Input_Buffers
 _atlas_texture: gpu.Texture
+
+// Note(Dragos): Hope we won't need this in the future
+_viewport_width, _viewport_height: int
 
 _push_quad :: proc(dst, src: mu.Rect, color: mu.Color) {
     vert_idx := _buf_idx * 4
@@ -87,9 +80,6 @@ _push_quad :: proc(dst, src: mu.Rect, color: mu.Color) {
     _indices[index_idx + 4] = u32(element_idx + 3)
     _indices[index_idx + 5] = u32(element_idx + 1)
 }
-
-
-
 
 
 _create_microui_shader :: proc() -> (shader: gpu.Shader, err: Maybe(string)) {
@@ -146,8 +136,6 @@ _create_microui_pipeline :: proc(shader: gpu.Shader) -> (pipeline: gpu.Pipeline)
     info.primitive_type = .Triangles
     info.polygon_mode = .Fill
 
-    depth: core.Depth_State
-    info.depth = depth
 
     info.layout = core.layout_from_structs([]core.Struct_Layout_Info{
         0 = {Vertex, .Per_Vertex},
@@ -204,26 +192,7 @@ _create_atlas_texture :: proc() -> (gpu.Texture) {
     return gpu.create_texture(info)
 }
 
-init :: proc() {
-    mu.init(&_state.mu_ctx)
-    _state.mu_ctx.text_width, _state.mu_ctx.text_height = mu.default_atlas_text_width, mu.default_atlas_text_height
-    _vert_buf, _ind_buf = _create_microui_buffers()
-    _atlas_texture = _create_atlas_texture()
-    _uniforms.modelview = math.Mat4f(1)
-    // Todo(Dragos): Make a way to get width and height of the viewport inside gpu
-    
-    _input_textures.textures[.Fragment][0] = _atlas_texture
 
-    _input_buffers.buffers[0] = _vert_buf
-    _input_buffers.index = _ind_buf
-
-    shader_err: Maybe(string)
-    if _shader, shader_err = _create_microui_shader(); shader_err != nil {
-        fmt.printf("SHADER_ERR: %s\n", shader_err.(string))
-        return
-    }
-    _pipeline = _create_microui_pipeline(_shader)
-}
 
 _button_map := [event.Mouse_Button]mu.Mouse{
     event.Mouse_Button.Left  =  mu.Mouse.LEFT,
@@ -243,30 +212,12 @@ _key_map := [256]mu.Key{
   };
   
 
-process_platform_event :: proc(ev: event.Event) {
-    #partial switch ev.type {
-        case .Mouse_Move: mu.input_mouse_move(&_state.mu_ctx, cast(i32)ev.move.position.x, cast(i32)ev.move.position.y)
-        case .Mouse_Wheel: mu.input_mouse_move(&_state.mu_ctx, 0, cast(i32)ev.wheel.scroll.y * -30)
-        case .Text_Input: mu.input_text(&_state.mu_ctx, ev.text.text)
 
-        case .Mouse_Down, .Mouse_Up: {
-            b := _button_map[ev.button.button]
-            if ev.type == .Mouse_Down do mu.input_mouse_down(&_state.mu_ctx, cast(i32)ev.button.position.x, cast(i32)ev.button.position.y, b)
-            else if ev.type == .Mouse_Up do mu.input_mouse_up(&_state.mu_ctx, cast(i32)ev.button.position.x, cast(i32)ev.button.position.y, b)
-        }
-
-        case .Key_Up, .Key_Down: {
-            k := _key_map[cast(int)ev.key.key & 0xff]
-            if cast(int)k != 0 && ev.type == .Key_Down do mu.input_key_down(&_state.mu_ctx, k)
-            else if cast(int)k != 0 && ev.type == .Key_Up do mu.input_key_up(&_state.mu_ctx, k)
-        }
-    }
-}
 
 // Render the data
 _flush :: proc() {
     if (_buf_idx == 0) do return 
-    _uniforms.projection = linalg.matrix_ortho3d_f32(0, cast(f32)_viewport_width, 0, cast(f32)_viewport_height, -100, 100, false)
+    _uniforms.projection = linalg.matrix_ortho3d_f32(0, cast(f32)_viewport_width, 0, cast(f32)_viewport_height, 0, 100, false)
     gpu.apply_uniforms_raw(.Vertex, 0, &_uniforms, size_of(_uniforms))
     vertices := _vertices[:_buf_idx * 4]
     indices := _indices[:_buf_idx * 6]
@@ -278,49 +229,7 @@ _flush :: proc() {
     _buf_idx = 0
 }
 
-_viewport_width, _viewport_height: int
 
-render :: proc(ctx: ^mu.Context, viewport_width, viewport_height: int) {
-    commands: ^mu.Command
-    _viewport_width, _viewport_height = viewport_width, viewport_height
-
-    gpu.apply_pipeline(_pipeline)
-    gl.Disable(gl.CULL_FACE)
-    gl.Disable(gl.DEPTH_TEST)
-    gl.Enable(gl.SCISSOR_TEST)
-    gl.Enable(gl.BLEND)
-    gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-    //_draw_rect({0, 0, 300, 300}, {255, 255, 255, 255})
-    //_flush()
-    //if true do return
-    for variant in mu.next_command_iterator(ctx, &commands) {
-        switch cmd in variant {
-            case ^mu.Command_Text: {
-                _draw_text(cmd.str, cmd.pos, cmd.color)
-            }
-
-            case ^mu.Command_Rect: {
-                _draw_rect(cmd.rect, cmd.color)
-            }
-
-            case ^mu.Command_Icon: {
-                _draw_icon(cast(int)cmd.id, cmd.rect, cmd.color)
-            }
-
-            case ^mu.Command_Clip: {
-                _flush()
-                gl.Scissor(i32(cmd.rect.x), i32(_viewport_height) - i32(cmd.rect.y + cmd.rect.h), i32(cmd.rect.w), i32(cmd.rect.h))
-                fmt.printf("Clip command not implemented\n") // TODO(Dragos): Needs gpu implementation
-            }
-
-            case ^mu.Command_Jump: {
-                unreachable()
-            }
-        }
-    }
-
-    _flush()
-}
 
 _draw_text :: proc(text: string, pos: mu.Vec2, color: mu.Color) {
     dst := mu.Rect{pos.x, pos.y, 0, 0}

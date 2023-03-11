@@ -84,6 +84,8 @@ create_standard_pipeline :: proc(shader: gpu.Shader) -> (pipeline: gpu.Pipeline)
 }
 
 WIDTH, HEIGHT := 800, 800
+_planet: Planet
+ui: ^mu.Context
 
 initialize :: proc() {
     platform_info: platform.Init_Info
@@ -93,10 +95,9 @@ initialize :: proc() {
     platform.init(platform_info)
     gpu.init()
 
-    mu_mlw.init()
+    ui = mu_mlw.init()
 }
 
-_planet: Planet
 
 main :: proc() {
     initialize()
@@ -107,6 +108,8 @@ main :: proc() {
     }
     pipeline := create_standard_pipeline(shader)
     
+    
+
     init_planet(&_planet, 14)
     construct_planet_mesh(&_planet)
     planet_vertices, planet_indices := merge_planet_meshes(_planet)
@@ -155,24 +158,21 @@ main :: proc() {
     draw_ui := false
     for running {
         for ev in platform.poll_event() {
-            mu_mlw.process_platform_event(ev)
+            mu_mlw.process_platform_event(ui, ev)
             #partial switch ev.type {
                 case .Quit: {
                     running = false
                 }
             }
         }
-        mu.begin(&mu_mlw._state.mu_ctx)
-        mu_mlw.all_windows(&mu_mlw._state.mu_ctx)
+        mu.begin(ui)
         
-        /*
-        if mu.window(&mu_mlw._state.mu_ctx, "Hello", {0, 0, 300, 300}) {
-            /*if .SUBMIT in mu.button(&mu_mlw._state.mu_ctx, "Hello") {
+        if mu.window(ui, "Hello", {0, 0, 300, 300}) {
+            if .SUBMIT in mu.button(ui, "Hello") {
                 fmt.printf("Pressed")
-            }*/
-        }*/
-        
-        mu.end(&mu_mlw._state.mu_ctx)
+            }
+        }   
+        mu.end(ui)
 
         angle += 1
         input_uniforms.model = math.Mat4f(1)
@@ -185,7 +185,8 @@ main :: proc() {
         gpu.apply_input_buffers(input_buffers)
         gpu.apply_uniforms_raw(.Vertex, 0, &input_uniforms, size_of(input_uniforms))
         gpu.draw(0, len(planet_indices), 1)
-        mu_mlw.render(&mu_mlw._state.mu_ctx, WIDTH, HEIGHT)
+        mu_mlw.apply_microui_pipeline(WIDTH, HEIGHT)
+        mu_mlw.draw(ui)
         /*
         for face in _planet.terrain_faces {
             gpu.buffer_data(planet_vb, slice.to_bytes(face.mesh.vertices))
