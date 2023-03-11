@@ -17,5 +17,4 @@ void main()
     gl_Position = projection * modelview * vec4(aPos, 1.0);
     VertexColor = aCol;
     TexCoords = aTex;
-    FragPos = gl_Position.xyz;
 }
