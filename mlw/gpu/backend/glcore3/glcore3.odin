@@ -17,7 +17,8 @@ State :: struct {
 init :: proc() {
     gl.load_up_to(3, 3, core.gl_set_proc_address)
     glcache.init()
-    _init_vaos() 
+    _init_vaos()
+    glcache.BindVertexArray(_naked_vao)
     fmt.printf("OpenGL Version: %s\n", gl.GetString(gl.VERSION))
 }
 

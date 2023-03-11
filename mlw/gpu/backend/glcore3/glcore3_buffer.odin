@@ -58,9 +58,58 @@ destroy_buffer :: proc(buffer: core.Buffer) {
 }
 
 apply_input_buffers :: proc(buffers: core.Input_Buffers) {
+    /*
     vao, instanced := _get_or_configure_vao(buffers)
     _instanced_call = instanced
     glcache.BindVertexArray(vao)
+    */
+
+    assert(_current_pipeline != nil, "Invalid pipeline.")
+
+    glcache.BindVertexArray(_naked_vao)
+    
+    layout := &_current_pipeline.layout
+
+    // Bind index buffer if it exists
+    if index, found := buffers.index.?; found {
+        assert(index in _buffers, "Cannot find index buffer.")
+        glcache.BindBuffer(.ELEMENT_ARRAY_BUFFER, _buffers[index].handle)
+    } else {
+        glcache.BindBuffer(.ELEMENT_ARRAY_BUFFER, 0)
+    }
+
+    // Note(Dragos): check the usage and optimization of this loop format
+
+    // Bind attributes and buffers to the VAO
+    current_vbo := u32(0)
+    for attr, i in layout.attrs do if attr.format != .Invalid {
+        buf := buffers.buffers[attr.buffer_index]
+        assert(buf in _buffers, "Cannot find buffer.")
+        glbuf := &_buffers[buf]
+        vbo := glbuf.handle
+        buffer_layout := layout.buffers[attr.buffer_index]
+        divisor: u32
+        switch buffer_layout.step {
+            case .Per_Vertex: 
+                divisor = 0
+            case .Per_Instance: 
+                divisor = 1
+                _instanced_call = true
+        }
+        glcache.BindBuffer(.ARRAY_BUFFER, vbo)
+        current_vbo = vbo
+        gl.VertexAttribPointer(
+            u32(i), 
+            _ATTR_SIZE_CONV[attr.format], _ATTR_TYPE_CONV[attr.format], 
+            gl.FALSE, 
+            cast(i32)buffer_layout.stride, attr.offset)
+
+        gl.EnableVertexAttribArray(u32(i)) // Note(Dragos): This call should also be cached
+        gl.VertexAttribDivisor(u32(i), divisor)
+    } else do break
+
+
+   
 }
 
 

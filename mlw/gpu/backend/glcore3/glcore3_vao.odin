@@ -121,7 +121,7 @@ _get_or_configure_vao :: proc(key: core.Input_Buffers) -> (vao: u32, instanced: 
                 divisor = 1
                 instanced = true
         }
-        if current_vbo != vbo do gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
+        glcache.BindBuffer(.ARRAY_BUFFER, vbo)
         current_vbo = vbo
         gl.VertexAttribPointer(
             u32(i), 
