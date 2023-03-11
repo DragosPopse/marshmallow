@@ -58,12 +58,6 @@ destroy_buffer :: proc(buffer: core.Buffer) {
 }
 
 apply_input_buffers :: proc(buffers: core.Input_Buffers) {
-    /*
-    vao, instanced := _get_or_configure_vao(buffers)
-    _instanced_call = instanced
-    glcache.BindVertexArray(vao)
-    */
-
     assert(_current_pipeline != nil, "Invalid pipeline.")
 
     glcache.BindVertexArray(_naked_vao)
@@ -113,14 +107,11 @@ apply_input_buffers :: proc(buffers: core.Input_Buffers) {
 }
 
 
-// Todo(Dragos): There is some fuckery happening with binding/unbinding VBOs and VAOs
 buffer_data :: proc(buffer: core.Buffer, data: []byte) {
     glbuf := &_buffers[buffer]
     assert(glbuf != nil, "Invalid buffer.")
     assert(len(data) <= glbuf.size, "Data size exceeds the buffer size.")
-    //last_vao := glcache.BindVertexArray(_naked_vao) // Note(Dragos): We do this to not disturb the already configured vaos
     last_buf := glcache.BindBuffer(cast(glcache.Buffer_Target)glbuf.target, glbuf.handle)
     gl.BufferSubData(glbuf.target, 0, len(data), raw_data(data))
     glcache.BindBuffer(auto_cast(glbuf.target), last_buf)
-    //glcache.BindVertexArray(last_vao)
 }
