@@ -38,7 +38,7 @@ IB_SIZE :: 6 * (MAX_RESOLUTION - 1) * (MAX_RESOLUTION - 1) * 6 * size_of(u32)
 
 default_planet_settings :: proc() -> (settings: Planet_Settings) {
 	settings.radius = 1
-	settings.resolution = 2
+	settings.resolution = 16
 	settings.noise = default_noise()
 	return settings
 }
@@ -88,9 +88,31 @@ settings_window :: proc(ctx: ^mu.Context, settings: ^Settings) -> (graphics_chan
                 planet_changed = true
             }
 
+			mu.label(ctx, "Base Roughness:")
+			if .CHANGE in mu.slider(ctx, &settings.planet.noise.base_roughness, 0, 5, 0.01)  {
+                planet_changed = true
+            }
+
 			mu.label(ctx, "Roughness:")
 			if .CHANGE in mu.slider(ctx, &settings.planet.noise.roughness, 0, 5, 0.01)  {
                 planet_changed = true
+            }
+
+			mu.label(ctx, "Persistence:")
+			if .CHANGE in mu.slider(ctx, &settings.planet.noise.persistence, 0, 1, 0.01)  {
+                planet_changed = true
+            }
+
+			mu.label(ctx, "Min Value:")
+			if .CHANGE in mu.slider(ctx, &settings.planet.noise.min_value, 0, 5, 0.01)  {
+                planet_changed = true
+            }
+
+			mu.label(ctx, "Layers:")
+			layers := cast(f32)settings.planet.noise.layers_count
+			if .CHANGE in mu.slider(ctx, &layers, 1, 5, 1, "%.0f")  {
+                planet_changed = true
+				settings.planet.noise.layers_count = cast(int)layers
             }
 		}
 	}
