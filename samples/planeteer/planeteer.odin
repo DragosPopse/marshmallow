@@ -140,7 +140,8 @@ main :: proc() {
 
     pool: thread.Pool
     thread.pool_init(&pool, context.allocator, 6)
-
+    thread.pool_start(&pool)
+    defer thread.pool_finish(&pool)
     time.stopwatch_start(&gen_clock)
     construct_planet_mesh(&_planet, settings.planet, &pool)
     planet_vertices, planet_indices := merge_planet_meshes(_planet, context.temp_allocator)

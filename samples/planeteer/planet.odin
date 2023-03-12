@@ -59,9 +59,12 @@ construct_planet_mesh :: proc(planet: ^Planet, settings: Planet_Settings, pool: 
         thread.pool_add_task(pool, allocator, task, data)
     }
     
+    for !thread.pool_is_empty(pool) {
+        for _ in thread.pool_pop_done(pool) {
 
-    thread.pool_start(pool)
-    thread.pool_finish(pool)
+        }
+    }
+
     /*
     for face in &planet.terrain_faces {
         construct_terrain_face_mesh(&face, settings, allocator)
