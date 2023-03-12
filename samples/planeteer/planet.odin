@@ -3,6 +3,7 @@ package main
 import "../../mlw/math"
 import linalg "core:math/linalg"
 import "../../mlw/gpu"
+import "core:thread"
 
 Mesh :: struct {
     vertices: []math.Vec3f,
@@ -29,17 +30,43 @@ init_planet :: proc(planet: ^Planet) {
     }
 }
 
+
 destroy_planet :: proc(planet: Planet, allocator := context.allocator) {
     context.allocator = allocator
+
     for face in planet.terrain_faces {
         destroy_terrain_face(face)
     }
 }
 
-construct_planet_mesh :: proc(planet: ^Planet, settings: Planet_Settings, allocator := context.allocator) {
+construct_planet_mesh :: proc(planet: ^Planet, settings: Planet_Settings, pool: ^thread.Pool, allocator := context.allocator) {
+    Task_Data :: struct {
+        face: ^Terrain_Face,
+        settings: Planet_Settings,
+    }
+
+    task :: proc(task: thread.Task) {
+        data := cast(^Task_Data)task.data
+        construct_terrain_face_mesh(data.face, data.settings, task.allocator)
+    }
+
+    
+    
+    for face in &planet.terrain_faces {
+        data := new(Task_Data, context.temp_allocator)
+        data.face = &face
+        data.settings = settings
+        thread.pool_add_task(pool, allocator, task, data)
+    }
+    
+
+    thread.pool_start(pool)
+    thread.pool_finish(pool)
+    /*
     for face in &planet.terrain_faces {
         construct_terrain_face_mesh(&face, settings, allocator)
     }
+    */
 }
 
 Terrain_Face :: struct {
