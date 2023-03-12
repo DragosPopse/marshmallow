@@ -13,6 +13,7 @@ import mu "vendor:microui"
 import mu_mlw "../../mlw/third/microui"
 import "../../mlw/platform/event"
 
+import "core:time"
 
 
 Vertex_Uniforms :: struct {
@@ -100,6 +101,7 @@ initialize :: proc() {
 
 
 main :: proc() {
+    frame_clock, gen_clock, render_clock, buffer_update_clock: time.Stopwatch
     initialize()
     shader: gpu.Shader
     shader_err: Maybe(string)
@@ -110,6 +112,7 @@ main :: proc() {
     wireframe_pipeline := create_standard_pipeline(shader, .Line)
     
     settings: Settings
+    frame_info: Frame_Info
     settings.planet = default_planet_settings()
     init_planet(&_planet)
    
@@ -134,10 +137,13 @@ main :: proc() {
         planet_ib = gpu.create_buffer(info)
     }
 
+    time.stopwatch_start(&gen_clock)
     construct_planet_mesh(&_planet, settings.planet)
     planet_vertices, planet_indices := merge_planet_meshes(_planet, context.temp_allocator)
     gpu.buffer_data(planet_vb, slice.to_bytes(planet_vertices))
     gpu.buffer_data(planet_ib, slice.to_bytes(planet_indices))
+    frame_info.gen_time = cast(f32)time.duration_seconds(time.stopwatch_duration(gen_clock))
+    time.stopwatch_reset(&gen_clock)
 
     input_buffers: gpu.Input_Buffers
     input_buffers.buffers[0] = planet_vb
@@ -160,7 +166,12 @@ main :: proc() {
     angle: f32
     running := true 
     draw_ui := false
+    time.stopwatch_start(&frame_clock)
     for running {
+        frame_info.frame_time = cast(f32)time.duration_seconds(time.stopwatch_duration(frame_clock))
+        time.stopwatch_reset(&frame_clock)
+        time.stopwatch_start(&frame_clock)
+
         for ev in platform.poll_event() {
             mu_mlw.process_platform_event(ui, ev)
             #partial switch ev.type {
@@ -170,15 +181,26 @@ main :: proc() {
             }
         }
         mu.begin(ui)
-        graphics_changed, planet_changed := settings_window(ui, &settings)
+        graphics_changed, planet_changed := settings_window(ui, &settings, frame_info)
         mu.end(ui)
 
         if planet_changed {
+            time.stopwatch_start(&gen_clock)
+
             destroy_planet(_planet)
             construct_planet_mesh(&_planet, settings.planet)
+
+            frame_info.gen_time = cast(f32)time.duration_seconds(time.stopwatch_duration(gen_clock))
+            time.stopwatch_reset(&gen_clock)
+
+            time.stopwatch_start(&buffer_update_clock)
+
             planet_vertices, planet_indices = merge_planet_meshes(_planet, context.temp_allocator)
             gpu.buffer_data(planet_vb, slice.to_bytes(planet_vertices))
             gpu.buffer_data(planet_ib, slice.to_bytes(planet_indices))
+
+            frame_info.buffer_update_time = cast(f32)time.duration_seconds(time.stopwatch_duration(buffer_update_clock))
+            time.stopwatch_reset(&buffer_update_clock)
         }
 
         angle += 1
@@ -207,7 +229,6 @@ main :: proc() {
         gpu.end_pass()
 
         platform.update_window()
-
         free_all(context.temp_allocator)
     }
 }

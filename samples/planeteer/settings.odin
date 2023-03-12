@@ -25,11 +25,15 @@ Planet_Settings :: struct {
 	noise: Noise,
 }
 
-
-
 Settings :: struct {
 	graphics: Graphics_Settings,
 	planet: Planet_Settings,
+}
+
+Frame_Info :: struct {
+	frame_time: f32,
+	gen_time: f32,
+	buffer_update_time: f32,
 }
 
 MAX_RESOLUTION :: 100
@@ -43,16 +47,20 @@ default_planet_settings :: proc() -> (settings: Planet_Settings) {
 	return settings
 }
 
-settings_window :: proc(ctx: ^mu.Context, settings: ^Settings) -> (graphics_changed: bool, planet_changed: bool) {
+settings_window :: proc(ctx: ^mu.Context, settings: ^Settings, frame: Frame_Info) -> (graphics_changed: bool, planet_changed: bool) {
     opts := mu.Options{.NO_CLOSE}
     if mu.window(ctx, "Planeteer", {0, 0, 300, 450}, opts) {
-		if .ACTIVE in mu.header(ctx, "Window Info") {
+		if .ACTIVE in mu.header(ctx, "Performance") {
 			win := mu.get_current_container(ctx)
-			mu.layout_row(ctx, {54, -1}, 0)
-			mu.label(ctx, "Position:")
-			mu.label(ctx, fmt.tprintf("%d, %d", win.rect.x, win.rect.y))
-			mu.label(ctx, "Size:")
-			mu.label(ctx, fmt.tprintf("%d, %d", win.rect.w, win.rect.h))
+			CONV :: 1000
+			TIME_FMT :: "%.0f ms"
+			mu.layout_row(ctx, {120, 120}, 0)
+			mu.label(ctx, "Frame Time:")
+			mu.label(ctx, fmt.tprintf(TIME_FMT, frame.frame_time * CONV))
+			mu.label(ctx, "Generation Time:")
+			mu.label(ctx, fmt.tprintf(TIME_FMT, frame.gen_time * CONV))
+			mu.label(ctx, "Buffer Update Time:")
+			mu.label(ctx, fmt.tprintf(TIME_FMT, frame.buffer_update_time * CONV))
 		}
 
 		if .ACTIVE in mu.header(ctx, "Render Settings") {
