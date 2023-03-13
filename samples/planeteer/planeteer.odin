@@ -76,11 +76,9 @@ create_standard_pipeline :: proc(shader: gpu.Shader, polygon_mode: core.Polygon_
     depth: core.Depth_State
     pipe_info.depth = depth // Note(Dragos): not fully implemented
 
-    pipe_info.layout.attrs[0].buffer_index = 0
-    pipe_info.layout.attrs[0].format = .vec3f32
-    pipe_info.layout.attrs[0].offset = 0
-    pipe_info.layout.buffers[0].step = .Per_Vertex
-    pipe_info.layout.buffers[0].stride = size_of(math.Vec3f)
+    pipe_info.layout = core.layout_from_structs([]core.Struct_Layout_Info{
+        0 = {Vertex, .Per_Vertex},
+    })
 
     return gpu.create_pipeline(pipe_info)
 }
@@ -155,7 +153,7 @@ main :: proc() {
     input_buffers.index = planet_ib 
 
     pass_action := gpu.default_pass_action()
-    //pass_action.colors[0].value = math.Colorf{0.012, 0.533, 0.988, 1.0}
+    pass_action.colors[0].value = math.Colorf{0.012, 0.533, 0.988, 1.0}
 
     projection := math.Mat4f(1)
     projection = linalg.matrix4_perspective_f32(linalg.radians(cast(f32)45), f32(WIDTH) / f32(HEIGHT), 0.1, 100)

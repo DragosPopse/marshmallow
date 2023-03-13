@@ -5,8 +5,13 @@ import linalg "core:math/linalg"
 import "../../mlw/gpu"
 import "core:thread"
 
+Vertex :: struct {
+    pos: [3]f32,
+    normal: [3]f32,
+}
+
 Mesh :: struct {
-    vertices: []math.Vec3f,
+    vertices: []Vertex,
     indices: []u32,
     normals: []math.Vec3f,
 }
@@ -88,7 +93,7 @@ init_terrain_face :: proc(face: ^Terrain_Face, up: math.Vec3f) {
 construct_terrain_face_mesh :: proc(face: ^Terrain_Face, settings: Planet_Settings, allocator := context.allocator) {
     using settings
     context.allocator = allocator
-    face.mesh.vertices = make([]math.Vec3f, settings.resolution * settings.resolution)
+    face.mesh.vertices = make([]Vertex, settings.resolution * settings.resolution)
     face.mesh.indices = make([]u32, (settings.resolution - 1) * (settings.resolution - 1) * 6)
     current_index := 0
     for y in 0..<settings.resolution {
@@ -101,7 +106,7 @@ construct_terrain_face_mesh :: proc(face: ^Terrain_Face, settings: Planet_Settin
             unit_cube_point = linalg.normalize(unit_cube_point)
             elevation := evaluate_noise(noise, unit_cube_point)
             unit_cube_point = unit_cube_point * settings.radius * f32(1 + elevation)
-            face.mesh.vertices[i] = unit_cube_point
+            face.mesh.vertices[i].pos = unit_cube_point.xyz
             
             // Setup triangles
             if x != settings.resolution - 1 && y != settings.resolution - 1 {
@@ -118,6 +123,7 @@ construct_terrain_face_mesh :: proc(face: ^Terrain_Face, settings: Planet_Settin
         }
     }
     // TODO(Dragos): Calculate normals
+   
 }
 
 destroy_terrain_face :: proc(face: Terrain_Face, allocator := context.allocator) {
@@ -129,9 +135,9 @@ destroy_terrain_face :: proc(face: Terrain_Face, allocator := context.allocator)
 }
 
 // Note(Dragos): This is currently wrong
-merge_planet_meshes :: proc(planet: Planet, allocator := context.allocator) -> (vertices: []math.Vec3f, indices: []u32) {
+merge_planet_meshes :: proc(planet: Planet, allocator := context.allocator) -> (vertices: []Vertex, indices: []u32) {
     context.allocator = allocator
-    vertex_list: [dynamic]math.Vec3f
+    vertex_list: [dynamic]Vertex
     index_list: [dynamic]u32
     current_index := 0
     for face, i in planet.terrain_faces {
@@ -142,6 +148,17 @@ merge_planet_meshes :: proc(planet: Planet, allocator := context.allocator) -> (
             index_list[idx] += last_vertex_len
         }
         current_index = len(index_list)
+    }
+    for i := 0; i < len(index_list); i += 3 {
+        v1 := &vertex_list[index_list[0]]
+        v2 := &vertex_list[index_list[1]]
+        v3 := &vertex_list[index_list[2]]
+        edge1 := v2.pos - v1.pos
+        edge2 := v3.pos - v1.pos
+        normal := linalg.cross(edge1, edge2)
+        
+        normal = linalg.normalize(normal)
+        v1.normal, v2.normal, v3.normal = normal, normal, normal
     }
 
     return vertex_list[:], index_list[:]

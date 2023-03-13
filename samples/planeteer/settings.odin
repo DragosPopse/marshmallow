@@ -37,7 +37,7 @@ Frame_Info :: struct {
 }
 
 MAX_RESOLUTION :: 100
-VB_SIZE :: 6 * MAX_RESOLUTION * MAX_RESOLUTION * size_of(math.Vec3f) // This will be changed when adding colors
+VB_SIZE :: 6 * MAX_RESOLUTION * MAX_RESOLUTION * size_of(Vertex) // This will be changed when adding colors
 IB_SIZE :: 6 * (MAX_RESOLUTION - 1) * (MAX_RESOLUTION - 1) * 6 * size_of(u32)
 
 default_planet_settings :: proc() -> (settings: Planet_Settings) {
