@@ -4,6 +4,7 @@ import "../../mlw/math"
 import linalg "core:math/linalg"
 import "../../mlw/gpu"
 import "core:thread"
+import "core:fmt"
 
 Vertex :: struct {
     pos: [3]f32,
@@ -150,15 +151,16 @@ merge_planet_meshes :: proc(planet: Planet, allocator := context.allocator) -> (
         current_index = len(index_list)
     }
     for i := 0; i < len(index_list); i += 3 {
-        v1 := &vertex_list[index_list[0]]
-        v2 := &vertex_list[index_list[1]]
-        v3 := &vertex_list[index_list[2]]
+        v1 := &vertex_list[index_list[i + 0]]
+        v2 := &vertex_list[index_list[i + 1]]
+        v3 := &vertex_list[index_list[i + 2]]
         edge1 := v2.pos - v1.pos
         edge2 := v3.pos - v1.pos
         normal := linalg.cross(edge1, edge2)
         
         normal = linalg.normalize(normal)
         v1.normal, v2.normal, v3.normal = normal, normal, normal
+        //fmt.printf("[%v, %v, %v]: %.6f\n", v1.pos, v2.pos, v3.pos, normal)
     }
 
     return vertex_list[:], index_list[:]

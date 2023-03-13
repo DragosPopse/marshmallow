@@ -73,8 +73,13 @@ configure_target :: proc(project: Project, target: Target) -> (config: build.Con
         build.add_post_build_command(&config, "copy-dll", copy_dll)
     }
     build.add_post_build_command(&config, "copy-assets", copy_assets)
-    config.flags += {.Debug}
-    config.optimization = .Minimal
+    when ODIN_DEBUG {
+        config.flags += {.Debug}
+        config.optimization = .Minimal
+    } else {
+        config.optimization = .Speed
+        config.flags += {.Disable_Assert, .No_Bounds_Check}
+    }
 
    
     config.out = fmt.aprintf("%s/%s.%s", target.out_dir, target.name, exe_ext)

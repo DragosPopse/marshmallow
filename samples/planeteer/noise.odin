@@ -28,12 +28,13 @@ Noise :: struct {
 
 default_noise :: proc() -> (noise: Noise) {
     noise.seed = 10
-    noise.strength = 1
+    noise.strength = 0.38
     noise.roughness = 2
     noise.center = {0, 0, 0}
-    noise.base_roughness = 1
-    noise.layers_count = 1
+    noise.base_roughness = 0.5
+    noise.layers_count = 5
     noise.persistence = 0.5
+    noise.min_value = 1
     return noise
 }
 
