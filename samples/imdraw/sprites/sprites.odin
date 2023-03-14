@@ -1,1 +1,6 @@
 package main
+
+
+main :: proc() {
+    
+}

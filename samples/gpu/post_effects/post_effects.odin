@@ -299,8 +299,8 @@ main :: proc() {
     running := true
     for running {
         for event in platform.poll_event() {
-            #partial switch in event {
-                case core.Quit_Event: {
+            #partial switch event.type {
+                case .Quit: {
                     running = false
                 }
             }
@@ -314,7 +314,7 @@ main :: proc() {
         gpu.apply_input_buffers(input_buffers)
         gpu.apply_input_textures(input_textures)
         gpu.apply_uniforms_raw(.Vertex, 0, &input_uniforms, size_of(input_uniforms))
-        gpu.draw(0, 36)
+        gpu.draw(0, 36, 1)
         gpu.end_pass()
 
         // Render the output texture onto a quad and apply postfx
@@ -322,7 +322,7 @@ main :: proc() {
         gpu.apply_pipeline(postfx_pipeline)
         gpu.apply_input_buffers(postfx_input_buffers)
         gpu.apply_input_textures(postfx_input_textures)
-        gpu.draw(0, 6)
+        gpu.draw(0, 6, 1)
         gpu.end_pass()
         
         platform.update_window()

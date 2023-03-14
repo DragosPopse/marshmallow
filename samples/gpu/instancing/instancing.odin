@@ -222,8 +222,8 @@ main :: proc() {
     running := true
     for running {
         for event in platform.poll_event() {
-            #partial switch in event {
-                case core.Quit_Event: {
+            #partial switch event.type {
+                case .Quit: {
                     running = false
                 }
             }
