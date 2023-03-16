@@ -1,5 +1,22 @@
+
 package main
 
+import "core:fmt"
+import "core:mem"
+import "../../mlw/core"
+//import "../../mlw/gpu"
+import "core:c"
+import "core:runtime"
+import intr "core:intrinsics"
+import gl "vendor:wasm/WebGL"
+import smolarr "core:container/small_array"
+import "../../mlw/gpu/backend/webglcached"
+import "core:strings"
+main :: proc() {
+
+}
+
+/*
 import "core:fmt"
 import "core:mem"
 import "../../mlw/core"
@@ -248,3 +265,4 @@ main :: proc() {
         free_all(context.temp_allocator)
     }
 }
+*/

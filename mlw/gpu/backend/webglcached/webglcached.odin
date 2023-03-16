@@ -78,7 +78,7 @@ Capability :: enum gl.Enum {
 }
 
 // Note(Dragos): 64 is the minimum size of the new map implementation, and we have 4 of them, thus 64 * 4 will allocate enough memory
-MAP_ELEMENTS_CUM_SIZE :: len(Capability) + len(Buffer_Target) + len(Texture_Target) + len(Face) + 64 * 4
+MAP_ELEMENTS_CUM_SIZE :: len(Capability) + len(Buffer_Target) + len(Texture_Target) + 64 * 4
 
 Cache :: struct {
     _maps_memory: [MAP_ELEMENTS_CUM_SIZE * size_of(u32)]byte,
@@ -87,7 +87,7 @@ Cache :: struct {
     capabilities: map[Capability]bool, 
     buffers: map[Buffer_Target]gl.Buffer,
     textures: map[Texture_Target]gl.Texture,
-    vertex_array: u32,
+    vertex_array: gl.VertexArrayObject,
     program: gl.Program,
 
     blend_funcs: Blend_Funcs,
@@ -95,9 +95,8 @@ Cache :: struct {
 
     cull_mode: Face,
 
-    draw_framebuffer: u32,
-    read_framebuffer: u32,
-    renderbuffer: u32,
+    draw_framebuffer: gl.Framebuffer,
+    read_framebuffer: gl.Framebuffer,
 }
 
 cache: Cache
@@ -107,9 +106,8 @@ init :: proc() {
     mem.arena_init(&cache._arena, cache._maps_memory[:])
     map_alloc := mem.arena_allocator(&cache._arena)
     cache.capabilities = make(map[Capability]bool, len(Capability), map_alloc)
-    cache.buffers = make(map[Buffer_Target]u32, len(Buffer_Target), map_alloc)
-    cache.textures = make(map[Texture_Target]u32, len(Texture_Target), map_alloc)
-    cache.polygon_mode = make(map[Face]Polygon_Mode, len(Face), map_alloc)
+    cache.buffers = make(map[Buffer_Target]gl.Buffer, len(Buffer_Target), map_alloc)
+    cache.textures = make(map[Texture_Target]gl.Texture, len(Texture_Target), map_alloc)
 
     for e in Capability {
         cache.capabilities[e] = false
@@ -119,9 +117,6 @@ init :: proc() {
     }
     for e in Texture_Target {
         cache.textures[e] = 0
-    }
-    for e in Face {
-        cache.polygon_mode[e] = .FILL
     }
 
 
@@ -143,7 +138,7 @@ enable_or_disable :: proc(cap: Capability, enable: bool) -> (last: bool) {
 Enable :: proc(cap: Capability) -> (last: bool) {
     last = cache.capabilities[cap]
     if !last {
-        gl.Enable(cast(u32)cap)
+        gl.Enable(cast(gl.Enum)cap)
     }
     return last
 }
@@ -151,7 +146,7 @@ Enable :: proc(cap: Capability) -> (last: bool) {
 Disable :: proc(cap: Capability) -> (last: bool) {
     last = cache.capabilities[cap]
     if !last {
-        gl.Disable(cast(gl.Capability)cap)
+        gl.Disable(cast(gl.Enum)cap)
     }
     return last
 }
@@ -159,16 +154,16 @@ Disable :: proc(cap: Capability) -> (last: bool) {
 BindBuffer :: proc(target: Buffer_Target, buffer: gl.Buffer) -> (last: gl.Buffer) {
     last = cache.buffers[target]
     if buffer != last {
-        gl.BindBuffer(cast(gl.Buffer_Target)target, buffer)
+        gl.BindBuffer(cast(gl.Enum)target, buffer)
         cache.buffers[target] = buffer
     }
     return last
 }
 
-BindVertexArray :: proc(array: u32) -> (last: u32) {
+BindVertexArray :: proc(array: gl.VertexArrayObject) -> (last: gl.VertexArrayObject) {
     last = cache.vertex_array
     if last != array {
-        gl.BindVertexArray(cast(u32)array)
+        gl.BindVertexArray(array)
         cache.vertex_array = array
     }
     return last
@@ -179,7 +174,7 @@ BlendFuncSeparate :: proc(src_rgb, dst_rgb, src_alpha, dst_alpha: Blend_Factor) 
     last_blend = cache.blend_funcs
     current_blend := Blend_Funcs{src_rgb, dst_rgb, src_alpha, dst_alpha}
     if last_blend != current_blend {
-        gl.BlendFuncSeparate(cast(u32)src_rgb, cast(u32)dst_rgb, cast(u32)src_alpha, cast(u32)dst_alpha)
+        gl.BlendFuncSeparate(cast(gl.Enum)src_rgb, cast(gl.Enum)dst_rgb, cast(gl.Enum)src_alpha, cast(gl.Enum)dst_alpha)
         cache.blend_funcs = current_blend
     }
     return last_blend
@@ -189,7 +184,8 @@ BlendEquationSeparate :: proc(mode_rgb, mode_alpha: Blend_Eq) -> (last_equations
     last_equations = cache.blend_equations
     current_equations := Blend_Equations{mode_rgb, mode_alpha}
     if last_equations != current_equations {
-        gl.BlendEquationSeparate(cast(u32)mode_rgb, cast(u32)mode_alpha)
+        fmt.printf("BlendEquationSeparate is still not added in vendor:webgl")
+        //gl.BlendEquationSeparate(cast(gl.Enum)mode_rgb, cast(gl.Enum)mode_alpha)
         cache.blend_equations = current_equations
     }
     return last_equations
@@ -198,7 +194,7 @@ BlendEquationSeparate :: proc(mode_rgb, mode_alpha: Blend_Eq) -> (last_equations
 CullFace :: proc(mode: Face) -> (last_mode: Face) {
     last_mode = cache.cull_mode
     if mode != last_mode {
-        gl.CullFace(cast(u32)mode)
+        gl.CullFace(cast(gl.Enum)mode)
         cache.cull_mode = mode
     }
     return last_mode
@@ -216,42 +212,32 @@ UseProgram :: proc(program: gl.Program) -> (last_program: gl.Program) {
 BindTexture :: proc(target: Texture_Target, texture: gl.Texture) -> (last_texture: gl.Texture) {
     last_texture = cache.textures[target]
     if last_texture != texture {
-        gl.BindTexture(cast(gl.Texture_Target)target, texture)
+        gl.BindTexture(cast(gl.Enum)target, texture)
         cache.textures[target] = texture
     }
     return last_texture
 }
 
-BindFramebuffer :: proc(target: Framebuffer_Target, framebuffer: u32) -> (last_draw_framebuffer, last_read_framebuffer: u32) {
+BindFramebuffer :: proc(target: Framebuffer_Target, framebuffer: gl.Framebuffer) -> (last_draw_framebuffer, last_read_framebuffer: gl.Framebuffer) {
     last_draw_framebuffer = cache.draw_framebuffer
     last_read_framebuffer = cache.read_framebuffer
 
     switch target {
         case .FRAMEBUFFER: if cache.draw_framebuffer != framebuffer || cache.read_framebuffer != framebuffer {
-            gl.BindFramebuffer(cast(gl.Framebuffer_Target)target, framebuffer)
+            gl.BindFramebuffer(cast(gl.Enum)target, cast(gl.Buffer)framebuffer)
             cache.draw_framebuffer, cache.read_framebuffer = framebuffer, framebuffer
         }
 
         case .DRAW_FRAMEBUFFER: if cache.draw_framebuffer != framebuffer {
-            gl.BindFramebuffer(cast(gl.Framebuffer_Target)target, framebuffer)
+            gl.BindFramebuffer(cast(gl.Enum)target, cast(gl.Buffer)framebuffer)
             cache.draw_framebuffer = framebuffer
         }
 
         case .READ_FRAMEBUFFER: if cache.read_framebuffer != framebuffer {
-            gl.BindFramebuffer(cast(gl.Framebuffer_Target)target, framebuffer)
+            gl.BindFramebuffer(cast(gl.Enum)target, cast(gl.Buffer)framebuffer)
             cache.read_framebuffer = framebuffer
         }
     }
     
     return last_draw_framebuffer, last_read_framebuffer
-}
-
-BindRenderbuffer :: proc(target: Renderbuffer_Target, renderbuffer: u32) -> (last_renderbuffer: u32) {
-    last_renderbuffer = cache.renderbuffer
-    if last_renderbuffer != renderbuffer {
-        gl.BindRenderbuffer(cast(gl.Renderbuffer_Target)target, renderbuffer)
-        cache.renderbuffer = renderbuffer
-    }
-
-    return last_renderbuffer
 }

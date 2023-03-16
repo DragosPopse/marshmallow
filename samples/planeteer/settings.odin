@@ -1,4 +1,6 @@
+//+build ignore
 package main
+
 
 import "core:fmt"
 import "core:mem"
