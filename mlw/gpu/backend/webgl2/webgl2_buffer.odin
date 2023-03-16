@@ -5,15 +5,15 @@ import "../../../core"
 import "../../../math"
 import "core:fmt"
 
-import glcache "../glcached"
+import glcache "../webglcached"
 
-_BUFFER_USAGE_CONV := [core.Buffer_Usage_Hint]u32 {
+_BUFFER_USAGE_CONV := [core.Buffer_Usage_Hint]gl.Enum {
     .Immutable = gl.STATIC_DRAW,
     .Dynamic = gl.DYNAMIC_DRAW,
     .Stream = gl.STREAM_DRAW,
 }
 
-_BUFFER_TYPE_CONV := [core.Buffer_Type]u32 {
+_BUFFER_TYPE_CONV := [core.Buffer_Type]gl.Enum {
     .Vertex = gl.ARRAY_BUFFER,
     .Index = gl.ELEMENT_ARRAY_BUFFER,
 }

@@ -9,7 +9,6 @@ import "core:fmt"
 
 _TEXTURE_TARGET_CONV := [core.Texture_Type]u32 {
     .Invalid = 0,
-    .Texture1D = gl.TEXTURE_1D,
     .Texture2D = gl.TEXTURE_2D,
     .Texture3D = gl.TEXTURE_3D,
     .Cubemap = gl.TEXTURE_CUBE_MAP,

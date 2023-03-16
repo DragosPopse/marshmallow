@@ -5,8 +5,9 @@ import "core:c"
 import "core:slice" 
 import "core:strings"
 
+
 // TODO: Remove requirement for STB, use core:image/png
-import stbi "vendor:stb/image"
+//import stbi "vendor:stb/image"
 
 import "../math"
 
@@ -16,7 +17,9 @@ Image :: struct {
     size: [2]int,
 }
 
+/*
 load_image_from_file :: proc(path: string, allocator := context.allocator) -> (img: Image, ok: bool) {
+ 
     stbi.set_flip_vertically_on_load(1)
     width, height, channels: c.int
     cpath := strings.clone_to_cstring(path, context.temp_allocator)
@@ -31,6 +34,11 @@ load_image_from_file :: proc(path: string, allocator := context.allocator) -> (i
     img.size.x = cast(int)width 
     img.size.y = cast(int)height
     return img, true
+    
+}
+*/
+load_image_from_file :: proc(path: string, allocator := context.allocator) -> (img: Image, ok: bool) {
+    panic("Image loading not currently supported")
 }
 
 delete_image :: proc(img: Image, allocator := context.allocator) {

@@ -6,9 +6,9 @@ import "../../../math"
 import "core:strings"
 import "core:fmt"
 
-import glcache "../glcached"
+import glcache "../webglcached"
 
-_SHADER_STAGE_TYPE_CONV := [core.Shader_Stage_Type]u32 {
+_SHADER_STAGE_TYPE_CONV := [core.Shader_Stage_Type]gl.Enum {
     .Vertex = gl.VERTEX_SHADER,
     .Fragment = gl.FRAGMENT_SHADER,
 }

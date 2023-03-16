@@ -3,27 +3,26 @@ package mmlow_gpu_backend_glcore3
 import gl "vendor:wasm/WebGL"
 import "../../../core"
 import "../../../math"
-import glcache "../glcached"
+import glcache "../webglcached"
 import "core:strings"
 import "core:fmt"
 
-_TEXTURE_TARGET_CONV := [core.Texture_Type]u32 {
+_TEXTURE_TARGET_CONV := [core.Texture_Type]gl.Enum {
     .Invalid = 0,
-    .Texture1D = gl.TEXTURE_1D,
     .Texture2D = gl.TEXTURE_2D,
     .Texture3D = gl.TEXTURE_3D,
     .Cubemap = gl.TEXTURE_CUBE_MAP,
 }
 
-_WRAP_CONV := [core.Texture_Wrap_Mode]i32 {
+_WRAP_CONV := [core.Texture_Wrap_Mode]gl.Enum {
     .Repeat = gl.REPEAT,
-    .Clamp_To_Edge = gl.CLAMP_TO_EDGE,
-    .Clamp_To_Border = gl.CLAMP_TO_BORDER,
+    .Clamp_To_Edge = gl.REPEAT,
+    .Clamp_To_Border = gl.REPEAT, // border clamp not supported 
     .Mirrored_Repeat = gl.MIRRORED_REPEAT,
-    .Mirror_Clamp_To_Edge = gl.MIRROR_CLAMP_TO_EDGE,
+    .Mirror_Clamp_To_Edge = gl.MIRRORED_REPEAT,
 }
 
-_MINFILTER_CONV := [core.Texture_Min_Filter]i32 {
+_MINFILTER_CONV := [core.Texture_Min_Filter]gl.Enum {
     .Nearest = gl.NEAREST,
     .Linear = gl.LINEAR,
     .Nearest_Mip_Nearest = gl.NEAREST_MIPMAP_NEAREST,
@@ -32,7 +31,7 @@ _MINFILTER_CONV := [core.Texture_Min_Filter]i32 {
     .Linear_Mip_Linear = gl.LINEAR_MIPMAP_LINEAR,
 }
 
-_MAGFILTER_CONV := [core.Texture_Mag_Filter]i32 {
+_MAGFILTER_CONV := [core.Texture_Mag_Filter]gl.Enum {
     .Nearest = gl.NEAREST,
     .Linear = gl.LINEAR,
 }

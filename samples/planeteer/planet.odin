@@ -45,6 +45,14 @@ destroy_planet :: proc(planet: Planet, allocator := context.allocator) {
     }
 }
 
+construct_planet_mesh_single_threaded :: proc(planet: ^Planet, settings: Planet_Settings, allocator := context.allocator) {
+    for face in &planet.terrain_faces {
+        construct_terrain_face_mesh(&face, settings, allocator)
+    }
+    
+}
+
+
 construct_planet_mesh :: proc(planet: ^Planet, settings: Planet_Settings, pool: ^thread.Pool, allocator := context.allocator) {
     Task_Data :: struct {
         face: ^Terrain_Face,

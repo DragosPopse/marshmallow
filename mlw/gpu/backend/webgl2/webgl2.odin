@@ -31,9 +31,9 @@ default_graphics_info :: proc() -> core.Graphics_Info {
     gfx_info: core.Graphics_Info
     gl_info: core.OpenGL_Info
 
-    gl_info.major = 3
-    gl_info.minor = 3
-    gl_info.profile = .Core
+    gl_info.major = 2
+    gl_info.minor = 0
+    gl_info.profile = .ES
 
     gfx_info.color_bits = 32
     gfx_info.debug = true when ODIN_DEBUG else false

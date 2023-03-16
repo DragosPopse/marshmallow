@@ -4,21 +4,21 @@ import gl "vendor:wasm/WebGL"
 import "../../../core"
 import "../../../math"
 
-import glcache "../glcached"
+import glcache "../webglcached"
 
-_CULL_CONV := [core.Cull_Mode]u32 {
+_CULL_CONV := [core.Cull_Mode]gl.Enum {
     .None = 0,
     .Front = gl.FRONT,
     .Back = gl.BACK,
 }
 
-_BLEND_OP_CONV := [core.Blend_Op]u32 {
+_BLEND_OP_CONV := [core.Blend_Op]gl.Enum {
     .Add = gl.FUNC_ADD,
     .Subtract = gl.FUNC_SUBTRACT,
     .Reverse_Subtract = gl.FUNC_REVERSE_SUBTRACT,
 }
 
-_BLEND_FACTOR_CONV := [core.Blend_Factor]u32 {
+_BLEND_FACTOR_CONV := [core.Blend_Factor]gl.Enum {
     .Zero = gl.ZERO,
     .One = gl.ONE,
     .Src_Color = gl.SRC_COLOR,
@@ -35,19 +35,21 @@ _BLEND_FACTOR_CONV := [core.Blend_Factor]u32 {
     .One_Minus_Dst_Alpha = gl.ONE_MINUS_DST_ALPHA,
 }
 
+/*
 _POLYGON_CONV := [core.Polygon_Mode]u32 {
     .Fill = gl.FILL,
     .Line = gl.LINE,
     .Point = gl.POINT,
 }
+*/
 
-_PRIMITIVE_CONV := [core.Primitive_Type]u32 {
+_PRIMITIVE_CONV := [core.Primitive_Type]gl.Enum {
     .Triangles = gl.TRIANGLES,
     .Lines = gl.LINES,
     .Line_Strip = gl.LINE_STRIP,
 }
 
-_INDEX_CONV := [core.Index_Type]u32 {
+_INDEX_CONV := [core.Index_Type]gl.Enum {
     .u16 = gl.UNSIGNED_SHORT,
     .u32 = gl.UNSIGNED_INT,
 }

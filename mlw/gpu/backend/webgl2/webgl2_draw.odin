@@ -4,7 +4,7 @@ import gl "vendor:wasm/WebGL"
 import "../../../core"
 import "../../../math"
 
-import glcache "../glcached"
+import glcache "../webglcached"
 
 draw :: proc(base_elem: int, elem_count: int, instance_count: int) {
     assert(_current_pipeline != nil, "Pipeline not set.")

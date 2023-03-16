@@ -1,10 +1,9 @@
 package glcache
 
-import gl "vendor:OpenGL"
-
+import gl "vendor:wasm/WebGL"
 import "core:mem"
 
-Blend_Eq :: enum u32 {
+Blend_Eq :: enum gl.Enum {
     FUNC_ADD = gl.FUNC_ADD,
     FUNC_SUBTRACT = gl.FUNC_SUBTRACT,
     FUNC_REVERSE_SUBTRACT = gl.FUNC_REVERSE_SUBTRACT,
@@ -20,7 +19,7 @@ Blend_Equations :: struct {
     mode_rgb, mode_alpha: Blend_Eq,
 }
 
-Blend_Factor :: enum u32 {
+Blend_Factor :: enum gl.Enum {
     ZERO = gl.ZERO,
     ONE = gl.ONE,
     SRC_COLOR = gl.SRC_COLOR,
@@ -38,135 +37,51 @@ Blend_Factor :: enum u32 {
     SRC_ALPHA_SATURATE = gl.SRC_ALPHA_SATURATE,
 }
 
-Face :: enum u32 {
+Face :: enum gl.Enum {
     FRONT = gl.FRONT,
     BACK = gl.BACK,
     FRONT_AND_BACK = gl.FRONT_AND_BACK,
 }
 
-Polygon_Mode :: enum u32 {
-    FILL = gl.FILL,
-    POINT = gl.POINT,
-    LINE = gl.LINE,
-}
-
-Texture_Target :: enum u32 {
-    TEXTURE_1D = gl.TEXTURE_1D,
+Texture_Target :: enum gl.Enum {
     TEXTURE_2D = gl.TEXTURE_2D,
     TEXTURE_3D = gl.TEXTURE_3D,
-    TEXTURE_1D_ARRAY = gl.TEXTURE_1D_ARRAY,
     TEXTURE_2D_ARRAY = gl.TEXTURE_2D_ARRAY,
     TEXTURE_RECTANGLE = gl.TEXTURE_RECTANGLE,
     TEXTURE_CUBE_MAP = gl.TEXTURE_CUBE_MAP,
-    TEXTURE_CUBE_MAP_ARRAY = gl.TEXTURE_CUBE_MAP_ARRAY,
-    TEXTURE_BUFFER = gl.TEXTURE_BUFFER,
     TEXTURE_2D_MULTISAMPLE = gl.TEXTURE_2D_MULTISAMPLE,
     TEXTURE_2D_MULTISAMPLE_ARRAY = gl.TEXTURE_2D_MULTISAMPLE_ARRAY,
 }
 
-Buffer_Target :: enum u32 {
+Buffer_Target :: enum gl.Enum {
     ARRAY_BUFFER = gl.ARRAY_BUFFER,
     ATOMIC_COUNTER_BUFFER = gl.ATOMIC_COUNTER_BUFFER,
     COPY_READ_BUFFER = gl.COPY_READ_BUFFER,
     COPY_WRITE_BUFFER = gl.COPY_WRITE_BUFFER,
     DISPATCH_INDIRECT_BUFFER = gl.DISPATCH_INDIRECT_BUFFER,
-    DRAW_INDIRECT_BUFFER = gl.DRAW_INDIRECT_BUFFER,
     ELEMENT_ARRAY_BUFFER = gl.ELEMENT_ARRAY_BUFFER,
     PIXEL_PACK_BUFFER = gl.PIXEL_PACK_BUFFER,
     PIXEL_UNPACK_BUFFER = gl.PIXEL_UNPACK_BUFFER,
-    QUERY_BUFFER = gl.QUERY_BUFFER,
-    SHADER_STORAGE_BUFFER = gl.SHADER_STORAGE_BUFFER,
     TEXTURE_BUFFER = gl.TEXTURE_BUFFER,
     TRANSFORM_FEEDBACK_BUFFER = gl.TRANSFORM_FEEDBACK_BUFFER,
     UNIFORM_BUFFER = gl.UNIFORM_BUFFER,
 }
 
-Framebuffer_Target :: enum u32 {
+Framebuffer_Target :: enum gl.Enum {
     FRAMEBUFFER = gl.FRAMEBUFFER,
     DRAW_FRAMEBUFFER = gl.DRAW_FRAMEBUFFER,
     READ_FRAMEBUFFER = gl.READ_FRAMEBUFFER,
 }
 
-Renderbuffer_Target :: enum u32 {
+Renderbuffer_Target :: enum gl.Enum {
     RENDERBUFFER = gl.RENDERBUFFER,
 }
 
-Capability :: enum u32 {
+Capability :: enum gl.Enum {
     ALPHA_TEST = gl.ALPHA_TEST,
-    AUTO_NORMAL = gl.AUTO_NORMAL,
     BLEND = gl.BLEND,
-    CLIP_PLANE0 = gl.CLIP_PLANE0,
-    CLIP_PLANE1 = gl.CLIP_PLANE1,
-    CLIP_PLANE2 = gl.CLIP_PLANE2,
-    CLIP_PLANE3 = gl.CLIP_PLANE3,
-    CLIP_PLANE4 = gl.CLIP_PLANE4,
-    CLIP_PLANE5 = gl.CLIP_PLANE5,
-    COLOR_LOGIC_OP = gl.COLOR_LOGIC_OP,
-    COLOR_MATERIAL = gl.COLOR_MATERIAL,
-    COLOR_SUM = gl.COLOR_SUM,
-    COLOR_TABLE = gl.COLOR_TABLE,
-    CONVOLUTION_1D = gl.CONVOLUTION_1D,
-    CONVOLUTION_2D = gl.CONVOLUTION_2D,
     CULL_FACE = gl.CULL_FACE,
     DEPTH_TEST = gl.DEPTH_TEST,
-    DITHER = gl.DITHER,
-    FOG = gl.FOG,
-    HISTOGRAM = gl.HISTOGRAM,
-    INDEX_LOGIC_OP = gl.INDEX_LOGIC_OP,
-    LIGHT0 = gl.LIGHT0,
-    LIGHT1 = gl.LIGHT1,
-    LIGHT2 = gl.LIGHT2,
-    LIGHT3 = gl.LIGHT3,
-    LIGHT4 = gl.LIGHT4,
-    LIGHT5 = gl.LIGHT5,
-    LIGHT6 = gl.LIGHT6,
-    LIGHT7 = gl.LIGHT7,
-    LIGHTING = gl.LIGHTING,
-    LINE_SMOOTH = gl.LINE_SMOOTH,
-    LINE_STIPPLE = gl.LINE_STIPPLE,
-    MAP1_COLOR_4 = gl.MAP1_COLOR_4,
-    MAP1_INDEX = gl.MAP1_INDEX,
-    MAP1_NORMAL = gl.MAP1_NORMAL,
-    MAP1_TEXTURE_COORD_1 = gl.MAP1_TEXTURE_COORD_1,
-    MAP1_TEXTURE_COORD_2 = gl.MAP1_TEXTURE_COORD_2,
-    MAP1_TEXTURE_COORD_3 = gl.MAP1_TEXTURE_COORD_3,
-    MAP1_TEXTURE_COORD_4 = gl.MAP1_TEXTURE_COORD_4,
-    MAP1_VERTEX_3 = gl.MAP1_VERTEX_3,
-    MAP1_VERTEX_4 = gl.MAP1_VERTEX_4,
-    MAP2_TEXTURE_COORD_1 = gl.MAP2_TEXTURE_COORD_1,
-    MAP2_TEXTURE_COORD_2 = gl.MAP2_TEXTURE_COORD_2,
-    MAP2_TEXTURE_COORD_3 = gl.MAP2_TEXTURE_COORD_3,
-    MAP2_TEXTURE_COORD_4 = gl.MAP2_TEXTURE_COORD_4,
-    MAP2_VERTEX_3 = gl.MAP2_VERTEX_3,
-    MAP2_VERTEX_4 = gl.MAP2_VERTEX_4,
-    MINMAX = gl.MINMAX,
-    MULTISAMPLE = gl.MULTISAMPLE,
-    NORMALIZE = gl.NORMALIZE,
-    POINT_SMOOTH = gl.POINT_SMOOTH,
-    POINT_SPRITE = gl.POINT_SPRITE,
-    POLYGON_OFFSET_FILL = gl.POLYGON_OFFSET_FILL,
-    POLYGON_OFFSET_LINE = gl.POLYGON_OFFSET_LINE,
-    POLYGON_OFFSET_POINT = gl.POLYGON_OFFSET_POINT,
-    POLYGON_SMOOTH = gl.POLYGON_SMOOTH,
-    POLYGON_STIPPLE = gl.POLYGON_STIPPLE,
-    POST_CONVOLUTION_COLOR_TABLE = gl.POST_CONVOLUTION_COLOR_TABLE,
-    RESCALE_NORMAL = gl.RESCALE_NORMAL,
-    SAMPLE_ALPHA_TO_COVERAGE = gl.SAMPLE_ALPHA_TO_COVERAGE,
-    SAMPLE_ALPHA_TO_ONE = gl.SAMPLE_ALPHA_TO_ONE,
-    SAMPLE_COVERAGE = gl.SAMPLE_COVERAGE,
-    SEPARABLE_2D = gl.SEPARABLE_2D,
-    SCISSOR_TEST = gl.SCISSOR_TEST,
-    STENCIL_TEST = gl.STENCIL_TEST,
-    TEXTURE_1D = gl.TEXTURE_1D,
-    TEXTURE_2D = gl.TEXTURE_2D,
-    TEXTURE_3D = gl.TEXTURE_3D,
-    TEXTURE_CUBE_MAP = gl.TEXTURE_CUBE_MAP,
-    TEXTURE_GEN_Q = gl.TEXTURE_GEN_Q,
-    TEXTURE_GEN_R = gl.TEXTURE_GEN_R,
-    TEXTURE_GEN_S = gl.TEXTURE_GEN_S,
-    TEXTURE_GEN_T = gl.TEXTURE_GEN_T,
-    VERTEX_PROGRAM_POINT_SIZE = gl.VERTEX_PROGRAM_POINT_SIZE,
-    VERTEX_PROGRAM_TWO_SIDE = gl.VERTEX_PROGRAM_TWO_SIDE,
 }
 
 // Note(Dragos): 64 is the minimum size of the new map implementation, and we have 4 of them, thus 64 * 4 will allocate enough memory
@@ -179,7 +94,6 @@ Cache :: struct {
     capabilities: map[Capability]bool, 
     buffers: map[Buffer_Target]u32,
     textures: map[Texture_Target]u32,
-    polygon_mode: map[Face]Polygon_Mode,
     vertex_array: u32,
     program: u32,
 
@@ -267,14 +181,6 @@ BindVertexArray :: proc(array: u32) -> (last: u32) {
     return last
 }
 
-PolygonMode :: proc(face: Face, mode: Polygon_Mode) -> (last: Polygon_Mode) {
-    last = cache.polygon_mode[face]
-    if last != mode {
-        gl.PolygonMode(cast(u32)face, cast(u32)mode)
-        cache.polygon_mode[face] = mode
-    }
-    return last
-}
 
 BlendFuncSeparate :: proc(src_rgb, dst_rgb, src_alpha, dst_alpha: Blend_Factor) -> (last_blend: Blend_Funcs) {
     last_blend = cache.blend_funcs

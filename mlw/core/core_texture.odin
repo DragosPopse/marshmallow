@@ -29,7 +29,6 @@ Texture_Mag_Filter :: enum {
 
 Texture_Type :: enum {
     Invalid,
-    Texture1D,
     Texture2D,
     Texture3D,
     Cubemap,

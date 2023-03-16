@@ -4,7 +4,6 @@ import "core:fmt"
 import "core:mem"
 import "../../mlw/core"
 import "../../mlw/gpu"
-import "../../mlw/image"
 import "../../mlw/math"
 import "../../mlw/platform"
 import linalg "core:math/linalg"
@@ -12,9 +11,11 @@ import "core:slice"
 import mu "vendor:microui"
 import mu_mlw "../../mlw/third/microui"
 import "../../mlw/platform/event"
-import "core:thread"
-
 import "core:time"
+
+when ODIN_OS != .JS {
+    import "core:thread"
+}
 
 
 Vertex_Uniforms :: struct {
@@ -136,12 +137,19 @@ main :: proc() {
         planet_ib = gpu.create_buffer(info)
     }
 
-    pool: thread.Pool
-    thread.pool_init(&pool, context.allocator, 6)
-    thread.pool_start(&pool)
-    defer thread.pool_finish(&pool)
+    when ODIN_OS != .JS {
+        pool: thread.Pool
+        thread.pool_init(&pool, context.allocator, 6)
+        thread.pool_start(&pool)
+        defer thread.pool_finish(&pool)
+    }
+    
     time.stopwatch_start(&gen_clock)
-    construct_planet_mesh(&_planet, settings.planet, &pool)
+    when ODIN_OS != .JS {
+        construct_planet_mesh(&_planet, settings.planet, &pool)
+    } else {
+        construct_planet_mesh_single_threaded(&planet, settings.planet)
+    }
     planet_vertices, planet_indices := merge_planet_meshes(_planet, context.temp_allocator)
     gpu.buffer_data(planet_vb, slice.to_bytes(planet_vertices))
     gpu.buffer_data(planet_ib, slice.to_bytes(planet_indices))
@@ -191,7 +199,11 @@ main :: proc() {
             time.stopwatch_start(&gen_clock)
 
             destroy_planet(_planet)
-            construct_planet_mesh(&_planet, settings.planet, &pool)
+            when ODIN_OS != .JS {
+                construct_planet_mesh(&_planet, settings.planet, &pool)
+            } else {
+                construct_planet_mesh_single_threaded(&_planet, settings.planet)
+            }
 
             frame_info.gen_time = cast(f32)time.duration_seconds(time.stopwatch_duration(gen_clock))
             time.stopwatch_reset(&gen_clock)

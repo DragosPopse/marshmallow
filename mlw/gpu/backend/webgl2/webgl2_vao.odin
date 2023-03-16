@@ -12,7 +12,7 @@ import smolarr "core:container/small_array"
 import "../../../core"
 import "../../../math"
 
-import glcache "../glcached"
+import glcache "../webglcached"
 
 
 _ATTR_SIZE_CONV := [core.Attr_Format]i32 {
@@ -49,7 +49,7 @@ _ATTR_SIZE_CONV := [core.Attr_Format]i32 {
     .vec4f32 = 4,
 }
 
-_ATTR_TYPE_CONV := [core.Attr_Format]u32 {
+_ATTR_TYPE_CONV := [core.Attr_Format]gl.Enum {
     .Invalid = 0,
     .u8..=.vec4u8 = gl.BYTE,
     .u16..=.vec4u16 = gl.UNSIGNED_SHORT,

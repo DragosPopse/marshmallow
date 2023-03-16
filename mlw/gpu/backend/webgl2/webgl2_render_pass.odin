@@ -4,7 +4,7 @@ import "../../../core"
 import "../../../math"
 
 import gl "vendor:wasm/WebGL"
-import glcache "../glcached"
+import glcache "../webglcached"
 
 Render_Pass :: struct {
     id: core.Render_Pass,
