@@ -37,9 +37,9 @@ _MAGFILTER_CONV := [core.Texture_Mag_Filter]gl.Enum {
 }
 
 WebGL2_Texture :: struct {
-    handle: u32,
+    handle: gl.Texture,
     id: core.Texture,
-    target: u32,
+    target: gl.Enum,
     type: core.Texture_Type,
     render_target: bool,
     size: [3]int,
@@ -49,17 +49,16 @@ _textures: map[core.Texture]WebGL2_Texture
 
 create_texture :: proc(desc: core.Texture_Info) -> (texture: core.Texture) {
     assert(desc.type != .Invalid, "Invalid texture type.")
-    handle: u32
     target := _TEXTURE_TARGET_CONV[desc.type]
-    gl.GenTextures(1, &handle)
+    handle := gl.CreateTexture()
     last_texture := glcache.BindTexture(cast(glcache.Texture_Target)target, handle)
     
     // Note(Dragos): Implement the other types
     assert(desc.type == .Texture2D, "Only Texture2D implemented.")
     if desc.type == .Texture2D {
         assert(desc.format != .Invalid, "Invalid pixel format. Did you forget to set up texture_info.format?")
-        internal_format: i32
-        format, data_type: u32
+        internal_format: gl.Enum
+        format, data_type: gl.Enum
         switch desc.format {
             case .Invalid: // already asserted
 
@@ -91,15 +90,15 @@ create_texture :: proc(desc: core.Texture_Info) -> (texture: core.Texture) {
             cast(i32)desc.size.x, cast(i32)desc.size.y, 
             0,
             format, 
-            data_type, raw_data(desc.data),
+            data_type, len(desc.data), raw_data(desc.data),
         )
     }
     
     if desc.generate_mipmap do gl.GenerateMipmap(target)
-    gl.TexParameteri(target, gl.TEXTURE_WRAP_S, _WRAP_CONV[desc.wrap.x])
-    gl.TexParameteri(target, gl.TEXTURE_WRAP_T, _WRAP_CONV[desc.wrap.y])
-    gl.TexParameteri(target, gl.TEXTURE_MIN_FILTER, _MINFILTER_CONV[desc.min_filter])
-    gl.TexParameteri(target, gl.TEXTURE_MAG_FILTER, _MAGFILTER_CONV[desc.mag_filter])
+    gl.TexParameteri(target, gl.TEXTURE_WRAP_S, cast(i32)_WRAP_CONV[desc.wrap.x])
+    gl.TexParameteri(target, gl.TEXTURE_WRAP_T, cast(i32)_WRAP_CONV[desc.wrap.y])
+    gl.TexParameteri(target, gl.TEXTURE_MIN_FILTER, cast(i32)_MINFILTER_CONV[desc.min_filter])
+    gl.TexParameteri(target, gl.TEXTURE_MAG_FILTER, cast(i32)_MAGFILTER_CONV[desc.mag_filter])
     
     glcache.BindTexture(cast(glcache.Texture_Target)target, last_texture)
     gltex: WebGL2_Texture
@@ -115,7 +114,7 @@ create_texture :: proc(desc: core.Texture_Info) -> (texture: core.Texture) {
 
 destroy_texture :: proc(texture: core.Texture) {
     gltex := &_textures[texture]
-    gl.DeleteTextures(1, &gltex.handle)
+    gl.DeleteTexture(gltex.handle)
     core.delete_texture_id(texture)
     delete_key(&_textures, texture)
 }
@@ -132,7 +131,7 @@ apply_input_textures :: proc(textures: core.Input_Textures) {
                 assert(gltex != nil, "Texture not found.")
                 assert(gltex.target == tex.target, "Target mismatch.")
                 // Note(Dragos): The glcache doesn't implement BindTexture properly
-                gl.ActiveTexture(gl.TEXTURE0 + current_tex_unit)
+                gl.ActiveTexture(gl.TEXTURE0 + cast(gl.Enum)current_tex_unit)
                 gl.BindTexture(gltex.target, gltex.handle)
                 current_tex_unit += 1
             }

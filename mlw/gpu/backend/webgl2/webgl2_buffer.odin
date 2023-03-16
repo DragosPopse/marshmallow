@@ -60,7 +60,7 @@ destroy_buffer :: proc(buffer: core.Buffer) {
 apply_input_buffers :: proc(buffers: core.Input_Buffers) {
     assert(_current_pipeline != nil, "Invalid pipeline.")
 
-    glcache.BindVertexArray(_naked_vao)
+    glcache.BindVertexArray(cast(gl.VertexArrayObject)_naked_vao)
     
     layout := &_current_pipeline.layout
 
@@ -75,7 +75,7 @@ apply_input_buffers :: proc(buffers: core.Input_Buffers) {
     // Note(Dragos): check the usage and optimization of this loop format
 
     // Bind attributes and buffers to the VAO
-    current_vbo := u32(0)
+    current_vbo := gl.Buffer(0)
     for attr, i in layout.attrs do if attr.format != .Invalid {
         buf := buffers.buffers[attr.buffer_index]
         assert(buf in _buffers, "Cannot find buffer.")
@@ -93,12 +93,12 @@ apply_input_buffers :: proc(buffers: core.Input_Buffers) {
         glcache.BindBuffer(.ARRAY_BUFFER, vbo)
         current_vbo = vbo
         gl.VertexAttribPointer(
-            u32(i), 
+            i32(i), 
             _ATTR_SIZE_CONV[attr.format], _ATTR_TYPE_CONV[attr.format], 
-            gl.FALSE, 
+            false, 
             cast(i32)buffer_layout.stride, attr.offset)
 
-        gl.EnableVertexAttribArray(u32(i)) // Note(Dragos): This call should also be cached
+        gl.EnableVertexAttribArray(i32(i)) // Note(Dragos): This call should also be cached
         gl.VertexAttribDivisor(u32(i), divisor)
     } else do break
 

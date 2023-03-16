@@ -195,7 +195,7 @@ create_shader :: proc(desc: core.Shader_Info, destroy_stages_on_success: bool) -
                 tex := &stage_info.textures[texture_i]
                 cname := strings.clone_to_cstring(tex.name, context.temp_allocator)
                 tex.location = gl.GetUniformLocation(program, cname)
-                //gl.Uniform1i(tex.location, current_tex_unit)
+                gl.Uniform1i(tex.location, current_tex_unit)
                 current_tex_unit += 1
             }
             gl_shader.stages[type] = stage_info

@@ -2,16 +2,26 @@
 package main
 
 import "core:fmt"
-import "core:mem"
-import "../../mlw/core"
-//import "../../mlw/gpu"
-import "core:c"
-import "core:runtime"
-import intr "core:intrinsics"
-import gl "vendor:wasm/WebGL"
-import smolarr "core:container/small_array"
-import "../../mlw/gpu/backend/webglcached"
 import "core:strings"
+import "core:mem"
+import "core:runtime"
+import "core:intrinsics"
+import "core:c"
+import "core:container/small_array"
+import "vendor:wasm/WebGL"
+
+import "../../mlw/gpu/backend/webglcached"
+import "../../mlw/math"
+
+import "../../mlw/core"
+import "../../mlw/gpu/backend/webgl2"
+import "../../mlw/platform"
+
+
+
+
+
+
 main :: proc() {
 
 }

@@ -15,7 +15,7 @@ import "../../../math"
 import glcache "../webglcached"
 
 
-_ATTR_SIZE_CONV := [core.Attr_Format]i32 {
+_ATTR_SIZE_CONV := [core.Attr_Format]int {
     .Invalid = 0,
 
     .u8 = 1,
@@ -64,20 +64,20 @@ MAX_CONFIGURABLE_VAOS :: #config(MLW_GPU_GL_MAX_CONFIGURABLE_VAOS, 32)
 
 
 Vao_Queue :: struct {
-    vaos: [MAX_CONFIGURABLE_VAOS]u32,
+    vaos: [MAX_CONFIGURABLE_VAOS]gl.VertexArrayObject,
     size: uint,
 }
 
 // Todo(Dragos): Implement naked VAO later. Not needed soon
-@(private = "package") _naked_vao: u32 // Used when running out of configurable VAOs.
-@(private = "file") _vaos: [MAX_CONFIGURABLE_VAOS]u32 
-@(private = "file") _configured_vaos: map[core.Input_Buffers]u32
+@(private = "package") _naked_vao: gl.VertexArrayObject // Used when running out of configurable VAOs.
+@(private = "file") _vaos: [MAX_CONFIGURABLE_VAOS]gl.VertexArrayObject 
+@(private = "file") _configured_vaos: map[core.Input_Buffers]gl.VertexArrayObject
 @(private = "file") _vao_queue: Vao_Queue
 
 
 
 @(private = "file")
-_add_configurable_vao :: #force_inline proc(key: core.Input_Buffers) -> (vao: u32) {
+_add_configurable_vao :: #force_inline proc(key: core.Input_Buffers) -> (vao: gl.VertexArrayObject) {
     assert(_vao_queue.size > 0, "Ran out of allocated configurable VAOs.")
     vao = _vao_queue.vaos[_vao_queue.size - 1]
     _vao_queue.size -= 1
@@ -85,7 +85,7 @@ _add_configurable_vao :: #force_inline proc(key: core.Input_Buffers) -> (vao: u3
     return
 }
 
-_get_or_configure_vao :: proc(key: core.Input_Buffers) -> (vao: u32, instanced: bool) {
+_get_or_configure_vao :: proc(key: core.Input_Buffers) -> (vao: gl.VertexArrayObject, instanced: bool) {
     assert(_current_pipeline != nil, "Invalid pipeline.")
     if key in _configured_vaos do return _configured_vaos[key]
 
@@ -106,7 +106,7 @@ _get_or_configure_vao :: proc(key: core.Input_Buffers) -> (vao: u32, instanced: 
     // Note(Dragos): check the usage and optimization of this loop format
 
     // Bind attributes and buffers to the VAO
-    current_vbo := u32(0)
+    current_vbo := gl.Buffer(0)
     for attr, i in layout.attrs do if attr.format != .Invalid {
         buf := key.buffers[attr.buffer_index]
         assert(buf in _buffers, "Cannot find buffer.")
@@ -124,12 +124,12 @@ _get_or_configure_vao :: proc(key: core.Input_Buffers) -> (vao: u32, instanced: 
         glcache.BindBuffer(.ARRAY_BUFFER, vbo)
         current_vbo = vbo
         gl.VertexAttribPointer(
-            u32(i), 
+            i32(i), 
             _ATTR_SIZE_CONV[attr.format], _ATTR_TYPE_CONV[attr.format], 
-            gl.FALSE, 
-            cast(i32)buffer_layout.stride, attr.offset)
+            false, 
+            cast(int)buffer_layout.stride, attr.offset)
 
-        gl.EnableVertexAttribArray(u32(i)) // Note(Dragos): This call should also be cached
+        gl.EnableVertexAttribArray(i32(i)) // Note(Dragos): This call should also be cached
         gl.VertexAttribDivisor(u32(i), divisor)
     } else do break
 
@@ -148,14 +148,19 @@ _remove_configured_vao :: proc(key: core.Input_Buffers) {
 }
 
 _init_vaos :: proc() {
-    gl.GenVertexArrays(MAX_CONFIGURABLE_VAOS, &_vaos[0])
-    gl.GenVertexArrays(1, &_naked_vao)
+    for i in 0..MAX_CONFIGURABLE_VAOS {
+        _vaos[i] = gl.CreateVertexArray()
+    }
+    _naked_vao = gl.CreateVertexArray()
 
     _vao_queue.vaos = _vaos
     _vao_queue.size = MAX_CONFIGURABLE_VAOS
 }
 
 _destroy_vaos :: proc() {
-    gl.DeleteVertexArrays(MAX_CONFIGURABLE_VAOS, &_vaos[0])
-    gl.DeleteVertexArrays(1, &_naked_vao)
+    for i in 0..MAX_CONFIGURABLE_VAOS {
+        gl.DeleteVertexArray(_vaos[i])
+    }
+    
+    gl.DeleteVertexArray(_naked_vao)
 }

@@ -2,10 +2,7 @@ package mmlow_gpu_backend_webgl2
 
 import gl "vendor:wasm/WebGL"
 import "../../../core"
-import glcache "../glcached"
-
-// Note(Dragos): Now gpu is dependent on platform
-import "../../../platform"
+import glcache "../webglcached"
 
 import "core:fmt"
 

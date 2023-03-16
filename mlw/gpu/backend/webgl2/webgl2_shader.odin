@@ -5,6 +5,7 @@ import "../../../core"
 import "../../../math"
 import "core:strings"
 import "core:fmt"
+import "core:math/linalg/glsl"
 
 import glcache "../webglcached"
 
@@ -41,7 +42,7 @@ WebGL2_Uniform :: struct {
 WebGL2_Shader_Texture :: struct {
     name: string,
     location: i32,
-    target: u32,
+    target: gl.Enum,
 }
 
 // Note(Dragos): This data is for the WebGL2_Shader. It will still be valid when the stage is deleted
@@ -186,17 +187,15 @@ create_shader :: proc(desc: core.Shader_Info, destroy_stages_on_success: bool) -
                 block := &stage_info.uniform_blocks[block_i]
                 for uniform_i := 0; uniform_i < block.uniform_count; uniform_i += 1 {
                     uniform := &block.uniforms[uniform_i]
-                    cname := strings.clone_to_cstring(uniform.name, context.temp_allocator)
-                    uniform.location = gl.GetUniformLocation(program, cname)
+                    uniform.location = gl.GetUniformLocation(program, uniform.name)
                     assert(uniform.location != -1, "Cannot find uniform location.")
                 } 
             }
 
             for texture_i := 0; texture_i < stage_info.textures_count; texture_i += 1 {
                 tex := &stage_info.textures[texture_i]
-                cname := strings.clone_to_cstring(tex.name, context.temp_allocator)
-                tex.location = gl.GetUniformLocation(program, cname)
-                //gl.Uniform1i(tex.location, current_tex_unit)
+                tex.location = gl.GetUniformLocation(program, tex.name)
+                gl.Uniform1i(tex.location, current_tex_unit)
                 current_tex_unit += 1
             }
             gl_shader.stages[type] = stage_info
@@ -240,6 +239,7 @@ apply_uniforms_raw :: proc(stage: core.Shader_Stage_Type, block_index: int, data
         uniform := &block.uniforms[uniform_i]
         assert(uniform.count > 0, "Uniform count cannot be 0.")
         addr := cast(rawptr)(uintptr(data) + uniform.offset)
+        /*
         switch uniform.type {
             case .i32: gl.Uniform1iv(uniform.location, uniform.count, cast([^]i32)addr)
             case .u32: gl.Uniform1uiv(uniform.location, uniform.count, cast([^]u32)addr) 
@@ -249,6 +249,41 @@ apply_uniforms_raw :: proc(stage: core.Shader_Stage_Type, block_index: int, data
             case .vec4f32: gl.Uniform4fv(uniform.location, uniform.count, cast([^]f32)addr)
             case .mat3f32: gl.UniformMatrix3fv(uniform.location, uniform.count, false, cast([^]f32)addr)
             case .mat4f32: gl.UniformMatrix4fv(uniform.location, uniform.count, false, cast([^]f32)addr)          
+        }
+        */
+        switch uniform.type {
+            case .i32: {
+                val := cast(^i32)(addr)
+                gl.Uniform1iv(uniform.location, val^)
+            }
+            case .u32: {
+                val := cast(^u32)(addr)
+                gl.Uniform1uiv(uniform.location, val^) 
+            }
+            case .f32: {
+                val := cast(^f32)(addr)
+                gl.Uniform1fv(uniform.location, val^)
+            }
+            case .vec2f32: {
+                val := cast(^glsl.vec2)(addr)
+                gl.Uniform2fv(uniform.location, val^)
+            }
+            case .vec3f32: {
+                val := cast(^glsl.vec3)(addr)
+                gl.Uniform3fv(uniform.location, val^)
+            }
+            case .vec4f32: {
+                val := cast(^glsl.vec4)(addr)
+                gl.Uniform4fv(uniform.location, val^)
+            }
+            case .mat3f32: {
+                val := cast(^glsl.mat3)(addr)
+                gl.UniformMatrix3fv(uniform.location, val^)
+            }
+            case .mat4f32: {
+                val := cast(^glsl.mat4)(addr)
+                gl.UniformMatrix4fv(uniform.location, val^)
+            }
         }
     }
 }

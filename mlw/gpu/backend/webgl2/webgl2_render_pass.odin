@@ -8,7 +8,7 @@ import glcache "../webglcached"
 
 Render_Pass :: struct {
     id: core.Render_Pass,
-    framebuffer: u32,
+    framebuffer: gl.Framebuffer,
     colors_count: int,
     fb_size: [2]i32,
     num_colors: int,
@@ -26,7 +26,7 @@ create_pass :: proc(info: core.Render_Pass_Info) -> (pass: core.Render_Pass) {
     glpass.id = pass
     fb_size: [2]int
 
-    gl.GenFramebuffers(1, &glpass.framebuffer)
+    glpass.framebuffer = gl.CreateFramebuffer()
     last_fb, _ := glcache.BindFramebuffer(.FRAMEBUFFER, glpass.framebuffer)
     for attach, i in info.colors do if attach.texture != 0 {
         glpass.num_colors += 1
@@ -38,7 +38,7 @@ create_pass :: proc(info: core.Render_Pass_Info) -> (pass: core.Render_Pass) {
         }
         assert(gltex.size.xy == fb_size, "All color attachments must have the same size.")
         if gltex.type == .Texture2D {
-            gl.FramebufferTexture2D(gl.FRAMEBUFFER, u32(gl.COLOR_ATTACHMENT0 + i), gl.TEXTURE_2D, gltex.handle, cast(i32)attach.mip_level)
+            gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.Enum(cast(u32)gl.COLOR_ATTACHMENT0 + cast(u32)i), gl.TEXTURE_2D, gltex.handle, cast(i32)attach.mip_level)
         } else {
             // Note(Dragos): Figure this out
             panic("Not supported texture type for render target.")
@@ -51,7 +51,8 @@ create_pass :: proc(info: core.Render_Pass_Info) -> (pass: core.Render_Pass) {
         glpass.depth_stencil = true
         gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.TEXTURE_2D, gltex.handle, 0)
     }
-    assert(gl.CheckFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE, "Framebuffer creation failed.")
+    // Note(Dragos): This is wrong in vendor:WebGL
+    //assert(gl.CheckFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE, "Framebuffer creation failed.")
     glcache.BindFramebuffer(.FRAMEBUFFER, last_fb)
     glpass.fb_size.x = cast(i32)fb_size.x
     glpass.fb_size.y = cast(i32)fb_size.y
@@ -62,7 +63,7 @@ create_pass :: proc(info: core.Render_Pass_Info) -> (pass: core.Render_Pass) {
 destroy_pass :: proc(pass: core.Render_Pass) {
     assert(pass in _passes, "Render pass not found.")
     glpass := &_passes[pass]
-    gl.DeleteFramebuffers(1, &glpass.framebuffer)
+    gl.DeleteFramebuffer(glpass.framebuffer)
     delete_key(&_passes, pass)
 }
 
@@ -86,20 +87,22 @@ begin_default_pass :: proc(action: core.Render_Pass_Action, width, height: int) 
     if clear_color {
         val := action.colors[0].value
         gl.ClearColor(val.r, val.g, val.b, val.a)
-        clear_mask |= gl.COLOR_BUFFER_BIT
+        clear_mask |= cast(u32)gl.COLOR_BUFFER_BIT
     }
 
     if clear_depth {
-        clear_mask |= gl.DEPTH_BUFFER_BIT
-        gl.ClearDepth(cast(f64)action.depth.value)
+        clear_mask |= cast(u32)gl.DEPTH_BUFFER_BIT
+        // Note(Dragos): This is wrong in vendor:WebGL
+        //gl.ClearDepth(cast(f64)action.depth.value) 
     }
 
     if clear_stencil {
-        clear_mask |= gl.STENCIL_BUFFER_BIT
-        gl.ClearStencil(cast(i32)action.stencil.value)
+        clear_mask |= cast(u32)gl.STENCIL_BUFFER_BIT
+        // Note(Dragos): This is wrong in vendor:WebGL
+        //gl.ClearStencil(cast(i32)action.stencil.value)
     }
 
-    if clear_mask != 0 do gl.Clear(clear_mask)  
+    if clear_mask != 0 do gl.Clear(cast(gl.Enum)clear_mask)  
 }
 
 begin_pass :: proc(pass: core.Render_Pass, action: core.Render_Pass_Action) {
@@ -119,15 +122,15 @@ begin_pass :: proc(pass: core.Render_Pass, action: core.Render_Pass_Action) {
     for i := 0; i < _current_pass.num_colors; i += 1 {
         clear_color := action.colors[i].action == .Clear
         color := action.colors[i].value
-        if clear_color do gl.ClearBufferfv(gl.COLOR, i32(i), &color[0])
+        if clear_color do gl.ClearBufferfv(gl.COLOR, i32(i), color[:])
     }
 
     if _current_pass.depth_stencil {
-        depth_value := action.depth.value
-        stencil_value := i32(action.stencil.value)
-        if clear_depth && clear_stencil do gl.ClearBufferfi(gl.DEPTH_STENCIL, 0, depth_value, stencil_value)
-        else if clear_depth do gl.ClearBufferfv(gl.DEPTH, 0, &depth_value)
-        else if clear_stencil do gl.ClearBufferiv(gl.STENCIL, 0, &stencil_value)
+        depth_value := []f32{action.depth.value}
+        stencil_value := []i32{cast(i32)action.stencil.value}
+        if clear_depth && clear_stencil do gl.ClearBufferfi(gl.DEPTH_STENCIL, 0, depth_value[0], stencil_value[0])
+        else if clear_depth do gl.ClearBufferfv(gl.DEPTH, 0, depth_value[:])
+        else if clear_stencil do gl.ClearBufferiv(gl.STENCIL, 0, stencil_value[:])
     }
 }
 

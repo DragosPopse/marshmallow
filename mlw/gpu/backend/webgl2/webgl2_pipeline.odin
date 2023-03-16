@@ -55,23 +55,22 @@ _INDEX_CONV := [core.Index_Type]gl.Enum {
 }
 
 WebGL2_Blend :: struct {
-    rgb_src: u32,
-    rgb_dst: u32,
-    rgb_op: u32,
-    alpha_src: u32,
-    alpha_dst: u32,
-    alpha_op: u32,
+    rgb_src: gl.Enum,
+    rgb_dst: gl.Enum,
+    rgb_op: gl.Enum,
+    alpha_src: gl.Enum,
+    alpha_dst: gl.Enum,
+    alpha_op: gl.Enum,
 }
 
 WebGL2_Pipeline :: struct {
     id: core.Pipeline,
     shader: ^WebGL2_Shader,
     cull_mode_enabled: bool,
-    cull_mode: u32,
-    polygon_mode: u32,
-    primitive_type: u32,
+    cull_mode: gl.Enum,
+    primitive_type: gl.Enum,
     layout: core.Layout_Info,
-    index_type: u32,
+    index_type: gl.Enum,
     depth: Maybe(core.Depth_State), // This is a small workaround until fully supported
     blend: Maybe(WebGL2_Blend), // Note(Dragos): This is weird rn
 }
@@ -91,7 +90,6 @@ create_pipeline :: proc(desc: core.Pipeline_Info) -> (pipeline: core.Pipeline) {
 
     glpipe.cull_mode_enabled = desc.cull_mode != .None
     glpipe.cull_mode = _CULL_CONV[desc.cull_mode]
-    glpipe.polygon_mode = _POLYGON_CONV[desc.polygon_mode]
     glpipe.primitive_type = _PRIMITIVE_CONV[desc.primitive_type]
     glpipe.index_type = _INDEX_CONV[desc.index_type]
     glpipe.depth = desc.depth
@@ -113,7 +111,7 @@ apply_pipeline :: proc(pipeline: core.Pipeline) {
     assert(pipeline != 0, "Invalid pipeline ID.")
     assert(pipeline in _pipelines, "Pipeline was not found.")
     _current_pipeline = &_pipelines[pipeline]
-    glcache.UseProgram(cast(u32)_current_pipeline.shader.program)
+    glcache.UseProgram(_current_pipeline.shader.program)
 
 
     if _current_pipeline.cull_mode_enabled {
@@ -123,8 +121,6 @@ apply_pipeline :: proc(pipeline: core.Pipeline) {
         glcache.Disable(.CULL_FACE)
     }
 
-    // Note(Dragos): This can be split into front and back polygon modes
-    glcache.PolygonMode(.FRONT_AND_BACK, cast(glcache.Polygon_Mode)_current_pipeline.polygon_mode)
 
     if blend, found := _current_pipeline.blend.?; found {
         glcache.Enable(.BLEND)
