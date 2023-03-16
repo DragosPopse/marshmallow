@@ -76,6 +76,8 @@ configure_target :: proc(project: Project, target: Target) -> (config: build.Con
     if target.platform.os == .Windows {
         exe_ext = "exe"
         build.add_post_build_command(&config, "copy-dll", copy_dll)
+    } else if target.platform.os == .JS {
+        exe_ext = "wasm"
     }
     build.add_post_build_command(&config, "copy-assets", copy_assets)
     when ODIN_DEBUG {
