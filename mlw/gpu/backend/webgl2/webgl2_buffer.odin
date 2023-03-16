@@ -96,7 +96,7 @@ apply_input_buffers :: proc(buffers: core.Input_Buffers) {
             i32(i), 
             _ATTR_SIZE_CONV[attr.format], _ATTR_TYPE_CONV[attr.format], 
             false, 
-            cast(i32)buffer_layout.stride, attr.offset)
+            cast(int)buffer_layout.stride, attr.offset)
 
         gl.EnableVertexAttribArray(i32(i)) // Note(Dragos): This call should also be cached
         gl.VertexAttribDivisor(u32(i), divisor)

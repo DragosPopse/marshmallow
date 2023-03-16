@@ -148,7 +148,7 @@ _remove_configured_vao :: proc(key: core.Input_Buffers) {
 }
 
 _init_vaos :: proc() {
-    for i in 0..MAX_CONFIGURABLE_VAOS {
+    for i in 0..=MAX_CONFIGURABLE_VAOS {
         _vaos[i] = gl.CreateVertexArray()
     }
     _naked_vao = gl.CreateVertexArray()
@@ -158,7 +158,7 @@ _init_vaos :: proc() {
 }
 
 _destroy_vaos :: proc() {
-    for i in 0..MAX_CONFIGURABLE_VAOS {
+    for i in 0..=MAX_CONFIGURABLE_VAOS {
         gl.DeleteVertexArray(_vaos[i])
     }
     
