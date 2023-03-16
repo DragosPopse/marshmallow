@@ -22,7 +22,17 @@ Vertex_Uniforms :: struct {
 create_standard_shader :: proc() -> (shader: gpu.Shader, err: Maybe(string)) {
     vert_info: gpu.Shader_Stage_Info
     vert: gpu.Shader_Stage
-    vert_info.src = #load("standard.vert.glsl", string)
+    frag_info: gpu.Shader_Stage_Info
+    frag: gpu.Shader_Stage
+   
+    when gpu.BACKEND == .glcore3 {
+        vert_info.src = #load("glcore3/standard.vert.glsl", string)
+        frag_info.src = #load("glcore3/standard.frag.glsl", string)
+    } else when gpu.BACKEND == .webgl2 {
+        vert_info.src = #load("webgl2/standard.vert.glsl", string)
+        frag_info.src = #load("webgl2/standard.frag.glsl", string)
+    }
+
     vert_info.type = .Vertex
 
     vert_info.uniform_blocks[0].size = size_of(Vertex_Uniforms)
@@ -38,9 +48,8 @@ create_standard_shader :: proc() -> (shader: gpu.Shader, err: Maybe(string)) {
     }
     defer gpu.destroy_shader_stage(vert)
 
-    frag_info: gpu.Shader_Stage_Info
-    frag: gpu.Shader_Stage
-    frag_info.src = #load("standard.frag.glsl", string)
+  
+
     frag_info.type = .Fragment
     
 

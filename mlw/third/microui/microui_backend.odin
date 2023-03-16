@@ -83,7 +83,19 @@ _push_quad :: proc(dst, src: mu.Rect, color: mu.Color) {
 _create_microui_shader :: proc() -> (shader: gpu.Shader, err: Maybe(string)) {
     vert_info: gpu.Shader_Stage_Info
     vert: gpu.Shader_Stage
-    vert_info.src = #load("microui.vert.glsl", string)
+    frag_info: gpu.Shader_Stage_Info
+    frag: gpu.Shader_Stage
+
+    when gpu.BACKEND == .glcore3 {
+        vert_info.src = #load("glcore3/microui.vert.glsl", string)
+        frag_info.src = #load("glcore3/microui.frag.glsl", string)
+    } else when gpu.BACKEND == .webgl2 {
+        vert_info.src = #load("webgl2/microui.vert.glsl", string)
+        frag_info.src = #load("webgl2/microui.frag.glsl", string)
+    } else {
+        #panic("Microui backend not supported for current gpu backend")
+    }
+
     vert_info.type = .Vertex
 
     
@@ -98,9 +110,7 @@ _create_microui_shader :: proc() -> (shader: gpu.Shader, err: Maybe(string)) {
     }
     defer gpu.destroy_shader_stage(vert)
 
-    frag_info: gpu.Shader_Stage_Info
-    frag: gpu.Shader_Stage
-    frag_info.src = #load("microui.frag.glsl", string)
+   
     frag_info.type = .Fragment
 
     frag_info.textures[0].name = "atlas"
