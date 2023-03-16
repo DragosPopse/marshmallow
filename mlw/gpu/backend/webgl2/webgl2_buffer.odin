@@ -1,4 +1,4 @@
-package mmlow_gpu_backend_glcore3
+package mmlow_gpu_backend_webgl2
 
 import gl "vendor:wasm/WebGL"
 import "../../../core"
@@ -18,28 +18,28 @@ _BUFFER_TYPE_CONV := [core.Buffer_Type]gl.Enum {
     .Index = gl.ELEMENT_ARRAY_BUFFER,
 }
 
-GLCore3_Buffer :: struct {
+WebGL2_Buffer :: struct {
     id: core.Buffer,
-    handle: u32,
+    handle: gl.Buffer,
     size: int,
     usage: core.Buffer_Usage_Hint,
     target: u32,
 }
 
-_buffers: map[core.Buffer]GLCore3_Buffer
+_buffers: map[core.Buffer]WebGL2_Buffer
 _instanced_call := false
 
 create_buffer :: proc(desc: core.Buffer_Info) ->(buffer: core.Buffer) {
-    vbo: u32
+    vbo: gl.Buffer
     usage := _BUFFER_USAGE_CONV[desc.usage_hint]
     type := _BUFFER_TYPE_CONV[desc.type]
     data := raw_data(desc.data) if len(desc.data) != 0 else nil
-    gl.GenBuffers(1, &vbo)
+    vbo = gl.CreateBuffer()
     last_buffer := glcache.BindBuffer(cast(glcache.Buffer_Target)type, vbo)
     gl.BufferData(type, cast(int)desc.size, data, usage)
     glcache.BindBuffer(cast(glcache.Buffer_Target)type, last_buffer) 
 
-    glbuf: GLCore3_Buffer
+    glbuf: WebGL2_Buffer
     glbuf.handle = vbo
     glbuf.id = core.new_buffer_id()
     glbuf.usage = desc.usage_hint
@@ -52,7 +52,7 @@ create_buffer :: proc(desc: core.Buffer_Info) ->(buffer: core.Buffer) {
 destroy_buffer :: proc(buffer: core.Buffer) {
     assert(buffer in _buffers, "Invalid buffer.")
     glbuf := &_buffers[buffer]
-    gl.DeleteBuffers(1, &glbuf.handle)
+    gl.DeleteBuffer(glbuf.handle)
     delete_key(&_buffers, buffer)
     core.delete_buffer_id(buffer)
 }

@@ -1,4 +1,4 @@
-package mmlow_gpu_backend_glcore3
+package mmlow_gpu_backend_webgl2
 
 import "../../../core"
 import "../../../math"

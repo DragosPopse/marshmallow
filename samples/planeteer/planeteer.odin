@@ -13,9 +13,10 @@ import mu_mlw "../../mlw/third/microui"
 import "../../mlw/platform/event"
 import "core:time"
 
+/*
 when ODIN_OS != .JS {
-    import "core:thread"
-}
+    //import "core:thread"
+}*/
 
 
 Vertex_Uniforms :: struct {
@@ -145,11 +146,11 @@ main :: proc() {
     }
     
     time.stopwatch_start(&gen_clock)
-    when ODIN_OS != .JS {
-        construct_planet_mesh(&_planet, settings.planet, &pool)
-    } else {
-        construct_planet_mesh_single_threaded(&planet, settings.planet)
-    }
+    //when ODIN_OS != .JS {
+        //construct_planet_mesh(&_planet, settings.planet, &pool)
+    //} else {
+        construct_planet_mesh_single_threaded(&_planet, settings.planet)
+    //}
     planet_vertices, planet_indices := merge_planet_meshes(_planet, context.temp_allocator)
     gpu.buffer_data(planet_vb, slice.to_bytes(planet_vertices))
     gpu.buffer_data(planet_ib, slice.to_bytes(planet_indices))
@@ -199,11 +200,11 @@ main :: proc() {
             time.stopwatch_start(&gen_clock)
 
             destroy_planet(_planet)
-            when ODIN_OS != .JS {
-                construct_planet_mesh(&_planet, settings.planet, &pool)
-            } else {
+            //when ODIN_OS != .JS {
+                //construct_planet_mesh(&_planet, settings.planet, &pool)
+            //} else {
                 construct_planet_mesh_single_threaded(&_planet, settings.planet)
-            }
+            //}
 
             frame_info.gen_time = cast(f32)time.duration_seconds(time.stopwatch_duration(gen_clock))
             time.stopwatch_reset(&gen_clock)

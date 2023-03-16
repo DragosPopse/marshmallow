@@ -13,7 +13,6 @@ import "core:slice"
 import "core:fmt"
 import linalg "core:math/linalg"
 import gl "vendor:OpenGL" // some debuggin
-import stbi "vendor:stb/image"
 
 Vertex :: struct {
     pos: math.Vec2f,

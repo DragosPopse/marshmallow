@@ -1,4 +1,4 @@
-package mmlow_gpu_backend_glcore3
+package mmlow_gpu_backend_webgl2
 
 import gl "vendor:wasm/WebGL"
 import "../../../core"
@@ -36,7 +36,7 @@ _MAGFILTER_CONV := [core.Texture_Mag_Filter]gl.Enum {
     .Linear = gl.LINEAR,
 }
 
-GLCore3_Texture :: struct {
+WebGL2_Texture :: struct {
     handle: u32,
     id: core.Texture,
     target: u32,
@@ -45,7 +45,7 @@ GLCore3_Texture :: struct {
     size: [3]int,
 }
 
-_textures: map[core.Texture]GLCore3_Texture 
+_textures: map[core.Texture]WebGL2_Texture 
 
 create_texture :: proc(desc: core.Texture_Info) -> (texture: core.Texture) {
     assert(desc.type != .Invalid, "Invalid texture type.")
@@ -102,7 +102,7 @@ create_texture :: proc(desc: core.Texture_Info) -> (texture: core.Texture) {
     gl.TexParameteri(target, gl.TEXTURE_MAG_FILTER, _MAGFILTER_CONV[desc.mag_filter])
     
     glcache.BindTexture(cast(glcache.Texture_Target)target, last_texture)
-    gltex: GLCore3_Texture
+    gltex: WebGL2_Texture
     gltex.handle = handle
     gltex.id = core.new_texture_id()
     gltex.target = target

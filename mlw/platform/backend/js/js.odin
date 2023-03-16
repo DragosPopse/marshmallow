@@ -17,9 +17,10 @@ update_window :: proc() {
 
 poll_event :: proc() -> (ev: event.Event, ok: bool) {
 
+    return
 }
 
 get_backend_window :: proc() -> (window: rawptr) {
-
+    return
 }
 

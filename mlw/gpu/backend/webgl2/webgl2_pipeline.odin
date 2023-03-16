@@ -1,4 +1,4 @@
-package mmlow_gpu_backend_glcore3
+package mmlow_gpu_backend_webgl2
 
 import gl "vendor:wasm/WebGL"
 import "../../../core"
@@ -54,7 +54,7 @@ _INDEX_CONV := [core.Index_Type]gl.Enum {
     .u32 = gl.UNSIGNED_INT,
 }
 
-GLCore3_Blend :: struct {
+WebGL2_Blend :: struct {
     rgb_src: u32,
     rgb_dst: u32,
     rgb_op: u32,
@@ -63,9 +63,9 @@ GLCore3_Blend :: struct {
     alpha_op: u32,
 }
 
-GLCore3_Pipeline :: struct {
+WebGL2_Pipeline :: struct {
     id: core.Pipeline,
-    shader: ^GLCore3_Shader,
+    shader: ^WebGL2_Shader,
     cull_mode_enabled: bool,
     cull_mode: u32,
     polygon_mode: u32,
@@ -73,15 +73,15 @@ GLCore3_Pipeline :: struct {
     layout: core.Layout_Info,
     index_type: u32,
     depth: Maybe(core.Depth_State), // This is a small workaround until fully supported
-    blend: Maybe(GLCore3_Blend), // Note(Dragos): This is weird rn
+    blend: Maybe(WebGL2_Blend), // Note(Dragos): This is weird rn
 }
 
-_pipelines: map[core.Pipeline]GLCore3_Pipeline
-_current_pipeline: ^GLCore3_Pipeline
+_pipelines: map[core.Pipeline]WebGL2_Pipeline
+_current_pipeline: ^WebGL2_Pipeline
 
 create_pipeline :: proc(desc: core.Pipeline_Info) -> (pipeline: core.Pipeline) {
     pipeline = core.new_pipeline_id()
-    glpipe: GLCore3_Pipeline
+    glpipe: WebGL2_Pipeline
     glpipe.id = pipeline
 
     glpipe.layout = desc.layout
@@ -96,7 +96,7 @@ create_pipeline :: proc(desc: core.Pipeline_Info) -> (pipeline: core.Pipeline) {
     glpipe.index_type = _INDEX_CONV[desc.index_type]
     glpipe.depth = desc.depth
     if blend, found := desc.color.blend.?; found {
-        glpipe.blend = GLCore3_Blend {
+        glpipe.blend = WebGL2_Blend {
             rgb_src = _BLEND_FACTOR_CONV[blend.rgb.src_factor],
             rgb_dst = _BLEND_FACTOR_CONV[blend.rgb.dst_factor],
             rgb_op = _BLEND_OP_CONV[blend.rgb.op],

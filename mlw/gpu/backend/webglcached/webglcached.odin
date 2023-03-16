@@ -47,22 +47,16 @@ Texture_Target :: enum gl.Enum {
     TEXTURE_2D = gl.TEXTURE_2D,
     TEXTURE_3D = gl.TEXTURE_3D,
     TEXTURE_2D_ARRAY = gl.TEXTURE_2D_ARRAY,
-    TEXTURE_RECTANGLE = gl.TEXTURE_RECTANGLE,
     TEXTURE_CUBE_MAP = gl.TEXTURE_CUBE_MAP,
-    TEXTURE_2D_MULTISAMPLE = gl.TEXTURE_2D_MULTISAMPLE,
-    TEXTURE_2D_MULTISAMPLE_ARRAY = gl.TEXTURE_2D_MULTISAMPLE_ARRAY,
 }
 
 Buffer_Target :: enum gl.Enum {
     ARRAY_BUFFER = gl.ARRAY_BUFFER,
-    ATOMIC_COUNTER_BUFFER = gl.ATOMIC_COUNTER_BUFFER,
     COPY_READ_BUFFER = gl.COPY_READ_BUFFER,
     COPY_WRITE_BUFFER = gl.COPY_WRITE_BUFFER,
-    DISPATCH_INDIRECT_BUFFER = gl.DISPATCH_INDIRECT_BUFFER,
     ELEMENT_ARRAY_BUFFER = gl.ELEMENT_ARRAY_BUFFER,
     PIXEL_PACK_BUFFER = gl.PIXEL_PACK_BUFFER,
     PIXEL_UNPACK_BUFFER = gl.PIXEL_UNPACK_BUFFER,
-    TEXTURE_BUFFER = gl.TEXTURE_BUFFER,
     TRANSFORM_FEEDBACK_BUFFER = gl.TRANSFORM_FEEDBACK_BUFFER,
     UNIFORM_BUFFER = gl.UNIFORM_BUFFER,
 }
@@ -78,7 +72,6 @@ Renderbuffer_Target :: enum gl.Enum {
 }
 
 Capability :: enum gl.Enum {
-    ALPHA_TEST = gl.ALPHA_TEST,
     BLEND = gl.BLEND,
     CULL_FACE = gl.CULL_FACE,
     DEPTH_TEST = gl.DEPTH_TEST,
@@ -92,10 +85,10 @@ Cache :: struct {
     _arena: mem.Arena,
     
     capabilities: map[Capability]bool, 
-    buffers: map[Buffer_Target]u32,
-    textures: map[Texture_Target]u32,
+    buffers: map[Buffer_Target]gl.Buffer,
+    textures: map[Texture_Target]gl.Texture,
     vertex_array: u32,
-    program: u32,
+    program: gl.Program,
 
     blend_funcs: Blend_Funcs,
     blend_equations: Blend_Equations,
@@ -158,15 +151,15 @@ Enable :: proc(cap: Capability) -> (last: bool) {
 Disable :: proc(cap: Capability) -> (last: bool) {
     last = cache.capabilities[cap]
     if !last {
-        gl.Disable(cast(u32)cap)
+        gl.Disable(cast(gl.Capability)cap)
     }
     return last
 }
 
-BindBuffer :: proc(target: Buffer_Target, buffer: u32) -> (last: u32) {
+BindBuffer :: proc(target: Buffer_Target, buffer: gl.Buffer) -> (last: u32) {
     last = cache.buffers[target]
     if buffer != last {
-        gl.BindBuffer(cast(u32)target, cast(u32)buffer)
+        gl.BindBuffer(cast(gl.Buffer_Target)target, buffer)
         cache.buffers[target] = buffer
     }
     return last
@@ -211,7 +204,7 @@ CullFace :: proc(mode: Face) -> (last_mode: Face) {
     return last_mode
 }
 
-UseProgram :: proc(program: u32) -> (last_program: u32) {
+UseProgram :: proc(program: gl.Program) -> (last_program: gl.Program) {
     last_program = cache.program 
     if program != last_program {
         gl.UseProgram(program)

@@ -1,4 +1,4 @@
-package mmlow_gpu_backend_glcore3
+package mmlow_gpu_backend_webgl2
 
 // Todo(Dragos): compile this with -vet-extra
 import "core:fmt"

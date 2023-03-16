@@ -1,4 +1,4 @@
-package mmlow_gpu_backend_glcore3
+package mmlow_gpu_backend_webgl2
 
 import gl "vendor:wasm/WebGL"
 import "../../../core"
@@ -24,13 +24,13 @@ _UNIFORM_SIZES := [core.Uniform_Type]int {
     .mat4f32 = size_of(math.Mat4f),
 }
 
-GLCore3_Uniform_Block :: struct {
+WebGL2_Uniform_Block :: struct {
     size: int,
     uniform_count: int,
-    uniforms: [core.MAX_UNIFORM_BLOCK_ELEMENTS]GLCore3_Uniform,
+    uniforms: [core.MAX_UNIFORM_BLOCK_ELEMENTS]WebGL2_Uniform,
 }
 
-GLCore3_Uniform :: struct {
+WebGL2_Uniform :: struct {
     name: string,
     location: i32,
     type: core.Uniform_Type,
@@ -38,45 +38,46 @@ GLCore3_Uniform :: struct {
     offset: uintptr,
 }
 
-GLCore3_Shader_Texture :: struct {
+WebGL2_Shader_Texture :: struct {
     name: string,
     location: i32,
     target: u32,
 }
 
-// Note(Dragos): This data is for the GLCore3_Shader. It will still be valid when the stage is deleted
-GLCore3_Shader_Stage_Info :: struct {
+// Note(Dragos): This data is for the WebGL2_Shader. It will still be valid when the stage is deleted
+WebGL2_Shader_Stage_Info :: struct {
     uniform_blocks_count: int,
     textures_count: int,
-    uniform_blocks: [core.MAX_UNIFORM_BLOCKS]GLCore3_Uniform_Block,
-    textures: [core.MAX_SHADERSTAGE_TEXTURES]GLCore3_Shader_Texture,
+    uniform_blocks: [core.MAX_UNIFORM_BLOCKS]WebGL2_Uniform_Block,
+    textures: [core.MAX_SHADERSTAGE_TEXTURES]WebGL2_Shader_Texture,
 }
 
-GLCore3_Shader_Stage :: struct {
+WebGL2_Shader_Stage :: struct {
     id: core.Shader_Stage,
-    handle: u32,
-    info: GLCore3_Shader_Stage_Info,
+    handle: gl.Shader,
+    info: WebGL2_Shader_Stage_Info,
 }
 
-GLCore3_Shader :: struct {
+WebGL2_Shader :: struct {
     id: core.Shader,
-    program: u32,
-    stages: [core.Shader_Stage_Type]Maybe(GLCore3_Shader_Stage_Info),
+    program: gl.Program,
+    stages: [core.Shader_Stage_Type]Maybe(WebGL2_Shader_Stage_Info),
 }
 
-_shaders: map[core.Shader]GLCore3_Shader
-_shader_stages: map[core.Shader_Stage]GLCore3_Shader_Stage
+_shaders: map[core.Shader]WebGL2_Shader
+_shader_stages: map[core.Shader_Stage]WebGL2_Shader_Stage
 
 
 create_shader_stage :: proc(desc: core.Shader_Stage_Info) -> (stage: core.Shader_Stage, temp_error: Maybe(string)) {
-    csrc: cstring 
+    csrc: cstring
+    osrc: string
     length: i32
     stageType := _SHADER_STAGE_TYPE_CONV[desc.type]
     switch src in desc.src {
         case []u8: {
-            str := strings.string_from_ptr(raw_data(src), len(src))
-            csrc = strings.unsafe_string_to_cstring(str)
-            length = cast(i32)len(str)
+            osrc = strings.string_from_ptr(raw_data(src), len(src))
+            csrc = strings.unsafe_string_to_cstring(osrc)
+            length = cast(i32)len(osrc)
         }
 
         case string: {
@@ -84,23 +85,23 @@ create_shader_stage :: proc(desc: core.Shader_Stage_Info) -> (stage: core.Shader
             length = cast(i32)len(src)
         }
     }
-
+    sources := []string{osrc}
     shader := gl.CreateShader(stageType)
-    gl.ShaderSource(shader, 1, &csrc, &length)
+    gl.ShaderSource(shader, sources)
     gl.CompileShader(shader)
     
     success: i32 
     log: [512]u8
-    gl.GetShaderiv(shader, gl.COMPILE_STATUS, &success)
+    success = gl.GetShaderiv(shader, gl.COMPILE_STATUS)
     if success == 0 {
         logLength: i32
-        gl.GetShaderInfoLog(shader, size_of(log), &logLength, &log[0])
+        gl.GetShaderInfoLog(shader, log[:])
         logstr := strings.string_from_ptr(&log[0], cast(int)logLength)
         gl.DeleteShader(shader)
         return 0, fmt.tprint(logstr)
     }
 
-    gl_stage: GLCore3_Shader_Stage
+    gl_stage: WebGL2_Shader_Stage
     gl_stage.id = core.new_shader_stage_id()
     gl_stage.handle = shader
     
@@ -152,7 +153,7 @@ destroy_shader_stage :: proc(stage: core.Shader_Stage) {
 
 create_shader :: proc(desc: core.Shader_Info, destroy_stages_on_success: bool) -> (shader: core.Shader, temp_error: Maybe(string)) {
     program := gl.CreateProgram()
-    gl_shader: GLCore3_Shader
+    gl_shader: WebGL2_Shader
     for stage, type in desc.stages {
         if s, ok := stage.?; ok {
             gl_stage := _shader_stages[s]
@@ -164,11 +165,11 @@ create_shader :: proc(desc: core.Shader_Info, destroy_stages_on_success: bool) -
 
     success: i32 
     log: [512]u8 
-    gl.GetProgramiv(program, gl.LINK_STATUS, &success)
+    success = gl.GetProgramParameter(program, gl.LINK_STATUS)
     
-    if cast(bool)success != gl.TRUE {
+    if success == 0 {
         logLength: i32 
-        gl.GetProgramInfoLog(program, size_of(log), &logLength, &log[0])
+        gl.GetProgramInfoLog(program, log[:])
         logstr := strings.string_from_ptr(&log[0], cast(int)logLength)
         gl.DeleteProgram(program)
         return 0, fmt.tprintf("%s", logstr)
