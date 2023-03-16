@@ -21,6 +21,10 @@ add_sample_target :: proc(project: ^Project, name: string, src: string, out_dir:
     build.add_target(project, Target{CURRENT_PLATFORM, name, src, out_dir})
 }
 
+add_wasm_target :: proc(project: ^Project, name: string, src: string, out_dir: string) {
+    build.add_target(project, Target{build.Platform{.JS, .wasm32}, name, src, out_dir})
+}
+
 modes := [][]build.Default_Target_Mode {
     {.Debug, .Release},
 }
@@ -59,6 +63,7 @@ add_targets :: proc(project: ^Project) {
     add_sample_target(project, "samp.gpu.post_effects", "samples/gpu/post_effects", "out/samples/gpu/post_effects")
     add_sample_target(project, "samp.gpu.instancing", "samples/gpu/instancing", "out/samples/gpu/instancing")
     add_sample_target(project, "samp.planeteer", "samples/planeteer", "out/samples/planeteer")
+    add_wasm_target(project, "wasm.planeteer", "samples/planeteer", "out/samplers/wasm_planeteer")
     add_sample_target(project, "samp.imdraw.sprites", "samples/imdraw/sprites", "out/samples/imdraw/sprites")
 }
 
