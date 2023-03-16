@@ -1,6 +1,10 @@
 package glcache
 
-import gl "vendor:OpenGL"
+when ODIN_OS == .JS {
+    import gl "vendor:wasm/WebGL"
+} else {
+    import gl "vendor:OpenGL"
+}
 import "core:mem"
 
 Blend_Eq :: enum u32 {

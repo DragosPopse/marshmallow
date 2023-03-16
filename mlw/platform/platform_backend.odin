@@ -6,8 +6,12 @@ BACKEND :: core.PLATFORM_BACKEND
 
 when BACKEND == .SDL2 {
     import backend "backend/sdl2"
-} else {
-    #panic("Unsupported PLATFORM_BACKEND")
+} else when BACKEND == .Native {
+    when ODIN_OS == .JS {
+        import backend "backend/js"
+    } else {
+        #panic("Unsupported platform")
+    }
 }
 
 

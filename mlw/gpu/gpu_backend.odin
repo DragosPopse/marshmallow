@@ -6,6 +6,8 @@ BACKEND :: core.GPU_BACKEND
 BACKEND_FAMILY :: core.GPU_BACKEND_FAMILY
 when BACKEND == .glcore3 {
     import backend "backend/glcore3"
+} else when BACKEND == .webgl2 {
+    import backend "backend/webgl2"
 } else {
     #panic("Unsupported GPU_BACKEND")
 }
