@@ -179,6 +179,7 @@ _create_atlas_texture :: proc() -> (gpu.Texture) {
     info.format = .RGBA8
     pixels := make([][4]u8, mu.DEFAULT_ATLAS_WIDTH * mu.DEFAULT_ATLAS_HEIGHT, context.temp_allocator)
 	for alpha, i in mu.default_atlas_alpha {
+        fmt.printf("%v\n", i)
 		pixels[i].rgb = 255
 		pixels[i].a   = alpha
 	}
