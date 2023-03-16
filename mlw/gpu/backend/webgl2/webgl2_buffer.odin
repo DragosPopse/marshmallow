@@ -23,7 +23,7 @@ WebGL2_Buffer :: struct {
     handle: gl.Buffer,
     size: int,
     usage: core.Buffer_Usage_Hint,
-    target: u32,
+    target: gl.Buffer_Target,
 }
 
 _buffers: map[core.Buffer]WebGL2_Buffer

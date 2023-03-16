@@ -156,7 +156,7 @@ Disable :: proc(cap: Capability) -> (last: bool) {
     return last
 }
 
-BindBuffer :: proc(target: Buffer_Target, buffer: gl.Buffer) -> (last: u32) {
+BindBuffer :: proc(target: Buffer_Target, buffer: gl.Buffer) -> (last: gl.Buffer) {
     last = cache.buffers[target]
     if buffer != last {
         gl.BindBuffer(cast(gl.Buffer_Target)target, buffer)
@@ -213,10 +213,10 @@ UseProgram :: proc(program: gl.Program) -> (last_program: gl.Program) {
     return last_program
 }
 
-BindTexture :: proc(target: Texture_Target, texture: u32) -> (last_texture: u32) {
+BindTexture :: proc(target: Texture_Target, texture: gl.Texture) -> (last_texture: gl.Texture) {
     last_texture = cache.textures[target]
     if last_texture != texture {
-        gl.BindTexture(cast(u32)target, texture)
+        gl.BindTexture(cast(gl.Texture_Target)target, texture)
         cache.textures[target] = texture
     }
     return last_texture
@@ -228,17 +228,17 @@ BindFramebuffer :: proc(target: Framebuffer_Target, framebuffer: u32) -> (last_d
 
     switch target {
         case .FRAMEBUFFER: if cache.draw_framebuffer != framebuffer || cache.read_framebuffer != framebuffer {
-            gl.BindFramebuffer(cast(u32)target, framebuffer)
+            gl.BindFramebuffer(cast(gl.Framebuffer_Target)target, framebuffer)
             cache.draw_framebuffer, cache.read_framebuffer = framebuffer, framebuffer
         }
 
         case .DRAW_FRAMEBUFFER: if cache.draw_framebuffer != framebuffer {
-            gl.BindFramebuffer(cast(u32)target, framebuffer)
+            gl.BindFramebuffer(cast(gl.Framebuffer_Target)target, framebuffer)
             cache.draw_framebuffer = framebuffer
         }
 
         case .READ_FRAMEBUFFER: if cache.read_framebuffer != framebuffer {
-            gl.BindFramebuffer(cast(u32)target, framebuffer)
+            gl.BindFramebuffer(cast(gl.Framebuffer_Target)target, framebuffer)
             cache.read_framebuffer = framebuffer
         }
     }
@@ -249,7 +249,7 @@ BindFramebuffer :: proc(target: Framebuffer_Target, framebuffer: u32) -> (last_d
 BindRenderbuffer :: proc(target: Renderbuffer_Target, renderbuffer: u32) -> (last_renderbuffer: u32) {
     last_renderbuffer = cache.renderbuffer
     if last_renderbuffer != renderbuffer {
-        gl.BindRenderbuffer(cast(u32)target, renderbuffer)
+        gl.BindRenderbuffer(cast(gl.Renderbuffer_Target)target, renderbuffer)
         cache.renderbuffer = renderbuffer
     }
 
