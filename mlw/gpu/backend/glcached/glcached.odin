@@ -1,3 +1,4 @@
+//+build !js
 package glcache
 
 import gl "vendor:OpenGL"

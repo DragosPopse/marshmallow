@@ -1,32 +1,6 @@
-
 package main
 
-import "core:fmt"
-import "core:strings"
-import "core:mem"
-import "core:runtime"
-import "core:intrinsics"
-import "core:c"
-import "core:container/small_array"
-import "vendor:wasm/WebGL"
 
-import "../../mlw/gpu/backend/webglcached"
-import "../../mlw/math"
-
-import "../../mlw/core"
-import "../../mlw/gpu/backend/webgl2"
-import "../../mlw/platform"
-
-
-
-
-
-
-main :: proc() {
-
-}
-
-/*
 import "core:fmt"
 import "core:mem"
 import "../../mlw/core"
@@ -39,11 +13,6 @@ import mu "vendor:microui"
 import mu_mlw "../../mlw/third/microui"
 import "../../mlw/platform/event"
 import "core:time"
-
-/*
-when ODIN_OS != .JS {
-    //import "core:thread"
-}*/
 
 
 Vertex_Uniforms :: struct {
@@ -165,12 +134,12 @@ main :: proc() {
         planet_ib = gpu.create_buffer(info)
     }
 
-    when ODIN_OS != .JS {
-        pool: thread.Pool
-        thread.pool_init(&pool, context.allocator, 6)
-        thread.pool_start(&pool)
-        defer thread.pool_finish(&pool)
-    }
+
+    //pool: thread.Pool
+    //thread.pool_init(&pool, context.allocator, 6)
+    //thread.pool_start(&pool)
+    //defer thread.pool_finish(&pool)
+  
     
     time.stopwatch_start(&gen_clock)
     //when ODIN_OS != .JS {
@@ -275,4 +244,3 @@ main :: proc() {
         free_all(context.temp_allocator)
     }
 }
-*/

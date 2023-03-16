@@ -1,3 +1,4 @@
+//+build !js
 package mmlow_gpu_backend_glcore3
 
 import "../../../core"

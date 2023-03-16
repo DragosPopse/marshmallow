@@ -1,3 +1,4 @@
+//+build !js
 package mmlow_gpu_backend_glcore3
 
 // Todo(Dragos): compile this with -vet-extra

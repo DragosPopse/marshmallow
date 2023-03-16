@@ -1,4 +1,3 @@
-//+build ignore
 package main
 
 import "../../mlw/math"
@@ -6,9 +5,6 @@ import linalg "core:math/linalg"
 import "../../mlw/gpu"
 import "core:fmt"
 
-//when ODIN_OS != .JS {
-    //import "core:thread"
-//} 
 
 Vertex :: struct {
     pos: [3]f32,
