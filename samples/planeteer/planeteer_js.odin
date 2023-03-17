@@ -200,6 +200,7 @@ step :: proc "contextless" (dt: f64, ctx: runtime.Context) {
 }
 
 main :: proc() {
+    context = platform.default_context()
     initialize()
     
     if shader, shader_err = create_standard_shader(); shader_err != nil {

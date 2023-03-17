@@ -2,6 +2,7 @@ package mmlow_platform_backend_js
 
 import "../../event"
 import "../../../core"
+import "core:runtime"
 
 init :: proc(info: core.Platform_Info) {
 

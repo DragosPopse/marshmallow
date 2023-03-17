@@ -1,6 +1,7 @@
 package highland_platform 
 
 import "../core"
+import "core:runtime"
 
 BACKEND :: core.PLATFORM_BACKEND
 
@@ -22,3 +23,9 @@ update_window: Backend_Update_Window : backend.update_window
 poll_event: Backend_Poll_Event : backend.poll_event
 
 get_backend_window: Backend_Get_Backend_Window : backend.get_backend_window
+
+when ODIN_OS == .JS {
+    default_context :: backend.default_context
+} else {
+    default_context :: runtime.default_context
+}
