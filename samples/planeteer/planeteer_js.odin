@@ -94,7 +94,7 @@ create_standard_pipeline :: proc(shader: gpu.Shader, polygon_mode: core.Polygon_
 WIDTH, HEIGHT := 800, 800
 _planet: Planet
 ui: ^mu.Context
-frame_clock, gen_clock, render_clock, buffer_update_clock: time.Stopwatch
+//frame_clock, gen_clock, render_clock, buffer_update_clock: time.Stopwatch
 shader: gpu.Shader
 shader_err: Maybe(string)
 default_pipeline, wireframe_pipeline: gpu.Pipeline
@@ -131,9 +131,9 @@ initialize :: proc() {
 step :: proc "contextless" (dt: f64, ctx: runtime.Context) {
     context = ctx
 
-    frame_info.frame_time = cast(f32)time.duration_seconds(time.stopwatch_duration(frame_clock))
-    time.stopwatch_reset(&frame_clock)
-    time.stopwatch_start(&frame_clock)
+    //frame_info.frame_time = cast(f32)time.duration_seconds(time.stopwatch_duration(frame_clock))
+    //time.stopwatch_reset(&frame_clock)
+    //time.stopwatch_start(&frame_clock)
 
     for ev in platform.poll_event() {
         mu_mlw.process_platform_event(ui, ev)
@@ -148,7 +148,7 @@ step :: proc "contextless" (dt: f64, ctx: runtime.Context) {
     mu.end(ui)
 
     if planet_changed {
-        time.stopwatch_start(&gen_clock)
+        //time.stopwatch_start(&gen_clock)
 
         destroy_planet(_planet)
         //when ODIN_OS != .JS {
@@ -157,17 +157,19 @@ step :: proc "contextless" (dt: f64, ctx: runtime.Context) {
             construct_planet_mesh_single_threaded(&_planet, settings.planet)
         //}
 
-        frame_info.gen_time = cast(f32)time.duration_seconds(time.stopwatch_duration(gen_clock))
-        time.stopwatch_reset(&gen_clock)
+        //frame_info.gen_time = cast(f32)time.duration_seconds(time.stopwatch_duration(gen_clock))
+        //time.stopwatch_reset(&gen_clock)
 
-        time.stopwatch_start(&buffer_update_clock)
-
-        planet_vertices, planet_indices = merge_planet_meshes(_planet, context.temp_allocator)
+        //time.stopwatch_start(&buffer_update_clock)
+        
+        delete(planet_vertices)
+        delete(planet_indices)
+        planet_vertices, planet_indices = merge_planet_meshes(_planet)
         gpu.buffer_data(planet_vb, slice.to_bytes(planet_vertices))
         gpu.buffer_data(planet_ib, slice.to_bytes(planet_indices))
 
-        frame_info.buffer_update_time = cast(f32)time.duration_seconds(time.stopwatch_duration(buffer_update_clock))
-        time.stopwatch_reset(&buffer_update_clock)
+        //frame_info.buffer_update_time = cast(f32)time.duration_seconds(time.stopwatch_duration(buffer_update_clock))
+        //time.stopwatch_reset(&buffer_update_clock)
     }
 
     angle += 1
@@ -232,13 +234,13 @@ main :: proc() {
     }
 
     
-    time.stopwatch_start(&gen_clock)
+    //time.stopwatch_start(&gen_clock)
     construct_planet_mesh_single_threaded(&_planet, settings.planet)
-    planet_vertices, planet_indices = merge_planet_meshes(_planet, context.temp_allocator)
+    planet_vertices, planet_indices = merge_planet_meshes(_planet)
     gpu.buffer_data(planet_vb, slice.to_bytes(planet_vertices))
     gpu.buffer_data(planet_ib, slice.to_bytes(planet_indices))
-    frame_info.gen_time = cast(f32)time.duration_seconds(time.stopwatch_duration(gen_clock))
-    time.stopwatch_reset(&gen_clock)
+    //frame_info.gen_time = cast(f32)time.duration_seconds(time.stopwatch_duration(gen_clock))
+    //time.stopwatch_reset(&gen_clock)
 
     
     input_buffers.buffers[0] = planet_vb
@@ -257,5 +259,5 @@ main :: proc() {
     input_uniforms.view = view
     input_uniforms.projection = projection
 
-    time.stopwatch_start(&frame_clock)
+    //time.stopwatch_start(&frame_clock)
 }
