@@ -204,7 +204,8 @@ main :: proc() {
     initialize()
     
     if shader, shader_err = create_standard_shader(); shader_err != nil {
-        fmt.panicf("SHADER_ERR: %s\n", shader_err.(string))
+        fmt.printf("SHADER_ERR: %s\n", shader_err.(string))
+        panic("Planeteer shader error")
     }
     default_pipeline = create_standard_pipeline(shader, .Fill)
     wireframe_pipeline = create_standard_pipeline(shader, .Line)

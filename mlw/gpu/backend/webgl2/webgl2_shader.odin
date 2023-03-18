@@ -70,25 +70,19 @@ _shader_stages: map[core.Shader_Stage]WebGL2_Shader_Stage
 
 
 create_shader_stage :: proc(desc: core.Shader_Stage_Info) -> (stage: core.Shader_Stage, temp_error: Maybe(string)) {
-    csrc: cstring
-    osrc: string
-    length: i32
+
     stageType := _SHADER_STAGE_TYPE_CONV[desc.type]
+    shader := gl.CreateShader(stageType)
     switch src in desc.src {
         case []u8: {
-            osrc = strings.string_from_ptr(raw_data(src), len(src))
-            csrc = strings.unsafe_string_to_cstring(osrc)
-            length = cast(i32)len(osrc)
+            str := strings.string_from_ptr(raw_data(src), len(src))
+            gl.ShaderSource(shader, {str})
         }
 
         case string: {
-            csrc = strings.unsafe_string_to_cstring(src)
-            length = cast(i32)len(src)
+           gl.ShaderSource(shader, {src})
         }
     }
-    sources := []string{osrc}
-    shader := gl.CreateShader(stageType)
-    gl.ShaderSource(shader, sources)
     gl.CompileShader(shader)
     
     success: i32 
@@ -96,9 +90,9 @@ create_shader_stage :: proc(desc: core.Shader_Stage_Info) -> (stage: core.Shader
     success = gl.GetShaderiv(shader, gl.COMPILE_STATUS)
     if success == 0 {
         logLength: i32
-        gl.GetShaderInfoLog(shader, log[:])
-        logstr := strings.string_from_ptr(&log[0], cast(int)logLength)
+        logstr := gl.GetShaderInfoLog(shader, log[:])
         gl.DeleteShader(shader)
+        fmt.printf("SHADER: %v\n", logstr)
         return 0, fmt.tprint(logstr)
     }
 
@@ -170,9 +164,9 @@ create_shader :: proc(desc: core.Shader_Info, destroy_stages_on_success: bool) -
     
     if success == 0 {
         logLength: i32 
-        gl.GetProgramInfoLog(program, log[:])
-        logstr := strings.string_from_ptr(&log[0], cast(int)logLength)
+        logstr := gl.GetProgramInfoLog(program, log[:])
         gl.DeleteProgram(program)
+        fmt.printf("PROGRAM: %v\n", logstr)
         return 0, fmt.tprintf("%s", logstr)
     }
     

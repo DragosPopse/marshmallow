@@ -16,7 +16,9 @@ init :: proc() {
     glcache.init()
     _init_vaos()
     glcache.BindVertexArray(_naked_vao)
-    //fmt.printf("OpenGL Version: %s\n", gl.GetString(gl.VERSION))
+    major, minor: i32
+    gl.GetESVersion(&major, &minor)
+    fmt.printf("OpenGL Version: WebGL %d.%d\n", major, minor)
 }
 
 teardown :: proc() {

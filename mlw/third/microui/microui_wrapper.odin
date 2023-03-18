@@ -34,7 +34,7 @@ init :: proc() -> ^mu.Context {
 
     shader_err: Maybe(string)
     if _shader, shader_err = _create_microui_shader(); shader_err != nil {
-        fmt.printf("SHADER_ERR: %s\n", shader_err.(string))
+        fmt.printf("microui SHADER_ERR: %s\n", shader_err.(string))
         return nil
     }
     _pipeline = _create_microui_pipeline(_shader)

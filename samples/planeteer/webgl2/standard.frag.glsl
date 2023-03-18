@@ -1,5 +1,7 @@
 #version 300 es
 
+precision mediump float;
+
 in vec4 VertexColor;
 in vec3 VertexNormal;
 out vec4 FragmentColor;
