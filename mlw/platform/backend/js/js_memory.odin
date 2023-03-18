@@ -43,7 +43,6 @@ Header :: struct {
 
 Wasm_Allocator_Data :: struct {
     buffer: []byte,
-    heap: Header,
 }
 
 
@@ -56,23 +55,28 @@ wasm_page_resize :: proc(wasm_data: ^Wasm_Allocator_Data, page_count: int) -> (e
 
 	ptr :[^]byte = cast([^]byte)(&wasm_data.buffer[0])
     wasm_data.buffer = ptr[:(prev_page_count + page_count) * js.PAGE_SIZE]
-    wasm_data.heap.size += page_count * js.PAGE_SIZE
+    heap := cast(^Header)&wasm_data.buffer[0]
+    heap.size += page_count * js.PAGE_SIZE
 	return .None
 }
 
 wasm_alloc_init :: proc(data: ^Wasm_Allocator_Data) {
     data.buffer, _ = js.page_alloc(1)
-    data.heap = Header{fefe = MAGIC_HEADER, size = js.PAGE_SIZE, next = nil}
+    header := cast(^Header)&data.buffer[0]
+    header.fefe = MAGIC_HEADER 
+    header.size = js.PAGE_SIZE - size_of(Header)
 }
 
 
 wasm_alloc :: proc(data: ^Wasm_Allocator_Data, size: int, alignment: int) -> (buffer: []byte, err: mem.Allocator_Error) {
     // TODO(matthew): handle alignment
     fmt.printf("wasm_alloc: %v %v\n", size, alignment)
-
+    size := size
+    
+    
     alloc_size := size + size_of(Header)
     
-    block_header := &data.heap
+    block_header := cast(^Header)&data.buffer[0]
     fmt.printf("block_header: %#v\n", block_header)
     for block_header != nil && block_header.size < alloc_size {
         block_header = block_header.next
@@ -85,29 +89,29 @@ wasm_alloc :: proc(data: ^Wasm_Allocator_Data, size: int, alignment: int) -> (bu
         if err = wasm_page_resize(data, pages_to_alloc); err != .None {
             return nil, err
         }
-        block_header = &data.heap
+        block_header = cast(^Header)&data.buffer[0]
     }
 
     fmt.printf("FINAL block_header: %#v\n", block_header)
-
-    
     
     block_ptr := uintptr(block_header) + size_of(Header)
-    aligned_ptr := mem.align_forward_uintptr(block_ptr, 64)
-    aligned_size := alloc_size + int(aligned_ptr - block_ptr)
-    block := slice.from_ptr(cast([^]byte)aligned_ptr, aligned_size)
 
+    block := slice.from_ptr(cast([^]byte)block_ptr, block_header.size)
    
-    block_start := block_header.size - aligned_size
-    block_header.size -= aligned_size
+    block_start := block_header.size - alloc_size
+
+    fmt.printf("block_start, header_size: %v %v\n", block_start, block_header.size)
+    fmt.printf("alloc_size %v\n", alloc_size)
+    allocated_data := block[block_start:block_start + alloc_size]
     
-    fmt.printf("block_start, header_size, alloc_size: %v %v %v\n", block_start, block_header.size, alloc_size)
-    allocated_data := block[block_start:block_start + aligned_size]
+    block_header.size -= alloc_size
+
     header := cast(^Header)raw_data(allocated_data[0:size_of(Header)])
     buffer = allocated_data[size_of(Header):]
-    header.size = aligned_size
+    header.size = size
     header.fefe = MAGIC_HEADER
-    assert(len(buffer) == size)
+    fmt.printf("Buffer size: %v", len(buffer))
+    fmt.assertf(len(buffer) == size, "Buffer size mismatch: %v %v", len(buffer), alloc_size)
     
     return
 }
@@ -116,7 +120,7 @@ wasm_free :: proc(data: ^Wasm_Allocator_Data, ptr: rawptr) -> (err: mem.Allocato
     header := cast(^Header)(uintptr(ptr) - size_of(Header))
     assert(header.fefe == MAGIC_HEADER)
 
-    block_header := &data.heap
+    block_header := cast(^Header)&data.buffer[0]
     for block_header.next != nil {
         block_header = block_header.next
     }
@@ -151,8 +155,9 @@ allocator_proc :: proc(allocator_data: rawptr, mode: mem.Allocator_Mode,
         }
 
         case .Free_All: {
-            data.heap.next = nil
-            data.heap.size = len(data.buffer)
+            heap := cast(^Header)&data.buffer[0]
+            heap.next = nil
+            heap.size = len(data.buffer)
             return nil, .None
         }
 
