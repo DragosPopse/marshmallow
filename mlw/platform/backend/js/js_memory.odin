@@ -7,6 +7,8 @@ import "core:slice"
 import "core:fmt"
 import "core:intrinsics"
 
+import "wasmem"
+
 allocator_data: Wasm_Allocator_Data
 _default_context: runtime.Context
 scratch: mem.Scratch_Allocator
