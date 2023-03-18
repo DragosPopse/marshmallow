@@ -135,6 +135,10 @@ create_shader_stage :: proc(desc: core.Shader_Stage_Info) -> (stage: core.Shader
 
     stage = gl_stage.id
     _shader_stages[stage] = gl_stage
+    
+    // Note(Dragos): We got problems with the maps in wasm, which means the allocator isn't correct
+    fmt.printf("Created Shader %v\n", gl_stage.handle)
+    fmt.printf("Same Shader in Map %v\n", _shader_stages[stage].handle)
     return
 }
 

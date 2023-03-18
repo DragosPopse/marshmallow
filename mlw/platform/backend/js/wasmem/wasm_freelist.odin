@@ -56,12 +56,30 @@ free_list_node_remove :: proc(fl: ^Free_List, prev_node, del_node: ^Free_List_No
     }
 }
 
-calc_padding_with_header :: proc(ptr: uintptr, alignment, header_size: int) -> int {
-    return int(mem.align_forward_uintptr(ptr + uintptr(header_size), uintptr(alignment)) - ptr) // This good? Who the fuck knows
+calc_padding_with_header :: proc(ptr: uintptr, alignment, header_size: int) -> (padding: int) {
+    p, a, modulo, needed_space, pad: uintptr
+    p = ptr
+    a = cast(uintptr)alignment
+    modulo = p & (a - 1)
+    if modulo != 0 {
+        pad = a - modulo
+    }
+
+    needed_space = cast(uintptr)header_size
+    if pad < needed_space {
+        needed_space -= pad
+        if (needed_space & (a - 1)) != 0 {
+            pad += a * (1 + needed_space / a)
+        } else {
+            pad += a * (needed_space / a)
+        }
+    }
+
+    return cast(int)pad
 }
 
 free_list_init :: proc "contextless" (fl: ^Free_List, data: []byte) {
-    fl.policy = .Find_Best
+    fl.policy = .Find_First
     //TODO(dragos): do some page alloc in here
     fl.data = data
     free_list_free_all(fl)
@@ -77,9 +95,12 @@ free_list_free_all :: proc "contextless" (fl: ^Free_List) {
 
 free_list_find_first :: proc(fl: ^Free_List, size, alignment: int) -> (node: ^Free_List_Node, padding: int, prev_node: ^Free_List_Node) {
     node = fl.head
+    fmt.printf("Head: %v\n", node)
     for node != nil {
         padding = calc_padding_with_header(cast(uintptr)node, alignment, size_of(Free_List_Alloc_Header))
         required_space := size + padding
+        fmt.printf("pad, align, size: %v %v %v\n", padding, alignment, size)
+        fmt.printf("block_size, required_space: %v %v %v\n", node.block_size, required_space)
         if node.block_size >= required_space do break
         prev_node = node
         node = node.next
@@ -87,6 +108,7 @@ free_list_find_first :: proc(fl: ^Free_List, size, alignment: int) -> (node: ^Fr
     return node, padding, prev_node
 }
 
+// Note(Dragos): There is a bug in this one
 free_list_find_best :: proc(fl: ^Free_List, size, alignment: int) -> (best_node: ^Free_List_Node, padding: int, prev_node: ^Free_List_Node) {
     smallest_diff := ~uint(0)
     node := fl.head
@@ -95,8 +117,10 @@ free_list_find_best :: proc(fl: ^Free_List, size, alignment: int) -> (best_node:
         padding = calc_padding_with_header(cast(uintptr)node, alignment, size_of(Free_List_Alloc_Header))
         fmt.printf("pad, align, size: %v %v %v\n", padding, alignment, size)
         required_space := size + padding
+        fmt.printf("block_size, required_space, smallest_diff: %v %v\n", node.block_size, required_space, smallest_diff)
         if node.block_size >= required_space && uint(node.block_size - required_space) < smallest_diff {
             best_node = node
+            smallest_diff = uint(node.block_size - required_space)
         }
         prev_node = node
         node = node.next
@@ -120,19 +144,21 @@ free_list_alloc :: proc(fl: ^Free_List, size, alignment: int) -> (data: []byte, 
 
     node, padding, prev_node := free_list_find(fl, size, alignment)
     if node == nil {
+        fmt.printf("Out of memory. We shouldn't be here.\n")
         return nil, .Out_Of_Memory
     }
 
     alignment_padding := padding - size_of(Free_List_Alloc_Header)
     required_space := size + padding
     remaining := node.block_size - required_space
-
+    fmt.printf("PRE Head, node, prev_node: %v %v %v\n", fl.head, node, prev_node)
     if remaining > 0 {
         new_node := cast(^Free_List_Node)(uintptr(node) + uintptr(required_space))
         new_node.block_size = remaining
         free_list_node_insert(fl, node, new_node)
     }
     free_list_node_remove(fl, prev_node, node)
+    fmt.printf("POST Head, node, prev_node: %v %v %v\n", fl.head, node, prev_node)
     header_ptr := cast(^Free_List_Alloc_Header)(uintptr(node) + uintptr(alignment_padding))
     header_ptr.block_size = required_space
     header_ptr.padding = alignment_padding
@@ -140,6 +166,7 @@ free_list_alloc :: proc(fl: ^Free_List, size, alignment: int) -> (data: []byte, 
     fl.used += required_space
 
     ptr := ([^]byte)(uintptr(header_ptr) + size_of(Free_List_Alloc_Header))
+    fmt.printf("PTR: %v\n", uintptr(ptr))
     return slice.from_ptr(ptr, required_space), .None
 }
 
