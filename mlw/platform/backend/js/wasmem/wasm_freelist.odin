@@ -50,7 +50,7 @@ free_list_node_insert :: proc(fl: ^Free_List, prev_node, new_node: ^Free_List_No
 
 free_list_node_remove :: proc(fl: ^Free_List, prev_node, del_node: ^Free_List_Node) {
     if prev_node == nil {
-        fl.head = prev_node
+        fl.head = del_node.next
     } else {
         prev_node.next = del_node.next
     }
@@ -192,6 +192,8 @@ free_list_free :: proc(fl: ^Free_List, ptr: rawptr) {
 }
 
 free_list_merge_nodes :: proc(fl: ^Free_List, prev_node, free_node: ^Free_List_Node) {
+    if prev_node == nil do return
+    
     if free_node.next != nil && rawptr(uintptr(free_node) + uintptr(free_node.block_size)) == free_node.next {
         free_node.block_size += free_node.next.block_size
         free_list_node_remove(fl, free_node, free_node.next)
@@ -233,6 +235,11 @@ free_list_allocator_proc :: proc(allocator_data: rawptr, mode: mem.Allocator_Mod
             return nil, .None
         }
 
+        case .Resize: {
+            fmt.printf("RESIZE CALLED AT LOCATION %v\n", location)
+            return nil, .Mode_Not_Implemented
+        }
+
         case .Query_Features: {
             set := (^mem.Allocator_Mode_Set)(old_memory)
 			if set != nil {
@@ -241,7 +248,7 @@ free_list_allocator_proc :: proc(allocator_data: rawptr, mode: mem.Allocator_Mod
             return nil, .None
         }
 
-        case .Query_Info, .Resize: {
+        case .Query_Info: {
             return nil, .Mode_Not_Implemented
         }
     }

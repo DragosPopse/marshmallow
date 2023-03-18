@@ -43,7 +43,7 @@ IB_SIZE :: 6 * (MAX_RESOLUTION - 1) * (MAX_RESOLUTION - 1) * 6 * size_of(u32)
 
 default_planet_settings :: proc() -> (settings: Planet_Settings) {
 	settings.radius = 2.5
-	settings.resolution = 40
+	settings.resolution = 2
 	settings.noise = default_noise()
 	return settings
 }

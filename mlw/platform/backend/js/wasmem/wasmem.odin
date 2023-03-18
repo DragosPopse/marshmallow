@@ -1,3 +1,4 @@
+//+build js
 package mmlow_js_wasmem
 
 import "core:mem"

@@ -1,4 +1,5 @@
-package glcache
+
+package webglcached
 
 import gl "vendor:wasm/WebGL"
 import "core:mem"

@@ -27,5 +27,6 @@ get_backend_window: Backend_Get_Backend_Window : backend.get_backend_window
 when ODIN_OS == .JS {
     default_context :: backend.default_context
 } else {
-    default_context :: runtime.default_context
+    import test "backend/js"
+    default_context :: test.default_context
 }

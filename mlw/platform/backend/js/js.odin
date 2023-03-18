@@ -11,6 +11,7 @@ import "wasmem"
 
 WASM_MEMORY_PAGES :: #config(WASM_MEMORY_PAGES_CONFIG, 16384) // 1 GiB default
 
+
 free_list: wasmem.Free_List
 wasm_context: runtime.Context
 scratch: mem.Scratch_Allocator
@@ -19,13 +20,16 @@ scratch: mem.Scratch_Allocator
 _init_default_context :: proc "contextless" () {
     wasm_context = runtime.default_context()
     context = wasm_context
-    fmt.printf("Allocating %v (%v bytes) pages for general purpose allocations\n", WASM_MEMORY_PAGES, WASM_MEMORY_PAGES * wasmem.PAGE_SIZE)
+    //fmt.printf("Allocating %v (%v bytes) pages for general purpose allocations\n", WASM_MEMORY_PAGES, WASM_MEMORY_PAGES * wasmem.PAGE_SIZE)
+    /*
     if data, err := wasmem.page_alloc(WASM_MEMORY_PAGES); err == .None {
         wasmem.free_list_init(&free_list, data)
     } else {
         fmt.printf("Failed to allocate %v pages.", WASM_MEMORY_PAGES)
     }
-    
+    */
+    data, _ := mem.alloc_bytes(1 << 30)
+    wasmem.free_list_init(&free_list, data)
     wasm_context.allocator = wasmem.free_list_allocator(&free_list)
     if err := mem.scratch_allocator_init(&scratch, 4 * mem.Megabyte, wasm_context.allocator); err != .None {
         fmt.printf("Failed to create scratch allocator.\n")
@@ -38,7 +42,7 @@ default_context :: proc "contextless" () -> (ctx: runtime.Context) {
 }
 
 @(export, link_name = "odin_context_ptr")
-odin_context_ptr :: proc "contextless"() -> (^runtime.Context) {
+odin_context_ptr :: proc "contextless" () -> (^runtime.Context) {
     return &wasm_context
 }
 

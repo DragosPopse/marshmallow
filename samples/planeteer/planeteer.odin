@@ -1,4 +1,4 @@
-//+build ignore
+//+build !js
 package main
 
 
@@ -108,6 +108,7 @@ initialize :: proc() {
 
 
 main :: proc() {
+    //context = platform.default_context()
     frame_clock, gen_clock, render_clock, buffer_update_clock: time.Stopwatch
     initialize()
     shader: gpu.Shader
@@ -152,12 +153,10 @@ main :: proc() {
   
     
     time.stopwatch_start(&gen_clock)
-    //when ODIN_OS != .JS {
-        //construct_planet_mesh(&_planet, settings.planet, &pool)
-    //} else {
-        construct_planet_mesh_single_threaded(&_planet, settings.planet)
-    //}
-    planet_vertices, planet_indices := merge_planet_meshes(_planet, context.temp_allocator)
+    
+    construct_planet_mesh_single_threaded(&_planet, settings.planet)
+    
+    planet_vertices, planet_indices := merge_planet_meshes(_planet)
     gpu.buffer_data(planet_vb, slice.to_bytes(planet_vertices))
     gpu.buffer_data(planet_ib, slice.to_bytes(planet_indices))
     frame_info.gen_time = cast(f32)time.duration_seconds(time.stopwatch_duration(gen_clock))
@@ -206,18 +205,16 @@ main :: proc() {
             time.stopwatch_start(&gen_clock)
 
             destroy_planet(_planet)
-            //when ODIN_OS != .JS {
-                //construct_planet_mesh(&_planet, settings.planet, &pool)
-            //} else {
-                construct_planet_mesh_single_threaded(&_planet, settings.planet)
-            //}
+            construct_planet_mesh_single_threaded(&_planet, settings.planet)
 
             frame_info.gen_time = cast(f32)time.duration_seconds(time.stopwatch_duration(gen_clock))
             time.stopwatch_reset(&gen_clock)
 
             time.stopwatch_start(&buffer_update_clock)
 
-            planet_vertices, planet_indices = merge_planet_meshes(_planet, context.temp_allocator)
+            delete(planet_vertices)
+            delete(planet_indices)
+            planet_vertices, planet_indices = merge_planet_meshes(_planet)
             gpu.buffer_data(planet_vb, slice.to_bytes(planet_vertices))
             gpu.buffer_data(planet_ib, slice.to_bytes(planet_indices))
 
