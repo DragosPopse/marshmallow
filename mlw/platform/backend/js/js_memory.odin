@@ -1,3 +1,4 @@
+//+build ignore
 package mmlow_platform_backend_js
 
 import "core:runtime"
@@ -9,9 +10,9 @@ import "core:intrinsics"
 
 import "wasmem"
 
-allocator_data: Wasm_Allocator_Data
-_default_context: runtime.Context
-scratch: mem.Scratch_Allocator
+
+
+
 
 @(init)
 _init_default_context :: proc "contextless" () {
