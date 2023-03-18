@@ -20,12 +20,16 @@ _init_default_context :: proc "contextless" () {
     wasm_context = runtime.default_context()
     context = wasm_context
     fmt.printf("Allocating %v (%v bytes) pages for general purpose allocations\n", WASM_MEMORY_PAGES, WASM_MEMORY_PAGES * wasmem.PAGE_SIZE)
-    if data, err := wasmem.page_alloc(WASM_MEMORY_PAGES); err != .None {
-        fmt.panicf("Failed to allocate %v pages.", WASM_MEMORY_PAGES)
+    if data, err := wasmem.page_alloc(WASM_MEMORY_PAGES); err == .None {
+        wasmem.free_list_init(&free_list, data)
+    } else {
+        fmt.printf("Failed to allocate %v pages.", WASM_MEMORY_PAGES)
     }
-    wasmem.free_list_init(&free_list, nil)
+    
     wasm_context.allocator = wasmem.free_list_allocator(&free_list)
-    mem.scratch_allocator_init(&scratch, 4 * mem.Megabyte, wasm_context.allocator)
+    if err := mem.scratch_allocator_init(&scratch, 4 * mem.Megabyte, wasm_context.allocator); err != .None {
+        fmt.printf("Failed to create scratch allocator.\n")
+    }
     wasm_context.temp_allocator = mem.scratch_allocator(&scratch)
 }
 
