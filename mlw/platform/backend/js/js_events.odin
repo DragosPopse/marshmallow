@@ -29,8 +29,12 @@ callback_mouse_move :: proc(ev: js.Event) {
     out: event.Event
     out.type = .Mouse_Move
     out.move.delta = linalg.to_int(ev.data.mouse.movement)
-    out.move.position.yx = linalg.to_int(ev.data.mouse.client)
-    fmt.printf("Mouse Move: %v %v %v %v\n", out.move.position, ev.mouse.screen, ev.mouse.offset, ev.mouse.page)
+    
+    // Excuse me what the fuck? Why does this work? What the fuck
+    out.move.position.y = cast(int)ev.data.mouse.offset.x
+    out.move.position.x = cast(int)ev.mouse.client.y
+
+    //fmt.printf("Mouse Move: %v\n", out.move.position)
     queue.push_back(&_events, out)
 }
 
