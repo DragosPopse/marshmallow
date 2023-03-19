@@ -1,3 +1,4 @@
+//+build js
 package mmlow_platform_backend_js
 
 import "../../event"
@@ -32,7 +33,7 @@ _init_default_context :: proc "contextless" () {
     if err := mem.scratch_allocator_init(&scratch, 4 * mem.Megabyte, wasm_context.allocator); err != .None {
         fmt.printf("Failed to create scratch allocator.\n")
     }
-    wasm_context.temp_allocator = mem.scratch_allocator(&scratch)
+    wasm_context.temp_allocator = mem.scratch_allocator(&scratch) // Todo(Dragos): Scratch allocator doesn't really work
 }
 
 default_context :: proc "contextless" () -> (ctx: runtime.Context) {

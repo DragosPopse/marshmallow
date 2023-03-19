@@ -152,9 +152,9 @@ destroy_terrain_face :: proc(face: Terrain_Face, allocator := context.allocator)
 merge_planet_meshes :: proc(planet: Planet, allocator := context.allocator) -> (vertices: []Vertex, indices: []u32) {
     context.allocator = allocator
     vertex_list: [dynamic]Vertex
-    resize_dynamic_array(&vertex_list, planet.settings.resolution * planet.settings.resolution * 6)
+    //resize_dynamic_array(&vertex_list, planet.settings.resolution * planet.settings.resolution * 6)
     index_list: [dynamic]u32
-    resize_dynamic_array(&index_list, (planet.settings.resolution - 1) * (planet.settings.resolution - 1) * 6 * 6)
+    //resize_dynamic_array(&index_list, (planet.settings.resolution - 1) * (planet.settings.resolution - 1) * 6 * 6)
     current_index := 0
     for face, i in planet.terrain_faces {
         last_vertex_len := cast(u32)len(vertex_list)

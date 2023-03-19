@@ -6,6 +6,8 @@ import "core:fmt"
 import "core:slice"
 import "vendor:wasm/js"
 
+PAGE_SIZE :: 64 * 1024
+
 // Adapted from https://www.gingerbill.org/article/2021/11/30/memory-allocation-strategies-005/
 
 Free_List_Alloc_Header :: struct {
@@ -193,7 +195,7 @@ free_list_free :: proc(fl: ^Free_List, ptr: rawptr) {
 
 free_list_merge_nodes :: proc(fl: ^Free_List, prev_node, free_node: ^Free_List_Node) {
     if prev_node == nil do return
-    
+
     if free_node.next != nil && rawptr(uintptr(free_node) + uintptr(free_node.block_size)) == free_node.next {
         free_node.block_size += free_node.next.block_size
         free_list_node_remove(fl, free_node, free_node.next)

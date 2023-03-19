@@ -28,5 +28,5 @@ when ODIN_OS == .JS {
     default_context :: backend.default_context
 } else {
     import test "backend/js"
-    default_context :: test.default_context
+    default_context :: runtime.default_context
 }
