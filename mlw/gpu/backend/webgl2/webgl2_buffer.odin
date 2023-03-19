@@ -57,6 +57,7 @@ destroy_buffer :: proc(buffer: core.Buffer) {
     core.delete_buffer_id(buffer)
 }
 
+_use_indexed := false
 apply_input_buffers :: proc(buffers: core.Input_Buffers) {
     assert(_current_pipeline != nil, "Invalid pipeline.")
 
@@ -67,9 +68,13 @@ apply_input_buffers :: proc(buffers: core.Input_Buffers) {
     // Bind index buffer if it exists
     if index, found := buffers.index.?; found {
         assert(index in _buffers, "Cannot find index buffer.")
-        glcache.BindBuffer(.ELEMENT_ARRAY_BUFFER, _buffers[index].handle)
+        //fmt.printf("Index Buffer: %v\n", _buffers[index].handle)
+        _use_indexed = true
+        // Note(Dragos): glcache doesn't seem to work for webgl. Need testing
+        gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, _buffers[index].handle)
     } else {
-        glcache.BindBuffer(.ELEMENT_ARRAY_BUFFER, 0)
+        _use_indexed = false
+        gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
     }
 
     // Note(Dragos): check the usage and optimization of this loop format

@@ -177,7 +177,9 @@ _create_atlas_texture :: proc() -> (gpu.Texture) {
     
     // Is this the problem?!
     info.format = .RGBA8
-    pixels := make([][4]u8, mu.DEFAULT_ATLAS_WIDTH * mu.DEFAULT_ATLAS_HEIGHT, context.temp_allocator)
+    // Note(Dragos): The temp_allocator is goofed up on wasm for now
+    pixels := make([][4]u8, mu.DEFAULT_ATLAS_WIDTH * mu.DEFAULT_ATLAS_HEIGHT, context.allocator)
+    defer delete(pixels)
 	for alpha, i in mu.default_atlas_alpha {
 		pixels[i].rgb = 255
 		pixels[i].a   = alpha
