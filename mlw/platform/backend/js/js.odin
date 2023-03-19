@@ -6,8 +6,10 @@ import "../../../core"
 import "core:runtime"
 import "core:mem"
 import "core:fmt"
+import "core:container/queue"
 
 import "wasmem"
+import "vendor:wasm/js"
 
 
 WASM_MEMORY_PAGES :: #config(WASM_MEMORY_PAGES_CONFIG, 16384) // 1 GiB default
@@ -36,6 +38,7 @@ _init_default_context :: proc "contextless" () {
     wasm_context.temp_allocator = mem.scratch_allocator(&scratch) // Todo(Dragos): Scratch allocator doesn't really work
 }
 
+
 default_context :: proc "contextless" () -> (ctx: runtime.Context) {
     return wasm_context
 }
@@ -46,7 +49,11 @@ odin_context_ptr :: proc "contextless" () -> (^runtime.Context) {
 }
 
 init :: proc(info: core.Platform_Info) {
-
+    queue.init_from_slice(&_events, _events_backing[:])
+    js.add_window_event_listener(.Mouse_Down, nil, callback_mouse_down)
+    js.add_window_event_listener(.Mouse_Up, nil, callback_mouse_up)
+    js.add_window_event_listener(.Scroll, nil, callback_wheel)
+    js.add_window_event_listener(.Mouse_Move, nil, callback_mouse_move)
 }
 
 teardown :: proc() {
@@ -58,8 +65,8 @@ update_window :: proc() {
 }
 
 poll_event :: proc() -> (ev: event.Event, ok: bool) {
-
-    return
+    if queue.len(_events) == 0 do return {}, false
+    return queue.pop_front(&_events), true
 }
 
 get_backend_window :: proc() -> (window: rawptr) {
