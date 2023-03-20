@@ -43,6 +43,8 @@ callback_mouse_up :: proc(ev: js.Event) {
     out.type = .Mouse_Up
     // Note(Dragos): Not really correctly implemented
     out.button.button = cast(event.Mouse_Button)ev.mouse.button
+    out.button.position.y = cast(int)ev.data.mouse.offset.x
+    out.button.position.x = cast(int)ev.mouse.client.y
     fmt.printf("Mouse Up: %v\n", out.button.button)
     queue.push_back(&_events, out)
 }
@@ -52,6 +54,8 @@ callback_mouse_down :: proc(ev: js.Event) {
     out.type = .Mouse_Down
     // Note(Dragos): Not really correctly implemented
     out.button.button = cast(event.Mouse_Button)ev.mouse.button
+    out.button.position.y = cast(int)ev.data.mouse.offset.x
+    out.button.position.x = cast(int)ev.mouse.client.y
     fmt.printf("Mouse Down: %v\n", out.button.button)
     queue.push_back(&_events, out)
 }

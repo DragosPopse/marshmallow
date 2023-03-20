@@ -44,9 +44,15 @@ init :: proc() -> ^mu.Context {
 
 process_platform_event :: proc(ctx: ^mu.Context, ev: event.Event) {
     #partial switch ev.type {
-        case .Mouse_Move: mu.input_mouse_move(ctx, cast(i32)ev.move.position.x, cast(i32)ev.move.position.y)
-        case .Mouse_Wheel: mu.input_mouse_move(ctx, 0, cast(i32)ev.wheel.scroll.y * -30)
-        case .Text_Input: mu.input_text(ctx, ev.text.text)
+        case .Mouse_Move: {
+            mu.input_mouse_move(ctx, cast(i32)ev.move.position.x, cast(i32)ev.move.position.y)
+        }
+        case .Mouse_Wheel: {
+            mu.input_mouse_move(ctx, 0, cast(i32)ev.wheel.scroll.y * -30)
+        }
+        case .Text_Input: {
+            mu.input_text(ctx, ev.text.text)
+        }
 
         case .Mouse_Down, .Mouse_Up: {
             b := _button_map[ev.button.button]
