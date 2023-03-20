@@ -12,12 +12,17 @@ import "wasmem"
 import "vendor:wasm/js"
 
 
-WASM_MEMORY_PAGES :: #config(WASM_MEMORY_PAGES_CONFIG, 16384) // 1 GiB default
+WASM_MEMORY_PAGES :: #config(MLW_WASM_MEMORY_PAGES_CONFIG, 16384) // 1 GiB default
+
+WASM_TEMP_ALLOCATOR_MB :: #config(MLW_WASM_TEMP_ALLOCATOR_MB, 4)
 
 
 free_list: wasmem.Free_List
 wasm_context: runtime.Context
 scratch: mem.Scratch_Allocator
+
+_temp_allocator_data: [WASM_TEMP_ALLOCATOR_MB * mem.Megabyte]byte
+_temp_allocator_arena: mem.Arena
 
 @(init)
 _init_default_context :: proc "contextless" () {
@@ -30,12 +35,10 @@ _init_default_context :: proc "contextless" () {
     } else {
         fmt.printf("Failed to allocate %v pages.", WASM_MEMORY_PAGES)
     }
+    mem.arena_init(&_temp_allocator_arena, _temp_allocator_data[:])
     
     wasm_context.allocator = wasmem.free_list_allocator(&free_list)
-    if err := mem.scratch_allocator_init(&scratch, 4 * mem.Megabyte, wasm_context.allocator); err != .None {
-        fmt.printf("Failed to create scratch allocator.\n")
-    }
-    wasm_context.temp_allocator = mem.scratch_allocator(&scratch) // Todo(Dragos): Scratch allocator doesn't really work
+    wasm_context.temp_allocator = mem.arena_allocator(&_temp_allocator_arena)
 }
 
 
@@ -50,11 +53,6 @@ odin_context_ptr :: proc "contextless" () -> (^runtime.Context) {
 
 init :: proc(info: core.Platform_Info) {
     queue.init_from_slice(&_events, _events_backing[:])
-    // add_event_listener: the ID is getElementById thing. Give the ID of the canvas. Maybe the title of the window?
-    /*js.add_window_event_listener(.Mouse_Down, nil, callback_mouse_down)
-    js.add_window_event_listener(.Mouse_Up, nil, callback_mouse_up)
-    js.add_window_event_listener(.Scroll, nil, callback_wheel)
-    js.add_window_event_listener(.Mouse_Move, nil, callback_mouse_move)*/
     js.add_event_listener(info.window.title, .Mouse_Down, nil, callback_mouse_down)
     js.add_event_listener(info.window.title, .Mouse_Up, nil, callback_mouse_up)
     js.add_event_listener(info.window.title, .Scroll, nil, callback_wheel)
