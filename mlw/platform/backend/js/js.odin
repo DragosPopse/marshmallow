@@ -50,10 +50,15 @@ odin_context_ptr :: proc "contextless" () -> (^runtime.Context) {
 
 init :: proc(info: core.Platform_Info) {
     queue.init_from_slice(&_events, _events_backing[:])
-    js.add_window_event_listener(.Mouse_Down, nil, callback_mouse_down)
+    // add_event_listener: the ID is getElementById thing. Give the ID of the canvas. Maybe the title of the window?
+    /*js.add_window_event_listener(.Mouse_Down, nil, callback_mouse_down)
     js.add_window_event_listener(.Mouse_Up, nil, callback_mouse_up)
     js.add_window_event_listener(.Scroll, nil, callback_wheel)
-    js.add_window_event_listener(.Mouse_Move, nil, callback_mouse_move)
+    js.add_window_event_listener(.Mouse_Move, nil, callback_mouse_move)*/
+    js.add_event_listener(info.window.title, .Mouse_Down, nil, callback_mouse_down)
+    js.add_event_listener(info.window.title, .Mouse_Up, nil, callback_mouse_up)
+    js.add_event_listener(info.window.title, .Scroll, nil, callback_wheel)
+    js.add_event_listener(info.window.title, .Mouse_Move, nil, callback_mouse_move)
 }
 
 teardown :: proc() {

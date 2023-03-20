@@ -28,13 +28,14 @@ event_queue_reset :: proc(q: ^Event_Queue) {
 callback_mouse_move :: proc(ev: js.Event) {
     out: event.Event
     out.type = .Mouse_Move
-    out.move.delta = linalg.to_int(ev.data.mouse.movement)
+    //out.move.delta = linalg.to_int(ev.data.mouse.movement)
     
     // Excuse me what the fuck? Why does this work? What the fuck
     out.move.position.y = cast(int)ev.data.mouse.offset.x
     out.move.position.x = cast(int)ev.mouse.client.y
+    //out.move.position.x = cast(int)ev.data.mouse.client.x
+    //out.move.position.y = cast(int)ev.data.mouse.client.y
 
-    //fmt.printf("Mouse Move: %v\n", out.move.position)
     queue.push_back(&_events, out)
 }
 
