@@ -1306,11 +1306,8 @@ function odinSetupDefaultImports(wasmMemoryInterface, consoleElement, glctxEleme
 	};
 
 	let event_temp_data = {};
-	console.log("Start WEBGL setup");
 	let webglContext = new WebGLInterface(wasmMemoryInterface);
-	console.log(JSON.stringify(glctxElement))
 	webglContext.setCurrentContext(glctxElement, null);
-	console.log("End WEBGL setup");
 	return {
 		"env": {
 			
@@ -1645,28 +1642,21 @@ function odinSetupDefaultImports(wasmMemoryInterface, consoleElement, glctxEleme
 };
 
 async function runWasm(wasmPath, consoleElement, glctxElement, extraForeignImports) {
-	console.log("Start runWasm");
 	let wasmMemoryInterface = new WasmMemoryInterface();
-	
-	console.log("Start Setup");
 	let imports = odinSetupDefaultImports(wasmMemoryInterface, consoleElement, glctxElement);
-	console.log("End Setup");
 	let exports = {};
-
 	if (extraForeignImports !== undefined) {
 		imports = {
 			...imports,
 			...extraForeignImports,
 		};
 	}
-
 	const response = await fetch(wasmPath);
 	const file = await response.arrayBuffer();
 	const wasm = await WebAssembly.instantiate(file, imports);
 	exports = wasm.instance.exports;
 	wasmMemoryInterface.setExports(exports);
 	wasmMemoryInterface.setMemory(exports.memory);
-
 	exports._start();
 	if (exports.step) {
 		const odin_ctx = exports.odin_context_ptr();
@@ -1691,6 +1681,26 @@ async function runWasm(wasmPath, consoleElement, glctxElement, extraForeignImpor
 	return;
 };
 
+class CanvasParams {
+	constructor() {
+		this.initialWidth = 0;
+		this.initialHeight = 0;
+	}
+}
+
+class MarshmallowCanvas {
+	constructor() {
+		this.canvas = null;
+	}
+}
+
+function setupCanvas(id, params) {
+	if (!(params instanceof CanvasParams)) {
+		alert("params not of type CanvasParams");
+		return;
+	}
+
+}
 
 window.odin = {
 	// Interface Types

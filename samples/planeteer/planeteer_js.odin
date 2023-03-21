@@ -16,6 +16,7 @@ import "core:time"
 import "core:runtime"
 
 
+
 Vertex_Uniforms :: struct {
     model, view, projection: math.Mat4f,
 }
