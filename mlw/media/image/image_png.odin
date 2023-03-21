@@ -380,31 +380,31 @@ stbi__create_png_image_raw :: proc(a: ^stbi__png, raw: [^]stbi_uc, raw_len: stbi
                     cur[0] = scale * ((_in[0]     ) & 0x01)
                     cur = cur[1:]
                 }
-                if (k > 0) {
+                if k > 0 {
                     cur[0] = scale * ((_in[0] >> 7)       )
                     cur = cur[1:]
                 }
-                if (k > 1) {
+                if k > 1 {
                     cur[0] = scale * ((_in[0] >> 6) & 0x01)
                     cur = cur[1:]
                 }
-                if (k > 2) {
+                if k > 2 {
                     cur[0] = scale * ((_in[0] >> 5) & 0x01)
                     cur = cur[1:] 
                 }
-                if (k > 3) {               
+                if k > 3 {               
                     cur[0] = scale * ((_in[0] >> 4) & 0x01)
                     cur = cur[1:]
                 }
-                if (k > 4) {               
+                if k > 4 {               
                     cur[0] = scale * ((_in[0] >> 3) & 0x01)
                     cur = cur[1:]
                 }
-                if (k > 5) {              
+                if k > 5 {              
                     cur[0] = scale * ((_in[0] >> 2) & 0x01)
                     cur = cur[1:]
                 }
-                if (k > 6) {           
+                if k > 6 {           
                     cur[0] = scale * ((_in[0] >> 1) & 0x01)
                     cur = cur[1:]
                 }
