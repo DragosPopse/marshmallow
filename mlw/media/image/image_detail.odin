@@ -78,6 +78,12 @@ stbi__malloc_mad3 :: proc(a, b, c, add: int) -> rawptr {
    return stbi__malloc(a*b*c + add);
 }
 
+stbi__malloc_mad2 :: proc(a, b, add: int) -> rawptr
+{
+   if (!stbi__mad2sizes_valid(a, b, add)) return nil;
+   return stbi__malloc(a*b + add);
+}
+
 stbi__mad3sizes_valid :: proc(a, b, c, add: int) -> bool {
    return stbi__mul2sizes_valid(a, b) && stbi__mul2sizes_valid(a*b, c) && stbi__addsizes_valid(a*b*c, add);
 }
@@ -86,7 +92,12 @@ stbi__mul2sizes_valid :: proc(a, b: int) -> bool {
    if a < 0 || b < 0 do return false;
    if b == 0 do return true; // mul-by-0 is always safe
    // portable way to check for no overflows in a*b
-   return a <= INT_MAX / b;
+   return a <= max(int) / b;
+}
+
+stbi__mad2sizes_valid :: proc(a, b, add: int) -> bool
+{
+   return stbi__mul2sizes_valid(a, b) && stbi__addsizes_valid(a*b, add);
 }
 
 stbi__addsizes_valid :: proc(a, b: int) -> bool {
@@ -111,4 +122,8 @@ stbi__err :: proc(str1: string, str2: string) {
 
 STBI__BYTECAST :: proc(x: #any_int builtin.int) -> stbi_uc {
     return stbi_uc(x & 255)
+}
+
+STBI_FREE :: proc(ptr: rawptr) {
+    unimplemented("STBI_FREE unimplemented")
 }
