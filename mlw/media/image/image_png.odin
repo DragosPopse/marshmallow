@@ -224,25 +224,88 @@ stbi__create_png_image_raw :: proc(a: ^stbi__png, raw: [^]stbi_uc, raw_len: stbi
 
             switch filter {
                 case STBI__F_none: { 
-                    cur[k] = raw[k]
+                    for i=x-1; i >= 1; i += 1, cur[filter_bytes] = 255, raw = raw[filter_bytes:], cur = cur[output_bytes:], prior = prior[output_bytes:] {
+                        cur[filter_bytes] = 255 
+                        raw = raw[filter_bytes:] 
+                        cur = cur[output_bytes:] 
+                        prior = prior[output_bytes:]
+                        for k=0; k < filter_bytes; k += 1 {
+                            cur[k] = raw[k]
+                        }
+                    }
                 }
                 case STBI__F_sub: { 
-                    cur[k] = STBI__BYTECAST(raw[k] + cur[k- output_bytes])
+                    for i=x-1; i >= 1; i += 1, cur[filter_bytes] = 255, raw = raw[filter_bytes:], cur = cur[output_bytes:], prior = prior[output_bytes:] {
+                        cur[filter_bytes] = 255 
+                        raw = raw[filter_bytes:] 
+                        cur = cur[output_bytes:] 
+                        prior = prior[output_bytes:]
+                        for k=0; k < filter_bytes; k += 1 {
+                            cur[k] = STBI__BYTECAST(raw[k] + cur[k- output_bytes])
+                        }
+                    }
                 } 
-                case STBI__F_up:         { cur[k] = STBI__BYTECAST(raw[k] + prior[k]); } break;
-                case STBI__F_avg:         { cur[k] = STBI__BYTECAST(raw[k] + ((prior[k] + cur[k- output_bytes])>>1)); } break;
-                case STBI__F_paeth:       { cur[k] = STBI__BYTECAST(raw[k] + stbi__paeth(cur[k- output_bytes],prior[k],prior[k- output_bytes])); } break;
-                case STBI__F_avg_first:    { cur[k] = STBI__BYTECAST(raw[k] + (cur[k- output_bytes] >> 1)); } break;
-                case STBI__F_paeth_first:  { cur[k] = STBI__BYTECAST(raw[k] + stbi__paeth(cur[k- output_bytes],0,0)); } break;
+                case STBI__F_up: { 
+                    for i=x-1; i >= 1; i += 1, cur[filter_bytes] = 255, raw = raw[filter_bytes:], cur = cur[output_bytes:], prior = prior[output_bytes:] {
+                        cur[filter_bytes] = 255 
+                        raw = raw[filter_bytes:] 
+                        cur = cur[output_bytes:] 
+                        prior = prior[output_bytes:]
+                        for k=0; k < filter_bytes; k += 1 {
+                            cur[k] = STBI__BYTECAST(raw[k] + prior[k]) 
+                        }
+                    }               
+                } 
+                case STBI__F_avg: { 
+                    for i=x-1; i >= 1; i += 1, cur[filter_bytes] = 255, raw = raw[filter_bytes:], cur = cur[output_bytes:], prior = prior[output_bytes:] {
+                        //cur[filter_bytes] = 255 
+                        //raw = raw[filter_bytes:] 
+                        //cur = cur[output_bytes:] 
+                        //prior = prior[output_bytes:]
+                        for k=0; k < filter_bytes; k += 1 {
+                            cur[k] = STBI__BYTECAST(raw[k] + ((prior[k] + cur[k- output_bytes])>>1))
+                        }
+                    }           
+                }
+                case STBI__F_paeth: { 
+                    for i=x-1; i >= 1; i += 1, cur[filter_bytes] = 255, raw = raw[filter_bytes:], cur = cur[output_bytes:], prior = prior[output_bytes:] {
+                        //cur[filter_bytes] = 255 
+                        //raw = raw[filter_bytes:] 
+                        //cur = cur[output_bytes:] 
+                        //prior = prior[output_bytes:]
+                        for k=0; k < filter_bytes; k += 1 {
+                            cur[k] = STBI__BYTECAST(raw[k] + stbi__paeth(cur[k- output_bytes],prior[k],prior[k- output_bytes]))
+                        }
+                    }        
+                } 
+                case STBI__F_avg_first: { 
+                    for i=x-1; i >= 1; i += 1, cur[filter_bytes] = 255, raw = raw[filter_bytes:], cur = cur[output_bytes:], prior = prior[output_bytes:] {
+                        //cur[filter_bytes] = 255 
+                        //raw = raw[filter_bytes:] 
+                        //cur = cur[output_bytes:] 
+                        //prior = prior[output_bytes:]
+                        for k=0; k < filter_bytes; k += 1 {
+                            cur[k] = STBI__BYTECAST(raw[k] + (cur[k- output_bytes] >> 1))
+                        }
+                    }    
+                } 
+                case STBI__F_paeth_first: { 
+                    for i=x-1; i >= 1; i += 1, cur[filter_bytes] = 255, raw = raw[filter_bytes:], cur = cur[output_bytes:], prior = prior[output_bytes:] {
+                        for k=0; k < filter_bytes; k += 1 {
+                            cur[k] = STBI__BYTECAST(raw[k] + stbi__paeth(cur[k- output_bytes],0,0))
+                        }
+                    }
+                } 
             }
 
            // the loop above sets the high byte of the pixels' alpha, but for
            // 16 bit png files we also need the low byte set. we'll do that here.
-           if (depth == 16) {
-              cur = a->out + stride*j; // start at the beginning of the row again
-              for (i=0; i < x; ++i,cur+=output_bytes) {
-                 cur[filter_bytes+1] = 255;
-              }
+           if depth == 16 {
+                cur = a.out[stride*j:] // start at the beginning of the row again
+                for i=0; i < x; i += 1 {
+                    cur = cur[output_bytes:]
+                    cur[filter_bytes+1] = 255
+                }
            }
         }
     }
@@ -250,89 +313,136 @@ stbi__create_png_image_raw :: proc(a: ^stbi__png, raw: [^]stbi_uc, raw_len: stbi
     // we make a separate pass to expand bits to pixels; for performance,
     // this could run two scanlines behind the above code, so it won't
     // intefere with filtering but will still be in the cache.
-    if (depth < 8) {
-       for (j=0; j < y; ++j) {
-          stbi_uc *cur = a->out + stride*j;
-          stbi_uc *in  = a->out + stride*j + x*out_n - img_width_bytes;
-          // unpack 1/2/4-bit into a 8-bit buffer. allows us to keep the common 8-bit path optimal at minimal cost for 1/2/4-bit
-          // png guarante byte alignment, if width is not multiple of 8/4/2 we'll decode dummy trailing data that will be skipped in the later loop
-          stbi_uc scale = (color == 0) ? stbi__depth_scale_table[depth] : 1; // scale grayscale values to 0..255 range
+    if depth < 8 {
+        for j=0; j < y; j += 1 {
+            cur:  = a.out[stride*j:]
+            _in: [^]stbi_uc  = a.out[stride*j + x*out_n - img_width_bytes:]
+            // unpack 1/2/4-bit into a 8-bit buffer. allows us to keep the common 8-bit path optimal at minimal cost for 1/2/4-bit
+            // png guarante byte alignment, if width is not multiple of 8/4/2 we'll decode dummy trailing data that will be skipped in the later loop
+            scale: stbi_uc = (color == 0) ? stbi__depth_scale_table[depth] : 1 // scale grayscale values to 0..255 range
 
-          // note that the final byte might overshoot and write more data than desired.
-          // we can allocate enough data that this never writes out of memory, but it
-          // could also overwrite the next scanline. can it overwrite non-empty data
-          // on the next scanline? yes, consider 1-pixel-wide scanlines with 1-bit-per-pixel.
-          // so we need to explicitly clamp the final ones
+            // note that the final byte might overshoot and write more data than desired.
+            // we can allocate enough data that this never writes out of memory, but it
+            // could also overwrite the next scanline. can it overwrite non-empty data
+            // on the next scanline? yes, consider 1-pixel-wide scanlines with 1-bit-per-pixel.
+            // so we need to explicitly clamp the final ones
 
-          if (depth == 4) {
-             for (k=x*img_n; k >= 2; k-=2, ++in) {
-                *cur++ = scale * ((*in >> 4)       );
-                *cur++ = scale * ((*in     ) & 0x0f);
-             }
-             if (k > 0) *cur++ = scale * ((*in >> 4)       );
-          } else if (depth == 2) {
-             for (k=x*img_n; k >= 4; k-=4, ++in) {
-                *cur++ = scale * ((*in >> 6)       );
-                *cur++ = scale * ((*in >> 4) & 0x03);
-                *cur++ = scale * ((*in >> 2) & 0x03);
-                *cur++ = scale * ((*in     ) & 0x03);
-             }
-             if (k > 0) *cur++ = scale * ((*in >> 6)       );
-             if (k > 1) *cur++ = scale * ((*in >> 4) & 0x03);
-             if (k > 2) *cur++ = scale * ((*in >> 2) & 0x03);
-          } else if (depth == 1) {
-             for (k=x*img_n; k >= 8; k-=8, ++in) {
-                *cur++ = scale * ((*in >> 7)       );
-                *cur++ = scale * ((*in >> 6) & 0x01);
-                *cur++ = scale * ((*in >> 5) & 0x01);
-                *cur++ = scale * ((*in >> 4) & 0x01);
-                *cur++ = scale * ((*in >> 3) & 0x01);
-                *cur++ = scale * ((*in >> 2) & 0x01);
-                *cur++ = scale * ((*in >> 1) & 0x01);
-                *cur++ = scale * ((*in     ) & 0x01);
-             }
-             if (k > 0) *cur++ = scale * ((*in >> 7)       );
-             if (k > 1) *cur++ = scale * ((*in >> 6) & 0x01);
-             if (k > 2) *cur++ = scale * ((*in >> 5) & 0x01);
-             if (k > 3) *cur++ = scale * ((*in >> 4) & 0x01);
-             if (k > 4) *cur++ = scale * ((*in >> 3) & 0x01);
-             if (k > 5) *cur++ = scale * ((*in >> 2) & 0x01);
-             if (k > 6) *cur++ = scale * ((*in >> 1) & 0x01);
-          }
-          if (img_n != out_n) {
-             int q;
-             // insert alpha = 255
-             cur = a->out + stride*j;
-             if (img_n == 1) {
-                for (q=x-1; q >= 0; --q) {
-                   cur[q*2+1] = 255;
-                   cur[q*2+0] = cur[q];
+            if depth == 4 {
+                for k=x*img_n; k >= 2; k -= 2, _in = _in[1:] {
+                    cur[0] = scale * ((_in[0] >> 4)       );
+                    cur = cur[1:]
+                    cur[0] = scale * ((_in[0]     ) & 0x0f);
+                    cur = cur[1:]
                 }
-             } else {
-                STBI_ASSERT(img_n == 3);
-                for (q=x-1; q >= 0; --q) {
-                   cur[q*4+3] = 255;
-                   cur[q*4+2] = cur[q*3+2];
-                   cur[q*4+1] = cur[q*3+1];
-                   cur[q*4+0] = cur[q*3+0];
+               if k > 0 {
+                cur[0] = scale * ((_in[0] >> 4)       )
+                cur = cur[1:]
                 }
-             }
-          }
-       }
-    } else if (depth == 16) {
-       // force the image data from big-endian to platform-native.
-       // this is done in a separate pass due to the decoding relying
-       // on the data being untouched, but could probably be done
-       // per-line during decode if care is taken.
-       stbi_uc *cur = a->out;
-       stbi__uint16 *cur16 = (stbi__uint16*)cur;
+            } else if depth == 2 {
+                for k=x*img_n; k >= 4; k -= 4, _in = _in[1:] {
+                    cur[0] = scale * ((_in[0] >> 6)       )
+                    cur = cur[1:]
+                    cur[0] = scale * ((_in[0] >> 4) & 0x03)
+                    cur = cur[1:]
+                    cur[0] = scale * ((_in[0] >> 2) & 0x03)
+                    cur = cur[1:]
+                    cur[0] = scale * ((_in[0]     ) & 0x03)
+                    cur = cur[1:]
+                }
+                if (k > 0) {
+                    cur[0] = scale * ((_in[0] >> 6)       )
+                    cur = cur[1:]
+                }
+                if (k > 1) {
+                    cur[0] = scale * ((_in[0] >> 4) & 0x03)
+                    cur = cur[1:]
+                }
+                if (k > 2) {
+                    cur[0] = scale * ((_in[0] >> 2) & 0x03)
+                    cur = cur[1:]
+                }
+            } else if (depth == 1) {
+                for (k=x*img_n; k >= 8; k-=8, _in = _in[1:]) {
+                    cur[0] = scale * ((_in[0] >> 7)       )
+                    cur = cur[1:]
+                    cur[0] = scale * ((_in[0] >> 6) & 0x01)
+                    cur = cur[1:]
+                    cur[0] = scale * ((_in[0] >> 5) & 0x01)
+                    cur = cur[1:]
+                    cur[0] = scale * ((_in[0] >> 4) & 0x01)
+                    cur = cur[1:]
+                    cur[0] = scale * ((_in[0] >> 3) & 0x01)
+                    cur = cur[1:]
+                    cur[0] = scale * ((_in[0] >> 2) & 0x01)
+                    cur = cur[1:]
+                    cur[0] = scale * ((_in[0] >> 1) & 0x01)
+                    cur = cur[1:]
+                    cur[0] = scale * ((_in[0]     ) & 0x01)
+                    cur = cur[1:]
+                }
+                if (k > 0) {
+                    cur[0] = scale * ((_in[0] >> 7)       )
+                    cur = cur[1:]
+                }
+                if (k > 1) {
+                    cur[0] = scale * ((_in[0] >> 6) & 0x01)
+                    cur = cur[1:]
+                }
+                if (k > 2) {
+                    cur[0] = scale * ((_in[0] >> 5) & 0x01)
+                    cur = cur[1:] 
+                }
+                if (k > 3) {               
+                    cur[0] = scale * ((_in[0] >> 4) & 0x01)
+                    cur = cur[1:]
+                }
+                if (k > 4) {               
+                    cur[0] = scale * ((_in[0] >> 3) & 0x01)
+                    cur = cur[1:]
+                }
+                if (k > 5) {              
+                    cur[0] = scale * ((_in[0] >> 2) & 0x01)
+                    cur = cur[1:]
+                }
+                if (k > 6) {           
+                    cur[0] = scale * ((_in[0] >> 1) & 0x01)
+                    cur = cur[1:]
+                }
+            }
+            if img_n != out_n {
+                q: int
+                // insert alpha = 255
+                cur = a.out[stride*j:]
+                if img_n == 1 {
+                    for q=x-1; q >= 0; q -= 1 {
+                        cur[q*2+1] = 255
+                        cur[q*2+0] = cur[q]
+                    }
+                } else {
+                    assert(img_n == 3)
+                    for q=x-1; q >= 0; q -= 1 {
+                        cur[q*4+3] = 255
+                        cur[q*4+2] = cur[q*3+2]
+                        cur[q*4+1] = cur[q*3+1]
+                        cur[q*4+0] = cur[q*3+0]
+                    }
+                }
+            }
+        }
+    } else if depth == 16 {
+        // force the image data from big-endian to platform-native.
+        // this is done in a separate pass due to the decoding relying
+        // on the data being untouched, but could probably be done
+        // per-line during decode if care is taken.
+        cur: [^]stbi_uc = a.out
+        cur16: [^]stbi__uint16 = cast([^]stbi__uint16)cur
 
-       for(i=0; i < x*y*out_n; ++i,cur16++,cur+=2) {
-          *cur16 = (cur[0] << 8) | cur[1];
-       }
+        for i=0; i < x*y*out_n; ++i, cur16 = cur16[1:], cur = cur[2:] {
+            cur16[0] = (cur[0] << 8) | cur[1];
+        }
     }
 
-    return 1;
+    return 1
 }
 
 static int stbi__create_png_image(stbi__png *a, stbi_uc *image_data, stbi__uint32 image_data_len, int out_n, int depth, int color, int interlaced)
