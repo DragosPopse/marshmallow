@@ -1,5 +1,7 @@
 package mmlow_core
 
+Step_Procedure :: #type proc(dt: f32)
+
 OpenGL_Profile :: enum {
     Core,
     ES,
@@ -25,6 +27,7 @@ Window_Info :: struct {
 }
 
 Platform_Info :: struct {
+    step: Step_Procedure,
     window: Window_Info,
     graphics: Graphics_Info,
 }

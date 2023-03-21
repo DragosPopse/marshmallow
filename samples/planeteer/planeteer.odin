@@ -1,4 +1,3 @@
-//+build !js
 package main
 
 
@@ -14,6 +13,12 @@ import mu "vendor:microui"
 import mu_mlw "../../mlw/third/microui"
 import "../../mlw/platform/event"
 import "core:time"
+import "core:runtime"
+
+when ODIN_OS != .JS {
+    import "core:thread"
+}
+
 
 
 Vertex_Uniforms :: struct {
@@ -94,38 +99,132 @@ create_standard_pipeline :: proc(shader: gpu.Shader, polygon_mode: core.Polygon_
 WIDTH, HEIGHT := 800, 800
 _planet: Planet
 ui: ^mu.Context
+//frame_clock, gen_clock, render_clock, buffer_update_clock: time.Stopwatch
+shader: gpu.Shader
+shader_err: Maybe(string)
+default_pipeline, wireframe_pipeline: gpu.Pipeline
+settings: Settings
+frame_info: Frame_Info
+planet_vb, planet_ib: gpu.Buffer
+
+planet_vertices: []Vertex
+planet_indices: []u32
+
+input_buffers: gpu.Input_Buffers
+pass_action: core.Render_Pass_Action
+
+projection: math.Mat4f
+view: math.Mat4f
+
+input_uniforms: Vertex_Uniforms
+
+angle: f32
+
+when ODIN_OS != .JS {
+    pool: thread.Pool
+}
+    
 
 initialize :: proc() {
     platform_info: platform.Init_Info
     platform_info.window.size = {WIDTH, HEIGHT}
     platform_info.window.title = "Planeteer"
     platform_info.graphics = gpu.default_graphics_info()
+    platform_info.step = update
     platform.init(platform_info)
     gpu.init()
-
     ui = mu_mlw.init()
 }
 
+update :: proc(dt: f32) {
+    //frame_info.frame_time = cast(f32)time.duration_seconds(time.stopwatch_duration(frame_clock))
+    //time.stopwatch_reset(&frame_clock)
+    //time.stopwatch_start(&frame_clock)
+
+    for ev in platform.poll_event() {
+        mu_mlw.process_platform_event(ui, ev)
+        #partial switch ev.type {
+            case .Quit: {
+                platform.quit()
+            }
+        }
+    }
+    mu.begin(ui)
+    graphics_changed, planet_changed := settings_window(ui, &settings, frame_info)
+    mu.end(ui)
+
+    if planet_changed {
+        //time.stopwatch_start(&gen_clock)
+
+        destroy_planet(_planet)
+        when ODIN_OS != .JS {
+            construct_planet_mesh(&_planet, settings.planet, &pool)
+        } else {
+            construct_planet_mesh_single_threaded(&_planet, settings.planet)
+        }
+
+        //frame_info.gen_time = cast(f32)time.duration_seconds(time.stopwatch_duration(gen_clock))
+        //time.stopwatch_reset(&gen_clock)
+
+        //time.stopwatch_start(&buffer_update_clock)
+        
+        delete(planet_vertices)
+        delete(planet_indices)
+        planet_vertices, planet_indices = merge_planet_meshes(_planet)
+        gpu.buffer_data(planet_vb, slice.to_bytes(planet_vertices))
+        gpu.buffer_data(planet_ib, slice.to_bytes(planet_indices))
+
+        //frame_info.buffer_update_time = cast(f32)time.duration_seconds(time.stopwatch_duration(buffer_update_clock))
+        //time.stopwatch_reset(&buffer_update_clock)
+    }
+
+    angle += 1
+    input_uniforms.model = math.Mat4f(1)
+    input_uniforms.model *= linalg.matrix4_translate_f32({0, 0, 0})
+    input_uniforms.model *= linalg.matrix4_rotate_f32(linalg.radians(angle), {1.0, 1.0, 0.0})
+    //input_uniforms.model *= linalg.matrix4_scale_f32({0.4, 0.4, 0.4})
+
+    gpu.begin_default_pass(pass_action, WIDTH, HEIGHT)
+    if settings.graphics.wireframe {
+        gpu.apply_pipeline(wireframe_pipeline)
+    } else {
+        gpu.apply_pipeline(default_pipeline)
+    }  
+    gpu.apply_input_buffers(input_buffers)
+    gpu.apply_uniforms_raw(.Vertex, 0, &input_uniforms, size_of(input_uniforms))
+    gpu.draw(0, len(planet_indices), 1)
+    mu_mlw.apply_microui_pipeline(WIDTH, HEIGHT)
+    mu_mlw.draw(ui)
+    /*
+    for face in _planet.terrain_faces {
+        gpu.buffer_data(planet_vb, slice.to_bytes(face.mesh.vertices))
+        gpu.buffer_data(planet_ib, slice.to_bytes(face.mesh.indices))
+        gpu.draw(0, len(face.mesh.indices), 1)
+    }*/
+    gpu.end_pass()
+
+    platform.update_window()
+    free_all(context.temp_allocator)
+}
 
 main :: proc() {
-    //context = platform.default_context()
-    frame_clock, gen_clock, render_clock, buffer_update_clock: time.Stopwatch
-    initialize()
-    shader: gpu.Shader
-    shader_err: Maybe(string)
-    if shader, shader_err = create_standard_shader(); shader_err != nil {
-        fmt.panicf("SHADER_ERR: %s\n", shader_err.(string))
+    context = platform.default_context()
+    when ODIN_OS != .JS {
+        thread.pool_init(&pool, context.allocator, 6)
+        thread.pool_start(&pool)
     }
-    default_pipeline := create_standard_pipeline(shader, .Fill)
-    wireframe_pipeline := create_standard_pipeline(shader, .Line)
+    initialize()
     
-    settings: Settings
-    frame_info: Frame_Info
+    if shader, shader_err = create_standard_shader(); shader_err != nil {
+        fmt.printf("SHADER_ERR: %s\n", shader_err.(string))
+        panic("Planeteer shader error")
+    }
+    default_pipeline = create_standard_pipeline(shader, .Fill)
+    wireframe_pipeline = create_standard_pipeline(shader, .Line)
+    
     settings.planet = default_planet_settings()
     init_planet(&_planet)
    
-    
-    planet_vb: gpu.Buffer
     {
         info: gpu.Buffer_Info
         info.type = .Vertex
@@ -135,7 +234,6 @@ main :: proc() {
         planet_vb = gpu.create_buffer(info)
     }
     
-    planet_ib: gpu.Buffer
     {
         info: gpu.Buffer_Info
         info.type = .Index
@@ -145,109 +243,32 @@ main :: proc() {
         planet_ib = gpu.create_buffer(info)
     }
 
-
-    //pool: thread.Pool
-    //thread.pool_init(&pool, context.allocator, 6)
-    //thread.pool_start(&pool)
-    //defer thread.pool_finish(&pool)
-  
     
-    time.stopwatch_start(&gen_clock)
-    
+    //time.stopwatch_start(&gen_clock)
     construct_planet_mesh_single_threaded(&_planet, settings.planet)
-    
-    planet_vertices, planet_indices := merge_planet_meshes(_planet)
+    planet_vertices, planet_indices = merge_planet_meshes(_planet)
     gpu.buffer_data(planet_vb, slice.to_bytes(planet_vertices))
     gpu.buffer_data(planet_ib, slice.to_bytes(planet_indices))
-    frame_info.gen_time = cast(f32)time.duration_seconds(time.stopwatch_duration(gen_clock))
-    time.stopwatch_reset(&gen_clock)
+    //frame_info.gen_time = cast(f32)time.duration_seconds(time.stopwatch_duration(gen_clock))
+    //time.stopwatch_reset(&gen_clock)
 
-    input_buffers: gpu.Input_Buffers
+    
     input_buffers.buffers[0] = planet_vb
     input_buffers.index = planet_ib 
 
-    pass_action := gpu.default_pass_action()
+    pass_action = gpu.default_pass_action()
     pass_action.colors[0].value = math.Colorf{0.012, 0.533, 0.988, 1.0}
 
-    projection := math.Mat4f(1)
+    projection = math.Mat4f(1)
     projection = linalg.matrix4_perspective_f32(linalg.radians(cast(f32)45), f32(WIDTH) / f32(HEIGHT), 0.1, 100)
     
 
-    view := math.Mat4f(1)
+    view = math.Mat4f(1)
     view = linalg.matrix4_translate_f32({0, 0, -10})
 
-    input_uniforms: Vertex_Uniforms
     input_uniforms.view = view
     input_uniforms.projection = projection
 
-    angle: f32
-    running := true 
-    draw_ui := false
-    time.stopwatch_start(&frame_clock)
-    for running {
-        frame_info.frame_time = cast(f32)time.duration_seconds(time.stopwatch_duration(frame_clock))
-        time.stopwatch_reset(&frame_clock)
-        time.stopwatch_start(&frame_clock)
-
-        for ev in platform.poll_event() {
-            mu_mlw.process_platform_event(ui, ev)
-            #partial switch ev.type {
-                case .Quit: {
-                    running = false
-                }
-            }
-        }
-        mu.begin(ui)
-        graphics_changed, planet_changed := settings_window(ui, &settings, frame_info)
-        mu.end(ui)
-
-        if planet_changed {
-            time.stopwatch_start(&gen_clock)
-
-            destroy_planet(_planet)
-            construct_planet_mesh_single_threaded(&_planet, settings.planet)
-
-            frame_info.gen_time = cast(f32)time.duration_seconds(time.stopwatch_duration(gen_clock))
-            time.stopwatch_reset(&gen_clock)
-
-            time.stopwatch_start(&buffer_update_clock)
-
-            delete(planet_vertices)
-            delete(planet_indices)
-            planet_vertices, planet_indices = merge_planet_meshes(_planet)
-            gpu.buffer_data(planet_vb, slice.to_bytes(planet_vertices))
-            gpu.buffer_data(planet_ib, slice.to_bytes(planet_indices))
-
-            frame_info.buffer_update_time = cast(f32)time.duration_seconds(time.stopwatch_duration(buffer_update_clock))
-            time.stopwatch_reset(&buffer_update_clock)
-        }
-
-        angle += 1
-        input_uniforms.model = math.Mat4f(1)
-        input_uniforms.model *= linalg.matrix4_translate_f32({0, 0, 0})
-        input_uniforms.model *= linalg.matrix4_rotate_f32(linalg.radians(angle), {1.0, 1.0, 0.0})
-        //input_uniforms.model *= linalg.matrix4_scale_f32({0.4, 0.4, 0.4})
-
-        gpu.begin_default_pass(pass_action, WIDTH, HEIGHT)
-        if settings.graphics.wireframe {
-            gpu.apply_pipeline(wireframe_pipeline)
-        } else {
-            gpu.apply_pipeline(default_pipeline)
-        }  
-        gpu.apply_input_buffers(input_buffers)
-        gpu.apply_uniforms_raw(.Vertex, 0, &input_uniforms, size_of(input_uniforms))
-        gpu.draw(0, len(planet_indices), 1)
-        mu_mlw.apply_microui_pipeline(WIDTH, HEIGHT)
-        mu_mlw.draw(ui)
-        /*
-        for face in _planet.terrain_faces {
-            gpu.buffer_data(planet_vb, slice.to_bytes(face.mesh.vertices))
-            gpu.buffer_data(planet_ib, slice.to_bytes(face.mesh.indices))
-            gpu.draw(0, len(face.mesh.indices), 1)
-        }*/
-        gpu.end_pass()
-
-        platform.update_window()
-        free_all(context.temp_allocator)
-    }
+    //time.stopwatch_start(&frame_clock)
+    platform.start()
 }

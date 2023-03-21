@@ -4,6 +4,7 @@ import "../../mlw/math"
 import linalg "core:math/linalg"
 import "../../mlw/gpu"
 import "core:fmt"
+import "core:thread"
 
 
 Vertex :: struct {
@@ -54,42 +55,40 @@ construct_planet_mesh_single_threaded :: proc(planet: ^Planet, settings: Planet_
     
 }
 
-/*
-when ODIN_OS != .JS {
-    construct_planet_mesh :: proc(planet: ^Planet, settings: Planet_Settings, pool: ^thread.Pool, allocator := context.allocator) {
-        Task_Data :: struct {
-            face: ^Terrain_Face,
-            settings: Planet_Settings,
-        }
-    
-        task :: proc(task: thread.Task) {
-            data := cast(^Task_Data)task.data
-            construct_terrain_face_mesh(data.face, data.settings, task.allocator)
-        }
-    
-        
-        
-        for face in &planet.terrain_faces {
-            data := new(Task_Data, context.temp_allocator)
-            data.face = &face
-            data.settings = settings
-            thread.pool_add_task(pool, allocator, task, data)
-        }
-        
-        for !thread.pool_is_empty(pool) {
-            for _ in thread.pool_pop_done(pool) {
-    
-            }
-        }
-    
-        /*
-        for face in &planet.terrain_faces {
-            construct_terrain_face_mesh(&face, settings, allocator)
-        }
-        */
+
+construct_planet_mesh :: proc(planet: ^Planet, settings: Planet_Settings, pool: ^thread.Pool, allocator := context.allocator) {
+    Task_Data :: struct {
+        face: ^Terrain_Face,
+        settings: Planet_Settings,
     }
+
+    task :: proc(task: thread.Task) {
+        data := cast(^Task_Data)task.data
+        construct_terrain_face_mesh(data.face, data.settings, task.allocator)
+    }
+
+    
+    
+    for face in &planet.terrain_faces {
+        data := new(Task_Data, context.temp_allocator)
+        data.face = &face
+        data.settings = settings
+        thread.pool_add_task(pool, allocator, task, data)
+    }
+    
+    for !thread.pool_is_empty(pool) {
+        for _ in thread.pool_pop_done(pool) {
+
+        }
+    }
+
+    /*
+    for face in &planet.terrain_faces {
+        construct_terrain_face_mesh(&face, settings, allocator)
+    }
+    */
 }
-*/
+
 
 Terrain_Face :: struct {
     mesh: Mesh,

@@ -1,4 +1,4 @@
-package highland_platform 
+package mmlow_platform 
 
 import "../core"
 import "event"

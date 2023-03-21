@@ -1,4 +1,4 @@
-package highland_platform 
+package mmlow_platform 
 
 import "../core"
 import "core:runtime"
@@ -16,7 +16,12 @@ when BACKEND == .SDL2 {
 }
 
 
-init: Backend_Init : backend.init
+init :: proc(info: Init_Info) {
+    assert(info.step != nil, "The step procedure is not set.")
+    step_proc = info.step
+    backend.init(info)
+}
+
 teardown: Backend_Teardown : backend.teardown
 
 update_window: Backend_Update_Window : backend.update_window
