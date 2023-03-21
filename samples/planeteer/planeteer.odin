@@ -15,11 +15,11 @@ import "../../mlw/platform/event"
 import "core:time"
 import "core:runtime"
 
+import "../../mlw/media/image"
+
 when ODIN_OS != .JS {
     import "core:thread"
 }
-
-
 
 Vertex_Uniforms :: struct {
     model, view, projection: math.Mat4f,
