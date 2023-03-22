@@ -1,51 +1,66 @@
+/*
+    Implementation based on "core:image". Make sure to import the required packages if you want support for different loaders eg. "core:image/png"
+*/
 package mlw_media_image
 
 import "core:fmt"
 import "core:c"
 import "core:slice" 
 import "core:strings"
-
-
-// TODO: Remove requirement for STB, use core:image/png
-//import stbi "vendor:stb/image"
-
+import "core:bytes"
 import "../../math"
 
+import "core:image"
+
+Error :: image.Error
 
 Image :: struct {
-    pixels: []math.Colorb,
-    size: [2]int,
+    using image: ^image.Image,
+    using conversion: struct #raw_union {
+        rgba_pixels: []math.BColorRGBA,
+        rgb_pixels: []math.BColorRGB,
+    },
 }
 
-/*
-load_image_from_file :: proc(path: string, allocator := context.allocator) -> (img: Image, ok: bool) {
- 
-    stbi.set_flip_vertically_on_load(1)
-    width, height, channels: c.int
-    cpath := strings.clone_to_cstring(path, context.temp_allocator)
-    data := stbi.load(cpath, &width, &height, &channels, 4)
-    defer if data != nil do stbi.image_free(data)
-    if data == nil {
-        return img, false
+load_from_file :: proc(path: string, opts := image.Options{}, allocator := context.allocator) -> (img: Image, err: Error) {
+    context.allocator = allocator
+    img.image, err = image.load_from_file(path, opts)
+    if err != nil do return
+    pixels_slice := bytes.buffer_to_bytes(&img.pixels)
+    switch img.channels {
+        case 3: {
+            img.rgb_pixels = slice.reinterpret([]math.BColorRGB, pixels_slice) 
+        }
+
+        case 4: {
+            img.rgba_pixels = slice.reinterpret([]math.BColorRGBA, pixels_slice)
+        }
     }
-    sliceData := slice.from_ptr(data, int(width * height * channels))
-    reinterpret := slice.reinterpret([]math.Colorb, sliceData)
-    img.pixels = slice.clone(reinterpret, allocator)
-    img.size.x = cast(int)width 
-    img.size.y = cast(int)height
-    return img, true
-    
+    return img, err
 }
-*/
-load_image_from_file :: proc(path: string, allocator := context.allocator) -> (img: Image, ok: bool) {
-    panic("Image loading not currently supported")
+
+load_from_bytes :: proc(data: []byte, opts := image.Options{}, allocator := context.allocator) -> (img: Image, err: Error) {
+    context.allocator = allocator
+    img.image, err = image.load_from_bytes(data, opts)
+    if err != nil do return
+    pixels_slice := bytes.buffer_to_bytes(&img.pixels)
+    switch img.channels {
+        case 3: {
+            img.rgb_pixels = slice.reinterpret([]math.BColorRGB, pixels_slice) 
+        }
+
+        case 4: {
+            img.rgba_pixels = slice.reinterpret([]math.BColorRGBA, pixels_slice)
+        }
+    }
+    return img, err
 }
 
 delete_image :: proc(img: Image, allocator := context.allocator) {
-    context.allocator = allocator
-    delete(img.pixels)
+    image.destroy(img.image, allocator)
 }
 
+/*
 get_pixel_indices :: #force_inline proc(using img: Image, x, y: int) -> math.Colorb {
     return pixels[x * size.x + y]
 }
@@ -71,4 +86,5 @@ set_pixel :: proc {
     set_pixel_indices,
     set_pixel_position,
 }
+*/
 
