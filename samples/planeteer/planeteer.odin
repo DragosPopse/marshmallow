@@ -14,6 +14,7 @@ import mu_mlw "../../mlw/third/microui"
 import "../../mlw/platform/event"
 import "core:time"
 import "core:runtime"
+import "core:strings"
 
 import "../../mlw/media/image"
 

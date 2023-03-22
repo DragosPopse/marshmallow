@@ -1,5 +1,6 @@
-//+build js
-package mmlow_platform_backend_js
+//+build wasi
+package mlw_platform_backend_wasi
+
 
 import "../../event"
 import "../../../core"

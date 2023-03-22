@@ -97,7 +97,6 @@ free_list_free_all :: proc "contextless" (fl: ^Free_List) {
 
 free_list_find_first :: proc(fl: ^Free_List, size, alignment: int) -> (node: ^Free_List_Node, padding: int, prev_node: ^Free_List_Node) {
     node = fl.head
-    fmt.printf("Head: %v\n", node)
     for node != nil {
         padding = calc_padding_with_header(cast(uintptr)node, alignment, size_of(Free_List_Alloc_Header))
         required_space := size + padding

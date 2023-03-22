@@ -1,4 +1,5 @@
 //+build !js
+//+build !wasi
 package mmlow_js_wasmem
 
 import "core:mem"

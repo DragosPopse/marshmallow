@@ -10,6 +10,8 @@ when BACKEND == .SDL2 {
 } else when BACKEND == .Native {
     when ODIN_OS == .JS {
         import backend "backend/js"
+    } else when ODIN_OS == .WASI {
+        import backend "backend/wasi"
     } else {
         #panic("Unsupported platform")
     }

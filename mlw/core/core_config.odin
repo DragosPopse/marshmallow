@@ -28,7 +28,7 @@ GPU_BACKEND_CONFIG :: #config(MLW_GPU_BACKEND, STR_UNDEFINED_CONFIG)
 
 when PLATFORM_BACKEND_CONFIG == STR_UNDEFINED_CONFIG {
     //Todo(Dragos): This should be ODIN_OS specific
-    when ODIN_OS == .JS {
+    when ODIN_OS == .JS || ODIN_OS == .WASI {
         PLATFORM_BACKEND :: Platform_Backend_Type.Native
     } else {
         PLATFORM_BACKEND :: Platform_Backend_Type.SDL2
@@ -43,7 +43,7 @@ when PLATFORM_BACKEND_CONFIG == STR_UNDEFINED_CONFIG {
 
 when GPU_BACKEND_CONFIG == STR_UNDEFINED_CONFIG {
     //Todo(Dragos): This should be ODIN_OS specific
-    when ODIN_OS == .JS {
+    when ODIN_OS == .JS || ODIN_OS == .WASI {
         GPU_BACKEND :: GPU_Backend_Type.webgl2
         GPU_BACKEND_FAMILY :: GPU_Backend_Family.OpenGL
     } else {
