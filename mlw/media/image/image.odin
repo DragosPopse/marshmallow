@@ -9,7 +9,7 @@ import "core:strings"
 // TODO: Remove requirement for STB, use core:image/png
 //import stbi "vendor:stb/image"
 
-import "../math"
+import "../../math"
 
 
 Image :: struct {

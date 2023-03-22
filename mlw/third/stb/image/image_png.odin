@@ -18,19 +18,19 @@ stbi__get_chunk_header :: proc(s: ^stbi__context) -> stbi__pngchunk {
     return c
 }
 
-stbi__check_png_header :: proc(s: ^stbi__context) -> int {
+stbi__check_png_header :: proc(s: ^stbi__context) -> bool {
     png_sig := [8]stbi_uc { 137,80,78,71,13,10,26,10 }
     for i := 0; i < 8; i += 1 {
         if (stbi__get8(s) != png_sig[i]) {
-            return stbi__err("Not a PNG")
+            return stbi__err("error", "Not a PNG")
         }
     }
        
-    return 1
+    return true
 }
 
 stbi__png :: struct {
-    s: stbi__context,
+    s: ^stbi__context,
     idata, expanded, out: [^]stbi_uc,
     depth: int,
 }
@@ -65,7 +65,7 @@ stbi__paeth :: proc(a, b, c: int) -> int {
 stbi__depth_scale_table := [9]stbi_uc { 0, 0xff, 0x55, 0, 0x11, 0,0,0, 0x01 };
 
 // create the png data from post-deflated data
-stbi__create_png_image_raw :: proc(a: ^stbi__png, raw: [^]stbi_uc, raw_len: stbi__uint32, out_n: int, x: stbi__uint32, y: stbi__uint32, depth: int, color: int) -> int {
+stbi__create_png_image_raw :: proc(a: ^stbi__png, raw: [^]stbi_uc, raw_len: stbi__uint32, out_n: int, x: stbi__uint32, y: stbi__uint32, depth: int, color: int) -> bool {
     bytes: int = (depth == 16 ? 2 : 1)
     s: ^stbi__context = a.s
     i, j: stbi__uint32
@@ -76,10 +76,10 @@ stbi__create_png_image_raw :: proc(a: ^stbi__png, raw: [^]stbi_uc, raw_len: stbi
 
     output_bytes: int = out_n * bytes
     filter_bytes: int = img_n * bytes
-    width: int = x
+    width: int = cast(int)x
 
     assert(out_n == s.img_n || out_n == s.img_n + 1)
-    a.out = cast([^]stbi_uc)stbi__malloc_mad3(x, y, output_bytes, 0) // extra bytes to write off the end into
+    a.out = cast([^]stbi_uc)stbi__malloc_mad3(cast(int)x, cast(int)y, cast(int)output_bytes, 0) // extra bytes to write off the end into
     if a.out == nil {
         return stbi__err("outofmem", "Out of memory")
     }
@@ -194,7 +194,7 @@ stbi__create_png_image_raw :: proc(a: ^stbi__png, raw: [^]stbi_uc, raw_len: stbi
                     }             
                 } 
                 case STBI__F_avg_first: { 
-                    for k=0; k < nk; k += 1 {
+                    for k=0; k < nk; k += 1 { 
                         cur[k] = STBI__BYTECAST(raw[k] + (cur[k-filter_bytes] >> 1))
                     }  
                 } 
@@ -226,73 +226,98 @@ stbi__create_png_image_raw :: proc(a: ^stbi__png, raw: [^]stbi_uc, raw_len: stbi
 
             switch filter {
                 case STBI__F_none: { 
-                    for i=x-1; i >= 1; i += 1, cur[filter_bytes] = 255, raw = raw[filter_bytes:], cur = cur[output_bytes:], prior = prior[output_bytes:] {
-                        cur[filter_bytes] = 255 
-                        raw = raw[filter_bytes:] 
-                        cur = cur[output_bytes:] 
-                        prior = prior[output_bytes:]
+                    for i=x-1; i >= 1; {
+                        defer {
+                            i += 1
+                            cur[filter_bytes] = 255
+                            raw = raw[filter_bytes:]
+                            cur = cur[output_bytes:]
+                            prior = prior[output_bytes:]
+                        }
                         for k=0; k < filter_bytes; k += 1 {
                             cur[k] = raw[k]
                         }
                     }
                 }
                 case STBI__F_sub: { 
-                    for i=x-1; i >= 1; i += 1, cur[filter_bytes] = 255, raw = raw[filter_bytes:], cur = cur[output_bytes:], prior = prior[output_bytes:] {
-                        cur[filter_bytes] = 255 
-                        raw = raw[filter_bytes:] 
-                        cur = cur[output_bytes:] 
-                        prior = prior[output_bytes:]
+                    for i=x-1; i >= 1; {
+                        defer {
+                            i += 1
+                            cur[filter_bytes] = 255
+                            raw = raw[filter_bytes:]
+                            cur = cur[output_bytes:]
+                            prior = prior[output_bytes:]
+                        }
                         for k=0; k < filter_bytes; k += 1 {
                             cur[k] = STBI__BYTECAST(raw[k] + cur[k- output_bytes])
                         }
                     }
                 } 
                 case STBI__F_up: { 
-                    for i=x-1; i >= 1; i += 1, cur[filter_bytes] = 255, raw = raw[filter_bytes:], cur = cur[output_bytes:], prior = prior[output_bytes:] {
-                        cur[filter_bytes] = 255 
-                        raw = raw[filter_bytes:] 
-                        cur = cur[output_bytes:] 
-                        prior = prior[output_bytes:]
+                    for i=x-1; i >= 1; {
+                        defer {
+                            i += 1
+                            cur[filter_bytes] = 255
+                            raw = raw[filter_bytes:]
+                            cur = cur[output_bytes:]
+                            prior = prior[output_bytes:]
+                        }
                         for k=0; k < filter_bytes; k += 1 {
                             cur[k] = STBI__BYTECAST(raw[k] + prior[k]) 
                         }
                     }               
                 } 
                 case STBI__F_avg: { 
-                    for i=x-1; i >= 1; i += 1, cur[filter_bytes] = 255, raw = raw[filter_bytes:], cur = cur[output_bytes:], prior = prior[output_bytes:] {
-                        //cur[filter_bytes] = 255 
-                        //raw = raw[filter_bytes:] 
-                        //cur = cur[output_bytes:] 
-                        //prior = prior[output_bytes:]
+                    for i=x-1; i >= 1; {
+                        defer {
+                            i += 1
+                            cur[filter_bytes] = 255
+                            raw = raw[filter_bytes:]
+                            cur = cur[output_bytes:]
+                            prior = prior[output_bytes:]
+                        }
                         for k=0; k < filter_bytes; k += 1 {
                             cur[k] = STBI__BYTECAST(raw[k] + ((prior[k] + cur[k- output_bytes])>>1))
                         }
                     }
                 }
                 case STBI__F_paeth: { 
-                    for i=x-1; i >= 1; i += 1, cur[filter_bytes] = 255, raw = raw[filter_bytes:], cur = cur[output_bytes:], prior = prior[output_bytes:] {
-                        //cur[filter_bytes] = 255 
-                        //raw = raw[filter_bytes:] 
-                        //cur = cur[output_bytes:] 
-                        //prior = prior[output_bytes:]
+                    for i=x-1; i >= 1; {
+                        defer {
+                            i += 1
+                            cur[filter_bytes] = 255
+                            raw = raw[filter_bytes:]
+                            cur = cur[output_bytes:]
+                            prior = prior[output_bytes:]
+                        }
                         for k=0; k < filter_bytes; k += 1 {
                             cur[k] = STBI__BYTECAST(raw[k] + stbi__paeth(cur[k- output_bytes],prior[k],prior[k- output_bytes]))
                         }
                     }        
                 } 
                 case STBI__F_avg_first: { 
-                    for i=x-1; i >= 1; i += 1, cur[filter_bytes] = 255, raw = raw[filter_bytes:], cur = cur[output_bytes:], prior = prior[output_bytes:] {
-                        //cur[filter_bytes] = 255 
-                        //raw = raw[filter_bytes:] 
-                        //cur = cur[output_bytes:] 
-                        //prior = prior[output_bytes:]
+                    for i=x-1; i >= 1; {
+                        defer {
+                            i += 1
+                            cur[filter_bytes] = 255
+                            raw = raw[filter_bytes:]
+                            cur = cur[output_bytes:]
+                            prior = prior[output_bytes:]
+                        }
                         for k=0; k < filter_bytes; k += 1 {
                             cur[k] = STBI__BYTECAST(raw[k] + (cur[k- output_bytes] >> 1))
                         }
                     }    
                 } 
                 case STBI__F_paeth_first: { 
-                    for i=x-1; i >= 1; i += 1, cur[filter_bytes] = 255, raw = raw[filter_bytes:], cur = cur[output_bytes:], prior = prior[output_bytes:] {
+                    for i=x-1; i >= 1; {
+                        defer {
+                            i += 1
+                            cur[filter_bytes] = 255
+                            raw = raw[filter_bytes:]
+                            cur = cur[output_bytes:]
+                            prior = prior[output_bytes:]
+                        }
                         for k=0; k < filter_bytes; k += 1 {
                             cur[k] = STBI__BYTECAST(raw[k] + stbi__paeth(cur[k- output_bytes],0,0))
                         }
@@ -330,18 +355,26 @@ stbi__create_png_image_raw :: proc(a: ^stbi__png, raw: [^]stbi_uc, raw_len: stbi
             // so we need to explicitly clamp the final ones
 
             if depth == 4 {
-                for k=x*img_n; k >= 2; k -= 2, _in = _in[1:] {
+                for k=x*img_n; k >= 2; {
+                    defer {
+                        k -= 2 
+                        _in = _in[1:]
+                    }
                     cur[0] = scale * ((_in[0] >> 4)       );
                     cur = cur[1:]
-                    cur[0] = scale * ((_in[0]     ) & 0x0f);
+                    cur[0] = scale * ((_in[0]     ) & 0x0f); 
                     cur = cur[1:]
                 }
-               if k > 0 {
-                cur[0] = scale * ((_in[0] >> 4)       )
-                cur = cur[1:]
+                if k > 0 {
+                    cur[0] = scale * ((_in[0] >> 4)       )
+                    cur = cur[1:]
                 }
             } else if depth == 2 {
-                for k=x*img_n; k >= 4; k -= 4, _in = _in[1:] {
+                for k=x*img_n; k >= 4; {
+                    defer {
+                        k -= 4 
+                        _in = _in[1:]
+                    }
                     cur[0] = scale * ((_in[0] >> 6)       )
                     cur = cur[1:]
                     cur[0] = scale * ((_in[0] >> 4) & 0x03)
@@ -364,7 +397,11 @@ stbi__create_png_image_raw :: proc(a: ^stbi__png, raw: [^]stbi_uc, raw_len: stbi
                     cur = cur[1:]
                 }
             } else if (depth == 1) {
-                for (k=x*img_n; k >= 8; k-=8, _in = _in[1:]) {
+                for k=x*img_n; k >= 8; {
+                    defer {
+                        k-=8
+                        _in = _in[1:]
+                    }
                     cur[0] = scale * ((_in[0] >> 7)       )
                     cur = cur[1:]
                     cur[0] = scale * ((_in[0] >> 6) & 0x01)
@@ -416,7 +453,7 @@ stbi__create_png_image_raw :: proc(a: ^stbi__png, raw: [^]stbi_uc, raw_len: stbi
                 // insert alpha = 255
                 cur = a.out[stride*j:]
                 if img_n == 1 {
-                    for q=x-1; q >= 0; q -= 1 {
+                    for q=x-1; q >= 0; q -= 1 { 
                         cur[q*2+1] = 255
                         cur[q*2+0] = cur[q]
                     }
@@ -439,7 +476,12 @@ stbi__create_png_image_raw :: proc(a: ^stbi__png, raw: [^]stbi_uc, raw_len: stbi
         cur: [^]stbi_uc = a.out
         cur16: [^]stbi__uint16 = cast([^]stbi__uint16)cur
 
-        for i=0; i < x*y*out_n; ++i, cur16 = cur16[1:], cur = cur[2:] {
+        for i=0; i < x*y*out_n; {
+            defer {
+                i += 1
+                cur16 = cur16[1:]
+                cur = cur[2:]
+            }
             cur16[0] = (cur[0] << 8) | cur[1];
         }
     }
@@ -447,16 +489,16 @@ stbi__create_png_image_raw :: proc(a: ^stbi__png, raw: [^]stbi_uc, raw_len: stbi
     return 1
 }
 
-stbi__create_png_image :: proc(a: ^stbi__png, image_data: [^]stbi_uc, image_data_len: stbi__uint32, out_n, depth, color, interlaced: int) -> int {
+stbi__create_png_image :: proc(a: ^stbi__png, image_data: [^]stbi_uc, image_data_len: stbi__uint32, out_n, depth, color: int, interlaced: bool) -> bool {
     bytes: int = (depth == 16 ? 2 : 1)
     out_bytes: int = out_n * bytes
     final: [^]stbi_uc
     p: int
-    if !interlaced do return stbi__create_png_image_raw(a, image_data, image_data_len, out_n, a->s->img_x, a->s->img_y, depth, color)
+    if !interlaced do return stbi__create_png_image_raw(a, image_data, image_data_len, out_n, a.s.img_x, a.s.img_y, depth, color)
     
 
     // de-interlacing
-    final = cast([^]stbi_uc)stbi__malloc_mad3(a->s->img_x, a->s->img_y, out_bytes, 0)
+    final = cast([^]stbi_uc)stbi__malloc_mad3(a.s.img_x, a.s.img_y, out_bytes, 0)
     if final == nil do return stbi__err("outofmem", "Out of memory")
     for p=0; p < 7; p += 1 {
         xorig := [?]int { 0,4,0,2,0,1,0 }
@@ -465,10 +507,10 @@ stbi__create_png_image :: proc(a: ^stbi__png, image_data: [^]stbi_uc, image_data
         yspc  := [?]int { 8,8,8,4,4,2,2 }
         i, j, x, y: int
         // pass1_x[4] = 0, pass1_x[5] = 1, pass1_x[12] = 1
-        x = (a->s->img_x - xorig[p] + xspc[p]-1) / xspc[p]
-        y = (a->s->img_y - yorig[p] + yspc[p]-1) / yspc[p]
+        x = (a.s.img_x - xorig[p] + xspc[p]-1) / xspc[p]
+        y = (a.s.img_y - yorig[p] + yspc[p]-1) / yspc[p]
         if x != 0 && y != 0 {
-            img_len: stbi__uint32 = ((((a->s->img_n * x * depth) + 7) >> 3) + 1) * y;
+            img_len: stbi__uint32 = ((((a.s.img_n * x * depth) + 7) >> 3) + 1) * y;
             if !stbi__create_png_image_raw(a, image_data, image_data_len, out_n, x, y, depth, color) {
                STBI_FREE(final)
                return 0
@@ -477,7 +519,7 @@ stbi__create_png_image :: proc(a: ^stbi__png, image_data: [^]stbi_uc, image_data
                 for i=0; i < x; i += 1 {
                     out_y: int = j*yspc[p]+yorig[p]
                     out_x: int = i*xspc[p]+xorig[p]
-                    memcpy(final + out_y*a->s->img_x*out_bytes + out_x*out_bytes,
+                    memcpy(final + out_y*a.s.img_x*out_bytes + out_x*out_bytes,
                            a->out + (j*x+i)*out_bytes, out_bytes)
                 }
             }
@@ -491,7 +533,7 @@ stbi__create_png_image :: proc(a: ^stbi__png, image_data: [^]stbi_uc, image_data
     return 1;
 }
 
-stbi__compute_transparency :: proc(stbi__png *z, stbi_uc tc[3], int out_n) -> int {
+stbi__compute_transparency :: proc(z: ^stbi__png, tc: [3]stbi_uc , out_n: int) -> int {
     s: ^stbi__context = z.s
     i: stbi__uint32
     pixel_count: stbi__uint32 = s.img_x * s.img_y
@@ -518,29 +560,30 @@ stbi__compute_transparency :: proc(stbi__png *z, stbi_uc tc[3], int out_n) -> in
     return 1
 }
 
-stbi__compute_transparency16 :: proc(stbi__png *z, stbi__uint16 tc[3], int out_n)
-{
-   stbi__context *s = z->s;
-   stbi__uint32 i, pixel_count = s->img_x * s->img_y;
-   stbi__uint16 *p = (stbi__uint16*) z->out;
+stbi__compute_transparency16 :: proc(z: ^stbi__png, tc: [3]stbi__uint16, out_n: int) {
+    s: ^stbi__context = z.s
+    i: stbi__uint32
+    pixel_count: stbi__uint32 = s.img_x * s.img_y
+    p: [^]stbi__uint16 = cast([^]stbi__uint16) z.out
 
-   // compute color-based transparency, assuming we've
-   // already got 65535 as the alpha value in the output
-   STBI_ASSERT(out_n == 2 || out_n == 4);
+    // compute color-based transparency, assuming we've
+    // already got 65535 as the alpha value in the output
+    assert(out_n == 2 || out_n == 4)
 
-   if (out_n == 2) {
-      for (i = 0; i < pixel_count; ++i) {
-         p[1] = (p[0] == tc[0] ? 0 : 65535);
-         p += 2;
-      }
-   } else {
-      for (i = 0; i < pixel_count; ++i) {
-         if (p[0] == tc[0] && p[1] == tc[1] && p[2] == tc[2])
-            p[3] = 0;
-         p += 4;
-      }
-   }
-   return 1;
+    if out_n == 2 {
+        for i = 0; i < pixel_count; i += 1 {
+            p[1] = (p[0] == tc[0] ? 0 : 65535) 
+            p = p[2:]
+        }
+    } else {
+        for i = 0; i < pixel_count; i += 1 {
+            if p[0] == tc[0] && p[1] == tc[1] && p[2] == tc[2] {
+                p[3] = 0
+            }   
+            p = p[4:]
+        }
+    }
+    return 1
 }
 
 stbi__expand_png_palette :: proc(a: ^stbi__png, palette: [^]stbi_uc, len, pal_img_n: int) -> int
@@ -550,29 +593,29 @@ stbi__expand_png_palette :: proc(a: ^stbi__png, palette: [^]stbi_uc, len, pal_im
     orig: [^]stbi_uc = a->out
     p, temp_out: [^]stbi_uc
 
-    p = cast([^]stbi_uc)stbi__malloc_mad2(pixel_count, pal_img_n, 0);
+    p = cast([^]stbi_uc)stbi__malloc_mad2(cast(int)pixel_count, pal_img_n, 0);
     if p == nil do return stbi__err("outofmem", "Out of memory");
 
     // between here and free(out) below, exitting would leak
-    temp_out = p;
+    temp_out = p
 
     if pal_img_n == 3 {
-       for i=0; i < pixel_count; i += 1 {
-          n: int = orig[i]*4
-          p[0] = palette[n  ]
-          p[1] = palette[n+1]
-          p[2] = palette[n+2]
-          p = p[3:]
-       }
+        for i=0; i < pixel_count; i += 1 {
+            n: int = orig[i]*4
+            p[0] = palette[n  ]
+            p[1] = palette[n+1]
+            p[2] = palette[n+2]
+            p = p[3:]
+        }
     } else {
-       for i=0; i < pixel_count; i += 1 {
-          int n = orig[i]*4
-          p[0] = palette[n  ]
-          p[1] = palette[n+1]
-          p[2] = palette[n+2]
-          p[3] = palette[n+3]
-          p = p[4:]
-       }
+        for i=0; i < pixel_count; i += 1 {
+             n = orig[i]*4
+             p[0] = palette[n  ]
+             p[1] = palette[n+1]
+             p[2] = palette[n+2]
+             p[3] = palette[n+3]
+             p = p[4:]
+        }
     }
     STBI_FREE(a.out)
     a.out = temp_out
@@ -585,12 +628,14 @@ stbi__expand_png_palette :: proc(a: ^stbi__png, palette: [^]stbi_uc, len, pal_im
 stbi__unpremultiply_on_load_global: int = 0
 stbi__de_iphone_flag_global: int = 0
 
+STBI_MAX_DIMENSIONS :: int(1) << 24
+
 stbi_set_unpremultiply_on_load :: proc(flag_true_if_should_unpremultiply: int) {
-   stbi__unpremultiply_on_load_global = flag_true_if_should_unpremultiply
+    stbi__unpremultiply_on_load_global = flag_true_if_should_unpremultiply
 }
 
 stbi_convert_iphone_png_to_rgb :: proc(flag_true_if_should_convert: int) {
-   stbi__de_iphone_flag_global = flag_true_if_should_convert
+    stbi__de_iphone_flag_global = flag_true_if_should_convert
 }
 
 // Note(dragos): wtf
@@ -668,267 +713,292 @@ static void stbi__de_iphone(stbi__png *z)
 }
 */
 
+STBI__SCAN_load :: 0
+STBI__SCAN_type :: 1
+STBI__SCAN_header :: 2
 
-#define STBI__PNG_TYPE(a,b,c,d)  (((unsigned) (a) << 24) + ((unsigned) (b) << 16) + ((unsigned) (c) << 8) + (unsigned) (d))
+//#define STBI__PNG_TYPE(a,b,c,d)  (((unsigned) (a) << 24) + ((unsigned) (b) << 16) + ((unsigned) (c) << 8) + (unsigned) (d))
 
-static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
-{
-   stbi_uc palette[1024], pal_img_n=0;
-   stbi_uc has_trans=0, tc[3]={0};
-   stbi__uint16 tc16[3];
-   stbi__uint32 ioff=0, idata_limit=0, i, pal_len=0;
-   int first=1,k,interlace=0, color=0, is_iphone=0;
-   stbi__context *s = z->s;
+STBI__PNG_TYPE :: proc(a, b, c, d: rune) -> stbi__uint32 {
+    return ((stbi__uint32(a) << 24) + (stbi__uint32(b) << 16) + (stbi__uint32(c) << 8) + stbi__uint32(d))
+}
+ 
+stbi__parse_png_file :: proc(z: ^stbi__png, scan: int, req_comp: int) -> bool {
+    pal_img_n: stbi_uc = 0
+    palette: [1024]stbi_uc
+    has_trans: stbi_uc = 0
+    tc: [3]stbi_uc
+    tc16: [3]stbi__uint16
+    ioff, idata_limit, i, pal_len: stbi__uint32
+    k, interlace, color, is_iphone: int
+    first: int = 1
+    s: ^stbi__context = z.s
 
-   z->expanded = NULL;
-   z->idata = NULL;
-   z->out = NULL;
+    z.expanded = nil
+    z.idata = nil
+    z.out = nil
 
-   if (!stbi__check_png_header(s)) return 0;
+    if !stbi__check_png_header(s) do return false
 
-   if (scan == STBI__SCAN_type) return 1;
+    if scan == STBI__SCAN_type do return true
 
-   for (;;) {
-      stbi__pngchunk c = stbi__get_chunk_header(s);
-      switch (c.type) {
-         case STBI__PNG_TYPE('C','g','B','I'):
-            is_iphone = 1;
-            stbi__skip(s, c.length);
-            break;
-         case STBI__PNG_TYPE('I','H','D','R'): {
-            int comp,filter;
-            if (!first) return stbi__err("multiple IHDR","Corrupt PNG");
-            first = 0;
-            if (c.length != 13) return stbi__err("bad IHDR len","Corrupt PNG");
-            s->img_x = stbi__get32be(s);
-            s->img_y = stbi__get32be(s);
-            if (s->img_y > STBI_MAX_DIMENSIONS) return stbi__err("too large","Very large image (corrupt?)");
-            if (s->img_x > STBI_MAX_DIMENSIONS) return stbi__err("too large","Very large image (corrupt?)");
-            z->depth = stbi__get8(s);  if (z->depth != 1 && z->depth != 2 && z->depth != 4 && z->depth != 8 && z->depth != 16)  return stbi__err("1/2/4/8/16-bit only","PNG not supported: 1/2/4/8/16-bit only");
-            color = stbi__get8(s);  if (color > 6)         return stbi__err("bad ctype","Corrupt PNG");
-            if (color == 3 && z->depth == 16)                  return stbi__err("bad ctype","Corrupt PNG");
-            if (color == 3) pal_img_n = 3; else if (color & 1) return stbi__err("bad ctype","Corrupt PNG");
-            comp  = stbi__get8(s);  if (comp) return stbi__err("bad comp method","Corrupt PNG");
-            filter= stbi__get8(s);  if (filter) return stbi__err("bad filter method","Corrupt PNG");
-            interlace = stbi__get8(s); if (interlace>1) return stbi__err("bad interlace method","Corrupt PNG");
-            if (!s->img_x || !s->img_y) return stbi__err("0-pixel image","Corrupt PNG");
-            if (!pal_img_n) {
-               s->img_n = (color & 2 ? 3 : 1) + (color & 4 ? 1 : 0);
-               if ((1 << 30) / s->img_x / s->img_n < s->img_y) return stbi__err("too large", "Image too large to decode");
+    for {
+        c: stbi__pngchunk = stbi__get_chunk_header(s);
+        switch c.type {
+            case STBI__PNG_TYPE('C','g','B','I'):
+                is_iphone = 1 
+                stbi__skip(s, c.length)
+                
+            case STBI__PNG_TYPE('I','H','D','R'): {
+                comp, filter: int
+                if first == 0 do return stbi__err("multiple IHDR","Corrupt PNG")
+                first = 0
+                if c.length != 13 do return stbi__err("bad IHDR len","Corrupt PNG")
+                s.img_x = stbi__get32be(s)
+                s.img_y = stbi__get32be(s)
+                if s.img_y > STBI_MAX_DIMENSIONS do return stbi__err("too large","Very large image (corrupt?)");
+                if s.img_x > STBI_MAX_DIMENSIONS do return stbi__err("too large","Very large image (corrupt?)");
+                z.depth = stbi__get8(s); if z.depth != 1 && z.depth != 2 && z.depth != 4 && z.depth != 8 && z.depth != 16 do return stbi__err("1/2/4/8/16-bit only","PNG not supported: 1/2/4/8/16-bit only");
+                color = stbi__get8(s); if color > 6 do return stbi__err("bad ctype","Corrupt PNG");
+                if color == 3 && z->depth == 16       do     return stbi__err("bad ctype","Corrupt PNG");
+                if color == 3 do pal_img_n = 3; else if color & 1 do return stbi__err("bad ctype","Corrupt PNG");
+                comp  = stbi__get8(s);  if comp != 0 do return stbi__err("bad comp method","Corrupt PNG");
+                filter= stbi__get8(s);  if filter != 0 do return stbi__err("bad filter method","Corrupt PNG");
+                interlace = stbi__get8(s); if interlace>1 do return stbi__err("bad interlace method","Corrupt PNG");
+                if s.img_x == 0 || s.img_y == 0 do return stbi__err("0-pixel image","Corrupt PNG");
+                if (!pal_img_n) {
+                    s.img_n = (color & 2 ? 3 : 1) + (color & 4 ? 1 : 0);
+                    if (1 << 30) / s.img_x / s.img_n < s.img_y do return stbi__err("too large", "Image too large to decode");
+                } else {
+                    // if paletted, then pal_n is our final components, and
+                    // img_n is # components to decompress/filter.
+                    s.img_n = 1;
+                    if (1 << 30) / s.img_x / 4 < s.img_y do return stbi__err("too large","Corrupt PNG");
+                }
+                // even with SCAN_header, have to scan to see if we have a tRNS
+            }
+          
+            case STBI__PNG_TYPE('P','L','T','E'):  {
+                if first != 0 do return stbi__err("first not IHDR", "Corrupt PNG")
+                if c.length > 256*3 do return stbi__err("invalid PLTE","Corrupt PNG")
+                pal_len = c.length / 3
+                if pal_len * 3 != c.length do return stbi__err("invalid PLTE","Corrupt PNG");
+                for i=0; i < pal_len; i += 1 {
+                   palette[i*4+0] = stbi__get8(s)
+                   palette[i*4+1] = stbi__get8(s) 
+                   palette[i*4+2] = stbi__get8(s) 
+                   palette[i*4+3] = 255
+                }
+            }
+          
+            case STBI__PNG_TYPE('t','R','N','S'): {
+                if first != 0 do return stbi__err("first not IHDR", "Corrupt PNG")
+                if z.idata != nil do return stbi__err("tRNS after IDAT","Corrupt PNG")
+                if pal_img_n != 0 {
+                    if scan == STBI__SCAN_header { 
+                        s->img_n = 4
+                        return 1
+                    }
+                    if pal_len == 0 do return stbi__err("tRNS before PLTE","Corrupt PNG")
+                    if c.length > pal_len do return stbi__err("bad tRNS len","Corrupt PNG")
+                    pal_img_n = 4
+                    for i=0; i < c.length; i += 1 {
+                        palette[i*4+3] = stbi__get8(s)
+                    }
+                       
+                } else {
+                    if !(s.img_n & 1) do return stbi__err("tRNS with alpha","Corrupt PNG")
+                    if c.length != cast(stbi__uint32)s->img_n*2 do return stbi__err("bad tRNS len","Corrupt PNG")
+                    has_trans = 1
+                    // non-paletted with tRNS = constant alpha. if header-scanning, we can stop now.
+                    if scan == STBI__SCAN_header { 
+                        s.img_n += 1
+                        return 1
+                    }
+                    if (z.depth == 16) {
+                        for k = 0; k < s.img_n; k += 1 do tc16[k] = cast(stbi__uint16)stbi__get16be(s); // copy the values as-is
+                    } else {
+                        for k = 0; k < s.img_n; k += 1 do tc[k] = cast(stbi_uc)(stbi__get16be(s) & 255) * stbi__depth_scale_table[z->depth]; // non 8-bit images will be larger
+                    }
+                }
+            }
+          
+            case STBI__PNG_TYPE('I','D','A','T'): {
+                if first != 0 do return stbi__err("first not IHDR", "Corrupt PNG");
+                if pal_img_n && pal_len == 0 do return stbi__err("no PLTE","Corrupt PNG");
+                if scan == STBI__SCAN_header {
+                   // header scan definitely stops at first IDAT
+                   if (pal_img_n) do s.img_n = pal_img_n 
+                   return 1 
+                }
+                if c.length > (u32(1) << 30) do return stbi__err("IDAT size limit", "IDAT section larger than 2^30 bytes");
+                if cast(int)(ioff + c.length) < cast(int)ioff do return 0
+                if (ioff + c.length > idata_limit) {
+                    idata_limit_old: stbi__uint32 = idata_limit;
+                    p: [^]stbi_uc
+                    if idata_limit == 0 do idata_limit = c.length > 4096 ? c.length : 4096;
+                    for ioff + c.length > idata_limit {
+                         idata_limit *= 2;
+                    }
+
+                    p = cast([^]stbi_uc)STBI_REALLOC_SIZED(z->idata, idata_limit_old, idata_limit); 
+                    if p == nil do return stbi__err("outofmem", "Out of memory");
+                    z.idata = p
+                }
+                if stbi__getn(s, z->idata+ioff,c.length) == 0 do return stbi__err("outofdata","Corrupt PNG");
+                ioff += c.length
+                break
+            }
+          
+            case STBI__PNG_TYPE('I','E','N','D'): {
+                raw_len, bpl: stbi__uint32
+                if first != 0 do return stbi__err("first not IHDR", "Corrupt PNG");
+                if scan != STBI__SCAN_load do return 1
+                if z.idata == nil do return stbi__err("no IDAT","Corrupt PNG");
+                // initial guess for decoded data size to avoid unnecessary reallocs
+                bpl = (s.img_x * z.depth + 7) / 8; // bytes per line, per component
+                raw_len = bpl * s.img_y * s.img_n /* pixels */ + s.img_y /* filter mode per row */;
+                // Note(dragos): import core:compress/zlib???
+                z.expanded = cast([^]stbi_uc)stbi_zlib_decode_malloc_guesssize_headerflag(cast([^]stbi_uc) z.idata, ioff, raw_len, cast(^int) &raw_len, !is_iphone);
+                if z.expanded == nil do return 0; // zlib should set error
+                STBI_FREE(z.idata)
+                z.idata = nil
+                if (req_comp == s.img_n+1 && req_comp != 3 && !pal_img_n) || has_trans {
+                    s.img_out_n = s.img_n+1
+                } else {
+                    s->img_out_n = s->img_n
+                }
+                   
+                if stbi__create_png_image(z, z.expanded, raw_len, s.img_out_n, z.depth, color, interlace) == 0 do return 0
+                if has_trans {
+                   if (z->depth == 16) {
+                      if !stbi__compute_transparency16(z, tc16, s.img_out_n) do return 0;
+                   } else {  
+                      if !stbi__compute_transparency(z, tc, s.img_out_n) do return 0;
+                   }
+                }
+                if is_iphone && stbi__de_iphone_flag && s->img_out_n > 2 {
+                    stbi__de_iphone(z)
+                }
+                if pal_img_n != 0 {
+                    // pal_img_n == 3 or 4
+                    s.img_n = pal_img_n // record the actual colors we had
+                    s.img_out_n = pal_img_n
+                    if req_comp >= 3 do s.img_out_n = req_comp
+                    if !stbi__expand_png_palette(z, palette, pal_len, s->img_out_n) {
+                        return 0
+                    }
+                      
+                } else if has_trans {
+                    // non-paletted image with tRNS -> source image has (constant) alpha
+                    s.img_n += 1
+                }
+                STBI_FREE(z.expanded) 
+                z.expanded = nil
+                // end of PNG chunk, read and skip CRC
+                stbi__get32be(s)
+                return 1
+            }
+          
+            case:
+                // if critical, fail
+                if first do return stbi__err("first not IHDR", "Corrupt PNG");
+                if (c.type & (1 << 29)) == 0 {
+                    //#ifndef STBI_NO_FAILURE_STRINGS
+                    // not threadsafe
+                    //static char invalid_chunk[] = "XXXX PNG chunk not known";
+                    //invalid_chunk[0] = STBI__BYTECAST(c.type >> 24);
+                    //invalid_chunk[1] = STBI__BYTECAST(c.type >> 16);
+                    //invalid_chunk[2] = STBI__BYTECAST(c.type >>  8);
+                    //invalid_chunk[3] = STBI__BYTECAST(c.type >>  0);
+                    //#endif
+                    return stbi__err(invalid_chunk, "PNG not supported: unknown PNG chunk type");
+                }
+                stbi__skip(s, c.length)
+                break
+        }
+        // end of PNG chunk, read and skip CRC
+        stbi__get32be(s)
+    }
+}
+
+stbi__do_png :: proc(p: ^stbi__png, x: ^int, y: ^int, n: ^int, req_comp: int, ri: ^stbi__result_info) -> rawptr {
+    result: rawptr
+    if req_comp < 0 || req_comp > 4 do return stbi__errpuc("bad req_comp", "Internal error");
+    if stbi__parse_png_file(p, STBI__SCAN_load, req_comp) {
+        if (p.depth <= 8) {
+            ri.bits_per_channel = 8
+        } else if (p.depth == 16) {
+            ri.bits_per_channel = 16
+        } else {
+            stbi__errpuc("bad bits_per_channel", "PNG not supported: unsupported color depth")
+            return nil
+        }   
+        result = p.out
+        p.out = nil
+        if (req_comp && req_comp != p.s.img_out_n) {
+            if (ri.bits_per_channel == 8) {
+                result = stbi__convert_format(cast([^]stbi_uc)result, p.s.img_out_n, req_comp, p.s.img_x, p.s.img_y);
             } else {
-               // if paletted, then pal_n is our final components, and
-               // img_n is # components to decompress/filter.
-               s->img_n = 1;
-               if ((1 << 30) / s->img_x / 4 < s->img_y) return stbi__err("too large","Corrupt PNG");
+                result = stbi__convert_format16(cast([^]stbi__uint16)result, p.s.img_out_n, req_comp, p.s.img_x, p.s.img_y);
             }
-            // even with SCAN_header, have to scan to see if we have a tRNS
-            break;
-         }
+              
+            p.s.img_out_n = req_comp;
+            if result == nil do return result
+        }
+        x^ = p.s.img_x;
+        y^ = p.s.img_y;
+        if n != nil do n^ = p.s.img_n
+    }
+    STBI_FREE(p.out)    
+    p.out      = nil
+    STBI_FREE(p.expanded)
+    p.expanded = nil
+    STBI_FREE(p.idata)   
+    p.idata    = nil
 
-         case STBI__PNG_TYPE('P','L','T','E'):  {
-            if (first) return stbi__err("first not IHDR", "Corrupt PNG");
-            if (c.length > 256*3) return stbi__err("invalid PLTE","Corrupt PNG");
-            pal_len = c.length / 3;
-            if (pal_len * 3 != c.length) return stbi__err("invalid PLTE","Corrupt PNG");
-            for (i=0; i < pal_len; ++i) {
-               palette[i*4+0] = stbi__get8(s);
-               palette[i*4+1] = stbi__get8(s);
-               palette[i*4+2] = stbi__get8(s);
-               palette[i*4+3] = 255;
-            }
-            break;
-         }
-
-         case STBI__PNG_TYPE('t','R','N','S'): {
-            if (first) return stbi__err("first not IHDR", "Corrupt PNG");
-            if (z->idata) return stbi__err("tRNS after IDAT","Corrupt PNG");
-            if (pal_img_n) {
-               if (scan == STBI__SCAN_header) { s->img_n = 4; return 1; }
-               if (pal_len == 0) return stbi__err("tRNS before PLTE","Corrupt PNG");
-               if (c.length > pal_len) return stbi__err("bad tRNS len","Corrupt PNG");
-               pal_img_n = 4;
-               for (i=0; i < c.length; ++i)
-                  palette[i*4+3] = stbi__get8(s);
-            } else {
-               if (!(s->img_n & 1)) return stbi__err("tRNS with alpha","Corrupt PNG");
-               if (c.length != (stbi__uint32) s->img_n*2) return stbi__err("bad tRNS len","Corrupt PNG");
-               has_trans = 1;
-               // non-paletted with tRNS = constant alpha. if header-scanning, we can stop now.
-               if (scan == STBI__SCAN_header) { ++s->img_n; return 1; }
-               if (z->depth == 16) {
-                  for (k = 0; k < s->img_n; ++k) tc16[k] = (stbi__uint16)stbi__get16be(s); // copy the values as-is
-               } else {
-                  for (k = 0; k < s->img_n; ++k) tc[k] = (stbi_uc)(stbi__get16be(s) & 255) * stbi__depth_scale_table[z->depth]; // non 8-bit images will be larger
-               }
-            }
-            break;
-         }
-
-         case STBI__PNG_TYPE('I','D','A','T'): {
-            if (first) return stbi__err("first not IHDR", "Corrupt PNG");
-            if (pal_img_n && !pal_len) return stbi__err("no PLTE","Corrupt PNG");
-            if (scan == STBI__SCAN_header) {
-               // header scan definitely stops at first IDAT
-               if (pal_img_n)
-                  s->img_n = pal_img_n;
-               return 1;
-            }
-            if (c.length > (1u << 30)) return stbi__err("IDAT size limit", "IDAT section larger than 2^30 bytes");
-            if ((int)(ioff + c.length) < (int)ioff) return 0;
-            if (ioff + c.length > idata_limit) {
-               stbi__uint32 idata_limit_old = idata_limit;
-               stbi_uc *p;
-               if (idata_limit == 0) idata_limit = c.length > 4096 ? c.length : 4096;
-               while (ioff + c.length > idata_limit)
-                  idata_limit *= 2;
-               STBI_NOTUSED(idata_limit_old);
-               p = (stbi_uc *) STBI_REALLOC_SIZED(z->idata, idata_limit_old, idata_limit); if (p == NULL) return stbi__err("outofmem", "Out of memory");
-               z->idata = p;
-            }
-            if (!stbi__getn(s, z->idata+ioff,c.length)) return stbi__err("outofdata","Corrupt PNG");
-            ioff += c.length;
-            break;
-         }
-
-         case STBI__PNG_TYPE('I','E','N','D'): {
-            stbi__uint32 raw_len, bpl;
-            if (first) return stbi__err("first not IHDR", "Corrupt PNG");
-            if (scan != STBI__SCAN_load) return 1;
-            if (z->idata == NULL) return stbi__err("no IDAT","Corrupt PNG");
-            // initial guess for decoded data size to avoid unnecessary reallocs
-            bpl = (s->img_x * z->depth + 7) / 8; // bytes per line, per component
-            raw_len = bpl * s->img_y * s->img_n /* pixels */ + s->img_y /* filter mode per row */;
-            z->expanded = (stbi_uc *) stbi_zlib_decode_malloc_guesssize_headerflag((char *) z->idata, ioff, raw_len, (int *) &raw_len, !is_iphone);
-            if (z->expanded == NULL) return 0; // zlib should set error
-            STBI_FREE(z->idata); z->idata = NULL;
-            if ((req_comp == s->img_n+1 && req_comp != 3 && !pal_img_n) || has_trans)
-               s->img_out_n = s->img_n+1;
-            else
-               s->img_out_n = s->img_n;
-            if (!stbi__create_png_image(z, z->expanded, raw_len, s->img_out_n, z->depth, color, interlace)) return 0;
-            if (has_trans) {
-               if (z->depth == 16) {
-                  if (!stbi__compute_transparency16(z, tc16, s->img_out_n)) return 0;
-               } else {
-                  if (!stbi__compute_transparency(z, tc, s->img_out_n)) return 0;
-               }
-            }
-            if (is_iphone && stbi__de_iphone_flag && s->img_out_n > 2)
-               stbi__de_iphone(z);
-            if (pal_img_n) {
-               // pal_img_n == 3 or 4
-               s->img_n = pal_img_n; // record the actual colors we had
-               s->img_out_n = pal_img_n;
-               if (req_comp >= 3) s->img_out_n = req_comp;
-               if (!stbi__expand_png_palette(z, palette, pal_len, s->img_out_n))
-                  return 0;
-            } else if (has_trans) {
-               // non-paletted image with tRNS -> source image has (constant) alpha
-               ++s->img_n;
-            }
-            STBI_FREE(z->expanded); z->expanded = NULL;
-            // end of PNG chunk, read and skip CRC
-            stbi__get32be(s);
-            return 1;
-         }
-
-         default:
-            // if critical, fail
-            if (first) return stbi__err("first not IHDR", "Corrupt PNG");
-            if ((c.type & (1 << 29)) == 0) {
-               #ifndef STBI_NO_FAILURE_STRINGS
-               // not threadsafe
-               static char invalid_chunk[] = "XXXX PNG chunk not known";
-               invalid_chunk[0] = STBI__BYTECAST(c.type >> 24);
-               invalid_chunk[1] = STBI__BYTECAST(c.type >> 16);
-               invalid_chunk[2] = STBI__BYTECAST(c.type >>  8);
-               invalid_chunk[3] = STBI__BYTECAST(c.type >>  0);
-               #endif
-               return stbi__err(invalid_chunk, "PNG not supported: unknown PNG chunk type");
-            }
-            stbi__skip(s, c.length);
-            break;
-      }
-      // end of PNG chunk, read and skip CRC
-      stbi__get32be(s);
-   }
+    return result
 }
 
-static void *stbi__do_png(stbi__png *p, int *x, int *y, int *n, int req_comp, stbi__result_info *ri)
-{
-   void *result=NULL;
-   if (req_comp < 0 || req_comp > 4) return stbi__errpuc("bad req_comp", "Internal error");
-   if (stbi__parse_png_file(p, STBI__SCAN_load, req_comp)) {
-      if (p->depth <= 8)
-         ri->bits_per_channel = 8;
-      else if (p->depth == 16)
-         ri->bits_per_channel = 16;
-      else
-         return stbi__errpuc("bad bits_per_channel", "PNG not supported: unsupported color depth");
-      result = p->out;
-      p->out = NULL;
-      if (req_comp && req_comp != p->s->img_out_n) {
-         if (ri->bits_per_channel == 8)
-            result = stbi__convert_format((unsigned char *) result, p->s->img_out_n, req_comp, p->s->img_x, p->s->img_y);
-         else
-            result = stbi__convert_format16((stbi__uint16 *) result, p->s->img_out_n, req_comp, p->s->img_x, p->s->img_y);
-         p->s->img_out_n = req_comp;
-         if (result == NULL) return result;
-      }
-      *x = p->s->img_x;
-      *y = p->s->img_y;
-      if (n) *n = p->s->img_n;
-   }
-   STBI_FREE(p->out);      p->out      = NULL;
-   STBI_FREE(p->expanded); p->expanded = NULL;
-   STBI_FREE(p->idata);    p->idata    = NULL;
-
-   return result;
+stbi__png_load :: proc(s: ^stbi__context, x, y, comp: ^int, req_comp: int, ri: ^stbi__result_info) -> rawptr {
+    p: stbi__png 
+    p.s = s
+    return stbi__do_png(&p, x, y, comp,req_comp, ri)
+}
+stbi__png_test :: proc(s: ^stbi__context) -> int {
+    r: bool
+    r = stbi__check_png_header(s)
+    stbi__rewind(s)
+    return r
 }
 
-static void *stbi__png_load(stbi__context *s, int *x, int *y, int *comp, int req_comp, stbi__result_info *ri)
+stbi__png_info_raw :: proc(p: ^stbi__png, x, y, comp: ^int) -> int
 {
-   stbi__png p;
-   p.s = s;
-   return stbi__do_png(&p, x,y,comp,req_comp, ri);
+    if !stbi__parse_png_file(p, STBI__SCAN_header, 0) {
+        stbi__rewind( p->s )
+        return 0
+    }
+    if x do x^ = p.s.img_x
+    if y do y^ = p.s.img_y
+    if comp do comp^ = p.s.img_n
+    return 1;
 }
 
-static int stbi__png_test(stbi__context *s)
+stbi__png_info :: proc(s: ^stbi__context, x, y, comp: ^int) -> int
 {
-   int r;
-   r = stbi__check_png_header(s);
-   stbi__rewind(s);
-   return r;
+    p: stbi__png
+    p.s = s
+    return stbi__png_info_raw(&p, x, y, comp)
 }
 
-static int stbi__png_info_raw(stbi__png *p, int *x, int *y, int *comp)
+stbi__png_is16 :: proc(s: ^stbi__context) -> int
 {
-   if (!stbi__parse_png_file(p, STBI__SCAN_header, 0)) {
-      stbi__rewind( p->s );
-      return 0;
-   }
-   if (x) *x = p->s->img_x;
-   if (y) *y = p->s->img_y;
-   if (comp) *comp = p->s->img_n;
-   return 1;
-}
-
-static int stbi__png_info(stbi__context *s, int *x, int *y, int *comp)
-{
-   stbi__png p;
-   p.s = s;
-   return stbi__png_info_raw(&p, x, y, comp);
-}
-
-static int stbi__png_is16(stbi__context *s)
-{
-   stbi__png p;
-   p.s = s;
-   if (!stbi__png_info_raw(&p, NULL, NULL, NULL))
-	   return 0;
-   if (p.depth != 16) {
-      stbi__rewind(p.s);
-      return 0;
-   }
-   return 1;
+    p: stbi__png
+    p.s = s;
+    if !stbi__png_info_raw(&p, NULL, NULL, NULL) do return 0
+    if p.depth != 16 {
+       stbi__rewind(p.s)
+       return 0
+    }
+    return 1;
 }
