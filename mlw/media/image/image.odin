@@ -22,6 +22,8 @@ Image :: struct {
     },
 }
 
+// This needs to be put into an _os shit now
+/*
 load_from_file :: proc(path: string, opts := image.Options{}, allocator := context.allocator) -> (img: Image, err: Error) {
     context.allocator = allocator
     img.image, err = image.load_from_file(path, opts)
@@ -38,6 +40,7 @@ load_from_file :: proc(path: string, opts := image.Options{}, allocator := conte
     }
     return img, err
 }
+*/
 
 load_from_bytes :: proc(data: []byte, opts := image.Options{}, allocator := context.allocator) -> (img: Image, err: Error) {
     context.allocator = allocator
