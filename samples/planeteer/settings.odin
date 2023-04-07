@@ -99,6 +99,7 @@ settings_window :: proc(ctx: ^mu.Context, settings: ^Settings, frame: Frame_Info
 
 			for layer, i in &settings.planet.noise_layers {		
 				if .ACTIVE in mu.header(ctx, fmt.tprintf("Noise Layer %v", i)) { 
+					mu.layout_row(ctx, {120, 120}, 0)
 					mu.label(ctx, "Seed:")
 					seed := cast(f32)layer.noise.seed
 					if .CHANGE in mu.slider(ctx, &seed, 1, 10000, 1, "%.0f")  {
