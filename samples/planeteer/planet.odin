@@ -55,7 +55,6 @@ construct_planet_mesh_single_threaded :: proc(planet: ^Planet, settings: Planet_
     
 }
 
-
 construct_planet_mesh :: proc(planet: ^Planet, settings: Planet_Settings, pool: ^thread.Pool, allocator := context.allocator) {
     Task_Data :: struct {
         face: ^Terrain_Face,
@@ -67,8 +66,6 @@ construct_planet_mesh :: proc(planet: ^Planet, settings: Planet_Settings, pool: 
         construct_terrain_face_mesh(data.face, data.settings, task.allocator)
     }
 
-    
-    
     for face in &planet.terrain_faces {
         data := new(Task_Data, context.temp_allocator)
         data.face = &face
@@ -81,14 +78,7 @@ construct_planet_mesh :: proc(planet: ^Planet, settings: Planet_Settings, pool: 
 
         }
     }
-
-    /*
-    for face in &planet.terrain_faces {
-        construct_terrain_face_mesh(&face, settings, allocator)
-    }
-    */
 }
-
 
 Terrain_Face :: struct {
     mesh: Mesh,
@@ -117,7 +107,11 @@ construct_terrain_face_mesh :: proc(face: ^Terrain_Face, settings: Planet_Settin
             unit_cube_point: math.Vec3f
             unit_cube_point.xyz = face.local_up + (percent.x - 0.5) * 2 * face.axis_a + (percent.y - 0.5) * 2 * face.axis_b
             unit_cube_point = linalg.normalize(unit_cube_point)
-            elevation := evaluate_noise(noise, unit_cube_point)
+            elevation := f32(0)
+            for noise_layer in settings.noise_layers do if noise_layer.enabled {
+                elevation += evaluate_noise(noise_layer.noise, unit_cube_point)
+            }
+            
             unit_cube_point = unit_cube_point * settings.radius * f32(1 + elevation)
             face.mesh.vertices[i].pos = unit_cube_point.xyz
             

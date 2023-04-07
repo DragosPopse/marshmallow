@@ -23,7 +23,9 @@ Planet_Settings :: struct {
 	radius: f32,
 	color: math.Colorb,
 	resolution: int,
-	noise: Noise,
+	noise_layers: []Noise_Layer,
+
+	_noise_layers_backing: [6]Noise_Layer,
 }
 
 Settings :: struct {
@@ -38,13 +40,15 @@ Frame_Info :: struct {
 }
 
 MAX_RESOLUTION :: 100
-VB_SIZE :: 6 * MAX_RESOLUTION * MAX_RESOLUTION * size_of(Vertex) // This will be changed when adding colors
+VB_SIZE :: 6 * MAX_RESOLUTION * MAX_RESOLUTION * size_of(Vertex) // This will be changed when adding colors. Or maybe have a separate color buffer?
 IB_SIZE :: 6 * (MAX_RESOLUTION - 1) * (MAX_RESOLUTION - 1) * 6 * size_of(u32)
 
 default_planet_settings :: proc() -> (settings: Planet_Settings) {
 	settings.radius = 2.5
 	settings.resolution = 30
-	settings.noise = default_noise()
+	noise := default_noise()
+	settings.noise_layers = settings._noise_layers_backing[0:1]
+	settings.noise_layers[0] = noise_layer(noise)
 	return settings
 }
 
@@ -85,44 +89,56 @@ settings_window :: proc(ctx: ^mu.Context, settings: ^Settings, frame: Frame_Info
 				settings.planet.resolution = cast(int)resolution
             }
 
-			mu.label(ctx, "Seed:")
-			seed := cast(f32)settings.planet.noise.seed
-			if .CHANGE in mu.slider(ctx, &seed, 1, 10000, 1, "%.0f")  {
+			mu.label(ctx, "Noise Filters:")
+			filters_count_f32 := f32(len(settings.planet.noise_layers))
+			if .CHANGE in mu.slider(ctx, &filters_count_f32, 0, len(settings.planet._noise_layers_backing), 1, "%.0f")  {
                 planet_changed = true
-				settings.planet.noise.seed = cast(int)seed
+				filters_count := cast(int)filters_count_f32
+				settings.planet.noise_layers = settings.planet._noise_layers_backing[0:filters_count] if filters_count != 0 else nil
             }
 
-			mu.label(ctx, "Strength:")
-			if .CHANGE in mu.slider(ctx, &settings.planet.noise.strength, 0, 5, 0.01)  {
-                planet_changed = true
-            }
+			for layer, i in &settings.planet.noise_layers {		
+				if .ACTIVE in mu.header(ctx, fmt.tprintf("Noise Layer %v", i)) { 
+					mu.label(ctx, "Seed:")
+					seed := cast(f32)layer.noise.seed
+					if .CHANGE in mu.slider(ctx, &seed, 1, 10000, 1, "%.0f")  {
+						planet_changed = true
+						layer.noise.seed = cast(int)seed
+					}
 
-			mu.label(ctx, "Base Roughness:")
-			if .CHANGE in mu.slider(ctx, &settings.planet.noise.base_roughness, 0, 5, 0.01)  {
-                planet_changed = true
-            }
+					mu.label(ctx, "Strength:")
+					if .CHANGE in mu.slider(ctx, &layer.noise.strength, 0, 5, 0.01) {
+						planet_changed = true
+					}
 
-			mu.label(ctx, "Roughness:")
-			if .CHANGE in mu.slider(ctx, &settings.planet.noise.roughness, 0, 5, 0.01)  {
-                planet_changed = true
-            }
+					mu.label(ctx, "Base Roughness:")
+					if .CHANGE in mu.slider(ctx, &layer.noise.base_roughness, 0, 5, 0.01) {
+						planet_changed = true
+					}
 
-			mu.label(ctx, "Persistence:")
-			if .CHANGE in mu.slider(ctx, &settings.planet.noise.persistence, 0, 1, 0.01)  {
-                planet_changed = true
-            }
+					mu.label(ctx, "Roughness:")
+					if .CHANGE in mu.slider(ctx, &layer.noise.roughness, 0, 5, 0.01) {
+						planet_changed = true
+					}
 
-			mu.label(ctx, "Min Value:")
-			if .CHANGE in mu.slider(ctx, &settings.planet.noise.min_value, 0, 5, 0.01)  {
-                planet_changed = true
-            }
+					mu.label(ctx, "Persistence:")
+					if .CHANGE in mu.slider(ctx, &layer.noise.persistence, 0, 1, 0.01) {
+						planet_changed = true
+					}
 
-			mu.label(ctx, "Layers:")
-			layers := cast(f32)settings.planet.noise.layers_count
-			if .CHANGE in mu.slider(ctx, &layers, 1, 5, 1, "%.0f")  {
-                planet_changed = true
-				settings.planet.noise.layers_count = cast(int)layers
-            }
+					mu.label(ctx, "Min Value:")
+					if .CHANGE in mu.slider(ctx, &layer.noise.min_value, 0, 5, 0.01) {
+						planet_changed = true
+					}
+
+					mu.label(ctx, "Layers:")
+					layers := cast(f32)layer.noise.layers_count
+					if .CHANGE in mu.slider(ctx, &layers, 1, 5, 1, "%.0f") {
+						planet_changed = true
+						layer.noise.layers_count = cast(int)layers
+					}
+				}
+			}
 		}
 	}
 

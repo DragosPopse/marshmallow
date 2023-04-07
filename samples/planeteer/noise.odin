@@ -26,6 +26,17 @@ Noise :: struct {
     min_value: f32,
 }
 
+Noise_Layer :: struct {
+    noise: Noise,
+    enabled: bool,
+}
+
+noise_layer :: proc(noise: Noise) -> (layer: Noise_Layer) {
+    layer.noise = noise
+    layer.enabled = true
+    return layer
+}
+
 default_noise :: proc() -> (noise: Noise) {
     noise.seed = 10
     noise.strength = 0.38
@@ -42,6 +53,8 @@ evaluate_noise :: proc(noise: Noise, point: math.Vec3f) -> (value: f32) {
 	using noise
     frequency := base_roughness
     amplitude: f32 = 1
+    first_layer_value := f32(0)
+    
     for i in 0..<layers_count {
         v := cast(f32)cnoise.noise_3d_improve_xy(cast(i64)seed, linalg.to_f64(point * frequency + center))
         value += (v + 1) * 0.5 * amplitude
