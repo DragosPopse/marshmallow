@@ -88,8 +88,8 @@ settings_window :: proc(ctx: ^mu.Context, settings: ^Settings, frame: Frame_Info
                 planet_changed = true
 				settings.planet.resolution = cast(int)resolution
             }
-
-			mu.label(ctx, "Noise Filters:")
+			
+			mu.label(ctx, "Noise Layers:")
 			filters_count_f32 := f32(settings.planet.noise_layers_count)
 			if .CHANGE in mu.slider(ctx, &filters_count_f32, 0, len(settings.planet.noise_layers), 1, "%.0f")  {
                 planet_changed = true
@@ -100,6 +100,9 @@ settings_window :: proc(ctx: ^mu.Context, settings: ^Settings, frame: Frame_Info
 				layer := &settings.planet.noise_layers[i]
 				if .ACTIVE in mu.header(ctx, fmt.tprintf("Noise Layer %v", i)) { 
 					if .CHANGE in mu.checkbox(ctx, "Enabled", &layer.enabled)  {
+						planet_changed = true
+					}
+					if i != 0 do if .CHANGE in mu.checkbox(ctx, "Use First Layer as Mask", &layer.use_first_layer_as_mask) {
 						planet_changed = true
 					}
 					mu.layout_row(ctx, {120, 120}, 0)

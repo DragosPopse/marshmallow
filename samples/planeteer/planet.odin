@@ -108,9 +108,20 @@ construct_terrain_face_mesh :: proc(face: ^Terrain_Face, settings: Planet_Settin
             unit_cube_point: math.Vec3f
             unit_cube_point.xyz = face.local_up + (percent.x - 0.5) * 2 * face.axis_a + (percent.y - 0.5) * 2 * face.axis_b
             unit_cube_point = linalg.normalize(unit_cube_point)
+
+            first_layer_value := f32(0)
             elevation := f32(0)
-            for i in 0..<settings.noise_layers_count do if settings.noise_layers[i].enabled {
-                elevation += evaluate_noise(settings.noise_layers[i].noise, unit_cube_point)
+            if settings.noise_layers_count > 0 {
+                first_layer_value = evaluate_noise(settings.noise_layers[0].noise, unit_cube_point)
+                if settings.noise_layers[0].enabled {
+                    elevation += first_layer_value
+                }
+            }
+        
+            for i in 1..<settings.noise_layers_count do if settings.noise_layers[i].enabled {
+                mask := first_layer_value if settings.noise_layers[i].use_first_layer_as_mask else f32(1)
+
+                elevation += evaluate_noise(settings.noise_layers[i].noise, unit_cube_point) * mask
             }
             
             unit_cube_point = unit_cube_point * settings.radius * f32(1 + elevation)
@@ -129,9 +140,7 @@ construct_terrain_face_mesh :: proc(face: ^Terrain_Face, settings: Planet_Settin
                 current_index += 6
             }
         }
-    }
-    // TODO(Dragos): Calculate normals
-   
+    }   
 }
 
 destroy_terrain_face :: proc(face: Terrain_Face, allocator := context.allocator) {
@@ -142,7 +151,6 @@ destroy_terrain_face :: proc(face: Terrain_Face, allocator := context.allocator)
     delete(mesh.normals)
 }
 
-// Note(Dragos): This is currently wrong
 merge_planet_meshes :: proc(planet: Planet, allocator := context.allocator) -> (vertices: []Vertex, indices: []u32) {
     context.allocator = allocator
     vertex_list: [dynamic]Vertex
@@ -159,6 +167,8 @@ merge_planet_meshes :: proc(planet: Planet, allocator := context.allocator) -> (
         }
         current_index = len(index_list)
     }
+
+    // Normal Calculations. Not smooth yet
     for i := 0; i < len(index_list); i += 3 {
         v1 := &vertex_list[index_list[i + 0]]
         v2 := &vertex_list[index_list[i + 1]]

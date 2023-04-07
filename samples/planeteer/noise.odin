@@ -29,6 +29,7 @@ Noise :: struct {
 Noise_Layer :: struct {
     noise: Noise,
     enabled: bool,
+    use_first_layer_as_mask: bool,
 }
 
 noise_layer :: proc(noise: Noise) -> (layer: Noise_Layer) {
