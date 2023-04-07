@@ -23,7 +23,8 @@ Planet :: struct {
     settings: Planet_Settings,
 }
 
-init_planet :: proc(planet: ^Planet) {
+init_planet :: proc(planet: ^Planet, settings: Planet_Settings) {
+    planet.settings = settings
     directions := [6]math.Vec3f{
         {1, 0, 0},
         {-1, 0, 0},
@@ -108,8 +109,8 @@ construct_terrain_face_mesh :: proc(face: ^Terrain_Face, settings: Planet_Settin
             unit_cube_point.xyz = face.local_up + (percent.x - 0.5) * 2 * face.axis_a + (percent.y - 0.5) * 2 * face.axis_b
             unit_cube_point = linalg.normalize(unit_cube_point)
             elevation := f32(0)
-            for noise_layer in settings.noise_layers do if noise_layer.enabled {
-                elevation += evaluate_noise(noise_layer.noise, unit_cube_point)
+            for i in 0..<settings.noise_layers_count do if settings.noise_layers[i].enabled {
+                elevation += evaluate_noise(settings.noise_layers[i].noise, unit_cube_point)
             }
             
             unit_cube_point = unit_cube_point * settings.radius * f32(1 + elevation)

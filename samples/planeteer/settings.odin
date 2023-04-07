@@ -23,9 +23,8 @@ Planet_Settings :: struct {
 	radius: f32,
 	color: math.Colorb,
 	resolution: int,
-	noise_layers: []Noise_Layer,
-
-	_noise_layers_backing: [6]Noise_Layer,
+	noise_layers_count: int,
+	noise_layers: [6]Noise_Layer,
 }
 
 Settings :: struct {
@@ -47,11 +46,12 @@ default_planet_settings :: proc() -> (settings: Planet_Settings) {
 	settings.radius = 2.5
 	settings.resolution = 30
 	noise := default_noise()
-	settings.noise_layers = settings._noise_layers_backing[0:1]
 	settings.noise_layers[0] = noise_layer(noise)
+	settings.noise_layers_count = 1
 	return settings
 }
 
+// Todo(Dragos): Scroll wheel doesn't work properly. It only works when I click on the scroll bar, and even that is buggy.
 settings_window :: proc(ctx: ^mu.Context, settings: ^Settings, frame: Frame_Info) -> (graphics_changed: bool, planet_changed: bool) {
     opts := mu.Options{.NO_CLOSE}
     if mu.window(ctx, "Planeteer", {0, 0, 300, 450}, opts) {
@@ -90,21 +90,25 @@ settings_window :: proc(ctx: ^mu.Context, settings: ^Settings, frame: Frame_Info
             }
 
 			mu.label(ctx, "Noise Filters:")
-			filters_count_f32 := f32(len(settings.planet.noise_layers))
-			if .CHANGE in mu.slider(ctx, &filters_count_f32, 0, len(settings.planet._noise_layers_backing), 1, "%.0f")  {
+			filters_count_f32 := f32(settings.planet.noise_layers_count)
+			if .CHANGE in mu.slider(ctx, &filters_count_f32, 0, len(settings.planet.noise_layers), 1, "%.0f")  {
                 planet_changed = true
-				filters_count := cast(int)filters_count_f32
-				settings.planet.noise_layers = settings.planet._noise_layers_backing[0:filters_count] if filters_count != 0 else nil
+				settings.planet.noise_layers_count = cast(int)filters_count_f32
             }
 
-			for layer, i in &settings.planet.noise_layers {		
+			for i in 0..<settings.planet.noise_layers_count {		
+				layer := &settings.planet.noise_layers[i]
 				if .ACTIVE in mu.header(ctx, fmt.tprintf("Noise Layer %v", i)) { 
+					if .CHANGE in mu.checkbox(ctx, "Enabled", &layer.enabled)  {
+						planet_changed = true
+					}
 					mu.layout_row(ctx, {120, 120}, 0)
 					mu.label(ctx, "Seed:")
 					seed := cast(f32)layer.noise.seed
 					if .CHANGE in mu.slider(ctx, &seed, 1, 10000, 1, "%.0f")  {
 						planet_changed = true
-						layer.noise.seed = cast(int)seed
+						//layer.noise.seed = cast(int)seed
+						settings.planet.noise_layers[i].noise.seed = cast(int)seed
 					}
 
 					mu.label(ctx, "Strength:")

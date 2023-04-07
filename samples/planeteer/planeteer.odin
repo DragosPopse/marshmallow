@@ -225,7 +225,7 @@ main :: proc() {
     wireframe_pipeline = create_standard_pipeline(shader, .Line)
     
     settings.planet = default_planet_settings()
-    init_planet(&_planet)
+    init_planet(&_planet, settings.planet)
    
     {
         info: gpu.Buffer_Info
