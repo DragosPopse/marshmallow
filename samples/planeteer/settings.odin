@@ -38,7 +38,7 @@ Frame_Info :: struct {
 	buffer_update_time: f32,
 }
 
-MAX_RESOLUTION :: 100
+MAX_RESOLUTION :: 256
 VB_SIZE :: 6 * MAX_RESOLUTION * MAX_RESOLUTION * size_of(Vertex) // This will be changed when adding colors. Or maybe have a separate color buffer?
 IB_SIZE :: 6 * (MAX_RESOLUTION - 1) * (MAX_RESOLUTION - 1) * 6 * size_of(u32)
 
@@ -48,6 +48,7 @@ default_planet_settings :: proc() -> (settings: Planet_Settings) {
 	noise := default_noise()
 	settings.noise_layers[0] = noise_layer(noise)
 	settings.noise_layers_count = 1
+	
 	return settings
 }
 
@@ -105,6 +106,20 @@ settings_window :: proc(ctx: ^mu.Context, settings: ^Settings, frame: Frame_Info
 					if i != 0 do if .CHANGE in mu.checkbox(ctx, "Use First Layer as Mask", &layer.use_first_layer_as_mask) {
 						planet_changed = true
 					}
+
+					// This sucks ass, but I don't have combo boxes for now
+					// Dogshit programmer named Dragos
+					is_simple_noise := layer.noise.type == .Simple
+					is_rigid_noise := layer.noise.type == .Rigid
+					if .CHANGE in mu.checkbox(ctx, "Simple Noise", &is_simple_noise)  {
+						planet_changed = true
+						layer.noise.type = .Simple
+					}
+					if .CHANGE in mu.checkbox(ctx, "Rigid Noise", &is_rigid_noise)  {
+						planet_changed = true
+						layer.noise.type = .Rigid
+					}
+
 					mu.layout_row(ctx, {120, 120}, 0)
 					mu.label(ctx, "Seed:")
 					seed := cast(f32)layer.noise.seed
@@ -144,6 +159,14 @@ settings_window :: proc(ctx: ^mu.Context, settings: ^Settings, frame: Frame_Info
 					if .CHANGE in mu.slider(ctx, &layers, 1, 5, 1, "%.0f") {
 						planet_changed = true
 						layer.noise.layers_count = cast(int)layers
+					}
+
+					// Rigid only settings
+					if layer.noise.type == .Rigid {
+						mu.label(ctx, "Weight Multiplier:")
+						if .CHANGE in mu.slider(ctx, &layer.noise.weight_multiplier, 0.01, 5, 0.01) {
+							planet_changed = true
+						} 
 					}
 				}
 			}
