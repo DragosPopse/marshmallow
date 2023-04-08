@@ -21,6 +21,8 @@ u8_slider :: proc(ctx: ^mu.Context, val: ^u8, lo, hi: u8) -> (res: mu.Result_Set
 
 init :: proc() -> ^mu.Context {
     mu.init(&mu_ctx)
+    mu_ctx._style.colors[.WINDOW_BG].a = 124
+
     mu_ctx.text_width, mu_ctx.text_height = mu.default_atlas_text_width, mu.default_atlas_text_height
     _vert_buf, _ind_buf = _create_microui_buffers()
     _atlas_texture = _create_atlas_texture()
