@@ -92,7 +92,7 @@ draw :: proc(ctx: ^mu.Context) {
 
             case ^mu.Command_Clip: {
                 _flush()
-                fmt.printf("Clip Command: %v\n", cmd.rect) // TODO(Dragos): Needs gpu implementation
+                //fmt.printf("Clip Command: %v\n", cmd.rect) // TODO(Dragos): Needs gpu implementation
             }
 
             case ^mu.Command_Jump: {
