@@ -5,7 +5,7 @@ import "../math"
 Render_Pass :: distinct u32
 
 MAX_COLOR_ATTACHMENTS :: 4
-DEFAULT_CLEAR_COLOR :: math.fBLACK
+DEFAULT_CLEAR_COLOR :: math.FRGBA_BLACK
 DEFAULT_CLEAR_DEPTH :: 1
 DEFAULT_CLEAR_STENCIL :: 0
 
@@ -17,7 +17,7 @@ Attachment_Info :: struct {
 
 Color_Action :: struct {
     action: Render_Pass_Action_Type,
-    value: math.Colorf,
+    value: math.FColorRGBA,
 }
 
 Depth_Action :: struct {

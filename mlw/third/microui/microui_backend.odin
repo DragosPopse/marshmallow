@@ -15,7 +15,7 @@ import linalg "core:math/linalg"
 
 Vertex :: struct {
     pos: math.Vec2f,
-    col: math.Colorf,
+    col: math.FColorRGBA,
     tex: math.Vec2f,
 }
 
@@ -65,7 +65,7 @@ _push_quad :: proc(dst, src: mu.Rect, color: mu.Color) {
     _vertices[vert_idx + 2].pos = {f32(dst.x), f32(_viewport_width) - f32(dst.y + dst.h)}
     _vertices[vert_idx + 3].pos = {f32(dst.x + dst.w), f32(_viewport_width) - f32(dst.y + dst.h)}
 
-    colorf := math.to_colorf(math.Colorb{color.r, color.g, color.b, color.a})
+    colorf := math.to_float_rgba(math.BColorRGBA{color.r, color.g, color.b, color.a})
     _vertices[vert_idx + 0].col = colorf
     _vertices[vert_idx + 1].col = colorf
     _vertices[vert_idx + 2].col = colorf
