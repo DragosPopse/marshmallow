@@ -86,6 +86,7 @@ Terrain_Face :: struct {
     local_up: math.Vec3f,
     axis_a: math.Vec3f,
     axis_b: math.Vec3f,
+    _elevation_min, _elevation_max: f32,
 }
 
 init_terrain_face :: proc(face: ^Terrain_Face, up: math.Vec3f) {
@@ -99,6 +100,8 @@ construct_terrain_face_mesh :: proc(face: ^Terrain_Face, settings: Planet_Settin
     context.allocator = allocator
     face.mesh.vertices = make([]Vertex, settings.resolution * settings.resolution)
     face.mesh.indices = make([]u32, (settings.resolution - 1) * (settings.resolution - 1) * 6)
+    face._elevation_min = max(f32)
+    face._elevation_max = min(f32)
     current_index := 0
     for y in 0..<settings.resolution {
         for x in 0..<settings.resolution {
@@ -124,7 +127,10 @@ construct_terrain_face_mesh :: proc(face: ^Terrain_Face, settings: Planet_Settin
                 elevation += evaluate_noise(settings.noise_layers[i].noise, unit_cube_point) * mask
             }
             
-            unit_cube_point = unit_cube_point * settings.radius * f32(1 + elevation)
+            elevation = settings.radius * f32(1 + elevation)
+            face._elevation_min, face._elevation_max = math.minmax(elevation, face._elevation_min, face._elevation_max)
+            unit_cube_point = unit_cube_point * elevation
+            
             face.mesh.vertices[i].pos = unit_cube_point.xyz
             
             // Setup triangles
