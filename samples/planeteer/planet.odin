@@ -24,8 +24,12 @@ Planet :: struct {
     settings: Planet_Settings,
 }
 
+Planet_Vert_Uniforms :: struct {
+    model, view, projection: math.Mat4f,
+}
+
 Planet_Frag_Uniforms :: struct {
-    elevation_minmax: [2]f32,
+    ElevationMinMax: [2]f32,
 }
 
 init_planet :: proc(planet: ^Planet, settings: Planet_Settings) {
@@ -44,6 +48,21 @@ init_planet :: proc(planet: ^Planet, settings: Planet_Settings) {
     }
 }
 
+// MVC shouldn't really be here, but it's fine for now
+update_planet_uniforms :: proc(planet: Planet, model, view, projection: math.Mat4f) {
+    vert_uniforms: Planet_Vert_Uniforms
+    frag_uniforms: Planet_Frag_Uniforms
+
+    vert_uniforms.model = model
+    vert_uniforms.view = view
+    vert_uniforms.projection = projection
+
+    frag_uniforms.ElevationMinMax = {planet._elevation_min, planet._elevation_max}
+    gpu.apply_uniforms_raw(.Vertex, 0, &vert_uniforms, size_of(Planet_Vert_Uniforms))
+    gpu.apply_uniforms_raw(.Fragment, 0, &frag_uniforms, size_of(Planet_Frag_Uniforms))
+}
+
+
 create_planet_shader :: proc() -> (shader: gpu.Shader, err: Maybe(string)) {
     vert_info: gpu.Shader_Stage_Info
     vert: gpu.Shader_Stage
@@ -60,7 +79,7 @@ create_planet_shader :: proc() -> (shader: gpu.Shader, err: Maybe(string)) {
 
     vert_info.type = .Vertex
 
-    vert_info.uniform_blocks[0].size = size_of(Vertex_Uniforms)
+    vert_info.uniform_blocks[0].size = size_of(Planet_Vert_Uniforms)
     vert_info.uniform_blocks[0].uniforms[0].name = "model"
     vert_info.uniform_blocks[0].uniforms[0].type = .mat4f32
     vert_info.uniform_blocks[0].uniforms[1].name = "view"
@@ -76,7 +95,13 @@ create_planet_shader :: proc() -> (shader: gpu.Shader, err: Maybe(string)) {
   
 
     frag_info.type = .Fragment
-    
+
+    // Should this be a different uniform block? Idk
+    frag_info.uniform_blocks[0].size = size_of(Planet_Frag_Uniforms)
+    frag_info.uniform_blocks[0].uniforms[0].name = "ElevationMinMax"
+    frag_info.uniform_blocks[0].uniforms[0].type = .vec2f32
+    frag_info.textures[0].name = "Gradient"
+    frag_info.textures[0].type = .Texture2D
 
     if frag, err = gpu.create_shader_stage(frag_info); err != nil {
         return 0, err
@@ -94,7 +119,6 @@ create_planet_shader :: proc() -> (shader: gpu.Shader, err: Maybe(string)) {
     return shader, nil
 }
 
-
 destroy_planet :: proc(planet: Planet, allocator := context.allocator) {
     context.allocator = allocator
 
@@ -108,7 +132,12 @@ construct_planet_mesh_single_threaded :: proc(planet: ^Planet, settings: Planet_
     for face in &planet.terrain_faces {
         construct_terrain_face_mesh(&face, settings, allocator)
     }
-    
+    planet._elevation_max = min(f32)
+    planet._elevation_min = max(f32)
+    for face in planet.terrain_faces {
+        if face._elevation_max > planet._elevation_max do planet._elevation_max = face._elevation_max
+        if face._elevation_min < planet._elevation_min do planet._elevation_min = face._elevation_min
+    }
 }
 
 construct_planet_mesh :: proc(planet: ^Planet, settings: Planet_Settings, pool: ^thread.Pool, allocator := context.allocator) {
@@ -136,7 +165,7 @@ construct_planet_mesh :: proc(planet: ^Planet, settings: Planet_Settings, pool: 
     }
 
     planet._elevation_max = min(f32)
-    planet._elevation_max = max(f32)
+    planet._elevation_min = max(f32)
     for face in planet.terrain_faces {
         if face._elevation_max > planet._elevation_max do planet._elevation_max = face._elevation_max
         if face._elevation_min < planet._elevation_min do planet._elevation_min = face._elevation_min

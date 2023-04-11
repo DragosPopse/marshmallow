@@ -5,6 +5,7 @@ layout (location = 1) in vec3 aNormal;
 
 out vec4 VertexColor;
 out vec3 VertexNormal;
+out vec3 ObjectSpacePosition;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -17,4 +18,5 @@ void main()
     //VertexColor = vec4(1.0, 1.0, 1.0, 1.0);
     VertexColor = gl_Position;
     VertexNormal = aNormal;
+    ObjectSpacePosition = aPos;
 }

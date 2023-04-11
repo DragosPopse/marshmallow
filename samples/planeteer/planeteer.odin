@@ -193,7 +193,7 @@ update :: proc(dt: f32) {
         gpu.apply_pipeline(default_pipeline)
     }  
     gpu.apply_input_buffers(input_buffers)
-    gpu.apply_uniforms_raw(.Vertex, 0, &input_uniforms, size_of(input_uniforms))
+    update_planet_uniforms(_planet, input_uniforms.model, input_uniforms.view, input_uniforms.projection) // a bit goofy, will refactor
     gpu.draw(0, len(planet_indices), 1)
     mu_mlw.apply_microui_pipeline(WIDTH, HEIGHT)
     mu_mlw.draw(ui)
@@ -217,7 +217,7 @@ main :: proc() {
     }
     initialize()
     
-    if shader, shader_err = create_standard_shader(); shader_err != nil {
+    if shader, shader_err = create_planet_shader(); shader_err != nil {
         fmt.printf("SHADER_ERR: %s\n", shader_err.(string))
         panic("Planeteer shader error")
     }
@@ -226,7 +226,7 @@ main :: proc() {
     
     settings.planet = default_planet_settings()
     init_planet(&_planet, settings.planet)
-   
+    
     {
         info: gpu.Buffer_Info
         info.type = .Vertex
