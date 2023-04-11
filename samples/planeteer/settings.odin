@@ -165,7 +165,7 @@ settings_window :: proc(ctx: ^mu.Context, settings: ^Settings, frame: Frame_Info
 						mu.label(ctx, "Weight Multiplier:")
 						if .CHANGE in mu.slider(ctx, &layer.noise.weight_multiplier, 0.01, 5, 0.01) {
 							planet_changed = true
-						} 
+						}
 					}
 				}
 			}

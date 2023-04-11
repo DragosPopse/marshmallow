@@ -20,7 +20,12 @@ Mesh :: struct {
 
 Planet :: struct {
     terrain_faces: [6]Terrain_Face,
+    _elevation_min, _elevation_max: f32,
     settings: Planet_Settings,
+}
+
+Planet_Frag_Uniforms :: struct {
+    elevation_minmax: [2]f32,
 }
 
 init_planet :: proc(planet: ^Planet, settings: Planet_Settings) {
@@ -37,6 +42,56 @@ init_planet :: proc(planet: ^Planet, settings: Planet_Settings) {
     for face, i in &planet.terrain_faces {
         init_terrain_face(&face, directions[i])
     }
+}
+
+create_planet_shader :: proc() -> (shader: gpu.Shader, err: Maybe(string)) {
+    vert_info: gpu.Shader_Stage_Info
+    vert: gpu.Shader_Stage
+    frag_info: gpu.Shader_Stage_Info
+    frag: gpu.Shader_Stage
+   
+    when gpu.BACKEND == .glcore3 {
+        vert_info.src = #load("glcore3/planet.vert.glsl", string)
+        frag_info.src = #load("glcore3/planet.frag.glsl", string)
+    } else when gpu.BACKEND == .webgl2 {
+        vert_info.src = #load("webgl2/planet.vert.glsl", string)
+        frag_info.src = #load("webgl2/planet.frag.glsl", string)
+    }
+
+    vert_info.type = .Vertex
+
+    vert_info.uniform_blocks[0].size = size_of(Vertex_Uniforms)
+    vert_info.uniform_blocks[0].uniforms[0].name = "model"
+    vert_info.uniform_blocks[0].uniforms[0].type = .mat4f32
+    vert_info.uniform_blocks[0].uniforms[1].name = "view"
+    vert_info.uniform_blocks[0].uniforms[1].type = .mat4f32
+    vert_info.uniform_blocks[0].uniforms[2].name = "projection"
+    vert_info.uniform_blocks[0].uniforms[2].type = .mat4f32
+
+    if vert, err = gpu.create_shader_stage(vert_info); err != nil {
+        return 0, err
+    }
+    defer gpu.destroy_shader_stage(vert)
+
+  
+
+    frag_info.type = .Fragment
+    
+
+    if frag, err = gpu.create_shader_stage(frag_info); err != nil {
+        return 0, err
+    }
+    defer gpu.destroy_shader_stage(frag)
+
+    shader_info: gpu.Shader_Info
+    shader_info.stages[.Vertex] = vert
+    shader_info.stages[.Fragment] = frag
+
+    if shader, err = gpu.create_shader(shader_info, false); err != nil {
+        return 0, err
+    }
+
+    return shader, nil
 }
 
 
@@ -78,6 +133,13 @@ construct_planet_mesh :: proc(planet: ^Planet, settings: Planet_Settings, pool: 
         for _ in thread.pool_pop_done(pool) {
 
         }
+    }
+
+    planet._elevation_max = min(f32)
+    planet._elevation_max = max(f32)
+    for face in planet.terrain_faces {
+        if face._elevation_max > planet._elevation_max do planet._elevation_max = face._elevation_max
+        if face._elevation_min < planet._elevation_min do planet._elevation_min = face._elevation_min
     }
 }
 
@@ -130,7 +192,7 @@ construct_terrain_face_mesh :: proc(face: ^Terrain_Face, settings: Planet_Settin
             elevation = settings.radius * f32(1 + elevation)
             face._elevation_min, face._elevation_max = math.minmax(elevation, face._elevation_min, face._elevation_max)
             unit_cube_point = unit_cube_point * elevation
-            
+
             face.mesh.vertices[i].pos = unit_cube_point.xyz
             
             // Setup triangles
