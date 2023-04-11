@@ -33,6 +33,7 @@ apply_input_buffers : Backend_Apply_Input_Buffers : backend.apply_input_buffers
 
 create_texture  : Backend_Create_Texture : backend.create_texture
 destroy_texture : Backend_Destroy_Texture : backend.destroy_texture
+texture_data : Backend_Texture_Data : backend.texture_data
 apply_input_textures : Backend_Apply_Input_Textures : backend.apply_input_textures
 
 create_pass: Backend_Create_Pass : backend.create_pass

@@ -42,11 +42,56 @@ GLCore3_Texture :: struct {
     id: core.Texture,
     target: u32,
     type: core.Texture_Type,
+    format: core.Pixel_Format,
     render_target: bool,
     size: [3]int,
 }
 
-_textures: map[core.Texture]GLCore3_Texture 
+_textures: map[core.Texture]GLCore3_Texture
+
+// This is not fully correct, but it will work for now. Wait for D3D11 implementation to make this better
+texture_data :: proc(texture: core.Texture, data: []byte) {
+    assert(texture in _textures, "Invalid texture ID")
+    gltex := _textures[texture]
+    if gltex.type == .Texture2D {
+        //assert(desc.format != .Invalid, "Invalid pixel format. Did you forget to set up texture_info.format?")
+        internal_format: i32
+        format, data_type: u32
+        switch gltex.format {
+            case .Invalid: // already asserted
+
+            case .A8: {
+                fmt.assertf(len(data) == gltex.size.x * gltex.size.y * 1 || data == nil, "Texture size and data mismatch. Expected %v, got %v", gltex.size.x * gltex.size.y, len(data))
+                internal_format = gl.ALPHA
+                format = gl.ALPHA
+                data_type = gl.UNSIGNED_BYTE
+            }
+
+            case .RGBA8:
+                assert(len(data) == gltex.size.x * gltex.size.y * 4 || data == nil, "Texture size and data mismatch")
+                internal_format = gl.RGBA
+                format = gl.RGBA
+                data_type = gl.UNSIGNED_BYTE
+            case .RGB8:
+                assert(len(data) == gltex.size.x * gltex.size.y * 3 || data == nil, "Texture size and data mismatch")
+                internal_format = gl.RGB
+                format = gl.RGB
+                data_type = gl.UNSIGNED_BYTE
+            case .DEPTH24_STENCIL8: 
+                // Todo(Dragos): Assert texture size and data mismatch
+                internal_format = gl.DEPTH24_STENCIL8
+                format = gl.DEPTH_STENCIL
+                data_type = gl.UNSIGNED_INT_24_8
+        }
+        gl.TexImage2D(gltex.target, 0, 
+            internal_format, 
+            cast(i32)gltex.size.x, cast(i32)gltex.size.y, 
+            0,
+            format, 
+            data_type, raw_data(data),
+        )
+    }
+}
 
 create_texture :: proc(desc: core.Texture_Info) -> (texture: core.Texture) {
     assert(desc.type != .Invalid, "Invalid texture type.")
