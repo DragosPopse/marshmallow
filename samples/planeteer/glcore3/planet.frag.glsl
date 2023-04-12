@@ -14,5 +14,5 @@ float inverse_lerp(float a, float b, float value) {
 
 void main() {
     float altitude = inverse_lerp(ElevationMinMax.x, ElevationMinMax.y, length(ObjectSpacePosition));
-    FragmentColor = vec4(texture(Gradient, vec2(altitude, altitude)));
+    FragmentColor = vec4(texture(Gradient, vec2(altitude, altitude)).xyz, 1.0);
 }

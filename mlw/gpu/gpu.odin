@@ -13,3 +13,17 @@ make_texture_data_from_gradient :: proc(gradient: math.Gradient, width: int, all
     }
     return slice.to_bytes(pixels)
 }
+
+create_texture_from_gradient :: proc(gradient: math.Gradient, width: int) -> (texture: Texture) { 
+    info: Texture_Info
+    info.format = .RGBA8
+    info.type = .Texture2D
+    info.generate_mipmap = false
+    info.size.xy = {width, 1}
+    info.data = make_texture_data_from_gradient(gradient, width, context.temp_allocator)
+    info.min_filter = .Linear
+    info.mag_filter = .Linear
+    info.wrap.xy = {.Clamp_To_Edge, .Clamp_To_Edge}
+
+    return create_texture(info)
+}

@@ -122,6 +122,17 @@ input_uniforms: Vertex_Uniforms
 
 angle: f32
 
+default_planet_gradient := math.Gradient{
+    color_keys = []math.Gradient_Color_Key{
+        {color = {84, 134, 255}, time = 0},
+        {color = {164, 174, 91}, time = 0.2},
+        {color = {212, 225, 112}, time = 0.3},
+        {color = {37, 183, 19}, time = 0.6},
+    },
+}
+
+gradient_texture: gpu.Texture
+
 when ODIN_OS != .JS {
     pool: thread.Pool
 }
@@ -194,6 +205,9 @@ update :: proc(dt: f32) {
     }  
     gpu.apply_input_buffers(input_buffers)
     update_planet_uniforms(_planet, input_uniforms.model, input_uniforms.view, input_uniforms.projection) // a bit goofy, will refactor
+    input_textures: gpu.Input_Textures
+    input_textures.textures[.Fragment][0] = gradient_texture
+    gpu.apply_input_textures(input_textures)
     gpu.draw(0, len(planet_indices), 1)
     mu_mlw.apply_microui_pipeline(WIDTH, HEIGHT)
     mu_mlw.draw(ui)
@@ -226,6 +240,7 @@ main :: proc() {
     
     settings.planet = default_planet_settings()
     init_planet(&_planet, settings.planet)
+    gradient_texture = gpu.create_texture_from_gradient(default_planet_gradient, 50)
     
     {
         info: gpu.Buffer_Info
@@ -259,7 +274,7 @@ main :: proc() {
     input_buffers.index = planet_ib 
 
     pass_action = gpu.default_pass_action()
-    pass_action.colors[0].value = math.FColorRGBA{0.012, 0.533, 0.988, 1.0}
+    //pass_action.colors[0].value = math.FColorRGBA{0.012, 0.533, 0.988, 1.0}
 
     projection = math.Mat4f(1)
     projection = linalg.matrix4_perspective_f32(linalg.radians(cast(f32)45), f32(WIDTH) / f32(HEIGHT), 0.1, 100)

@@ -87,7 +87,7 @@ gradient_evaluate_from_gradient :: proc(gradient: Gradient, time: f32) -> (resul
     if len(gradient.color_keys) == 1 do return gradient.color_keys[0].color
 
     i: int
-    for i = 1; i < len(gradient.color_keys); i += 1 {
+    for i = 1; i < len(gradient.color_keys) - 1; i += 1 {
         if time < gradient.color_keys[i].time do break
     }
 
