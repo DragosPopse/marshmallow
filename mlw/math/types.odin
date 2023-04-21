@@ -10,3 +10,12 @@ Mat3f :: alg.Matrix3f32
 Mat4f :: alg.Matrix4f32
 
 
+Recti :: struct {
+    using position: [2]int,
+    size: [2]int,
+}
+
+Rectf :: struct {
+    using position: Vec2f,
+    size: Vec2f,
+}
