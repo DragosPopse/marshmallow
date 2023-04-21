@@ -44,10 +44,17 @@ GLCore3_Texture :: struct {
     type: core.Texture_Type,
     format: core.Pixel_Format,
     render_target: bool,
+    // Note(Dragos): Maybe we should have a separate concept of Texture_Create_Info and Texture_Info? Some data in Info will not be usable in this context
+    info: core.Texture_Info, // Having this here means we don't need things like size anymore? 
     size: [3]int,
 }
 
 _textures: map[core.Texture]GLCore3_Texture
+
+texture_info :: proc(texture: core.Texture) -> (info: core.Texture_Info) {
+    assert(texture in _textures, "Invalid texture ID")
+    return _textures[texture].info
+}
 
 // This is not fully correct, but it will work for now. Wait for D3D11 implementation to make this better
 texture_data :: proc(texture: core.Texture, data: []byte) {
@@ -155,6 +162,7 @@ create_texture :: proc(desc: core.Texture_Info) -> (texture: core.Texture) {
     gltex.type = desc.type
     gltex.render_target = desc.render_target
     gltex.size = desc.size
+    gltex.info = desc
     _textures[gltex.id] = gltex
     return gltex.id
 }

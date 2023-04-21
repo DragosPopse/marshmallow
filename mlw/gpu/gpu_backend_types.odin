@@ -75,6 +75,7 @@ Backend_Buffer_Data :: #type proc(buffer: Buffer, data: []byte)
 Backend_Create_Texture :: #type proc(desc: Texture_Info) -> Texture
 Backend_Destroy_Texture :: #type proc(texture: Texture)
 Backend_Texture_Data :: #type proc(texture: Texture, data: []byte)
+Backend_Texture_Info :: #type proc(texture: Texture) -> (info: Texture_Info)
 //
 
 // Drawing
