@@ -13,6 +13,7 @@ import "core:fmt"
     Initialization/Teardown
 */
 
+ATLAS_UNIFORM_NAME :: "imdraw_Atlas"
 
 init :: proc() {
     err: Maybe(string)
@@ -96,4 +97,52 @@ create_texture :: proc(path: string) -> (texture: gpu.Texture) {
     info.size.xy = {img.width, img.height}
     info.data = slice.to_bytes(img.rgba_pixels)
     return gpu.create_texture(info)
+}
+
+create_shader :: proc(frag_info: gpu.Shader_Stage_Info) -> (shader: gpu.Shader, err: Maybe(string)) {
+    vert_info: gpu.Shader_Stage_Info
+    vert: gpu.Shader_Stage
+    frag: gpu.Shader_Stage
+
+
+    // The vertex shader should always stay the same
+
+    vert_info.type = .Vertex
+
+    when gpu.BACKEND == .glcore3 {
+        vert_info.src = #load("shaders/imdraw.vert.glsl", string)
+    } else {
+        #panic("Only glcore3 supported sorry.")
+    }
+    
+    vert_info.uniform_blocks[0].size = size_of(Vertex_Uniforms)
+    vert_info.uniform_blocks[0].uniforms[0].name = "imdraw_ModelView"
+    vert_info.uniform_blocks[0].uniforms[0].type = .mat4f32
+    vert_info.uniform_blocks[0].uniforms[1].name = "imdraw_Projection"
+    vert_info.uniform_blocks[0].uniforms[1].type = .mat4f32
+    
+    if vert, err = gpu.create_shader_stage(vert_info); err != nil {
+        return 0, err
+    }
+    defer gpu.destroy_shader_stage(vert)
+
+
+    assert(frag_info.type == .Fragment, "Expected a fragment shader stage info for imdraw.create_shader")
+    assert(frag_info.textures[0].name == ATLAS_UNIFORM_NAME, "The first texture in the shader must have a specific name. Check imdraw.ATLAS_UNIFORM_NAME")
+    assert(frag_info.textures[0].type == .Texture2D, "The first texture in the shader must be a Texture2D")
+
+    if frag, err = gpu.create_shader_stage(frag_info); err != nil {
+        return 0, err
+    }
+    defer gpu.destroy_shader_stage(frag)
+
+    shader_info: gpu.Shader_Info
+    shader_info.stages[.Vertex] = vert
+    shader_info.stages[.Fragment] = frag
+
+    if shader, err = gpu.create_shader(shader_info, false); err != nil {
+        return 0, err
+    }
+
+    return shader, nil
 }

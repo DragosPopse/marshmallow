@@ -84,51 +84,19 @@ _push_quad :: proc(dst: math.Rectf, src: math.Recti, color: math.FColorRGBA) {
 
 
 _create_default_shader :: proc() -> (shader: gpu.Shader, err: Maybe(string)) {
-    vert_info: gpu.Shader_Stage_Info
-    vert: gpu.Shader_Stage
     frag_info: gpu.Shader_Stage_Info
-    frag: gpu.Shader_Stage
+    frag_info.type = .Fragment  
 
     when gpu.BACKEND == .glcore3 {
-        vert_info.src = #load("shaders/imdraw.vert.glsl", string)
         frag_info.src = #load("shaders/default.frag.glsl", string)
     } else {
         #panic("Only glcore3 supported sorry.")
     }
-
-    vert_info.type = .Vertex
     
-    vert_info.uniform_blocks[0].size = size_of(Vertex_Uniforms)
-    vert_info.uniform_blocks[0].uniforms[0].name = "modelview"
-    vert_info.uniform_blocks[0].uniforms[0].type = .mat4f32
-    vert_info.uniform_blocks[0].uniforms[1].name = "projection"
-    vert_info.uniform_blocks[0].uniforms[1].type = .mat4f32
-    
-    if vert, err = gpu.create_shader_stage(vert_info); err != nil {
-        return 0, err
-    }
-    defer gpu.destroy_shader_stage(vert)
-
-
-    frag_info.type = .Fragment
-
-    frag_info.textures[0].name = "atlas"
+    frag_info.textures[0].name = ATLAS_UNIFORM_NAME
     frag_info.textures[0].type = .Texture2D
 
-    if frag, err = gpu.create_shader_stage(frag_info); err != nil {
-        return 0, err
-    }
-    defer gpu.destroy_shader_stage(frag)
-
-    shader_info: gpu.Shader_Info
-    shader_info.stages[.Vertex] = vert
-    shader_info.stages[.Fragment] = frag
-
-    if shader, err = gpu.create_shader(shader_info, false); err != nil {
-        return 0, err
-    }
-
-    return shader, nil
+    return create_shader(frag_info)
 }
 
 _create_imdraw_pipeline :: proc(shader: gpu.Shader) -> (pipeline: gpu.Pipeline) {
