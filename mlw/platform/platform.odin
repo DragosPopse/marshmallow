@@ -2,6 +2,8 @@ package mmlow_platform
 
 import "../core"
 import "core:runtime"
+import "core:time"
+import "core:fmt"
 
 Step_Procedure :: core.Step_Procedure
 
@@ -29,8 +31,13 @@ when ODIN_OS == .JS {
     is_running := true
 
     start :: proc() {
+        clock: time.Stopwatch
+        time.stopwatch_start(&clock)
         for is_running {
-            step_proc(0.1)
+            dt := cast(f32)time.duration_seconds(time.stopwatch_duration(clock))
+            time.stopwatch_reset(&clock)
+            time.stopwatch_start(&clock)
+            step_proc(dt)
         }
     }
 
