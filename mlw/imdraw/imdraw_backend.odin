@@ -29,8 +29,8 @@ _indices: [BUFFER_SIZE * 6]u32
 
 
 // gpu data
-_pipeline: gpu.Pipeline
-_shader: gpu.Shader
+_pipelines: map[Shader]gpu.Pipeline
+_default_shader: Shader
 _uniforms: Vertex_Uniforms
 _input_buffers: gpu.Input_Buffers
 
@@ -83,7 +83,7 @@ _push_quad :: proc(dst: math.Rectf, src: math.Recti, color: math.FColorRGBA) {
 }
 
 
-_create_default_shader :: proc() -> (shader: gpu.Shader, err: Maybe(string)) {
+_create_default_shader :: proc() -> (shader: Shader, err: Maybe(string)) {
     frag_info: gpu.Shader_Stage_Info
     frag_info.type = .Fragment  
 
@@ -99,14 +99,14 @@ _create_default_shader :: proc() -> (shader: gpu.Shader, err: Maybe(string)) {
     return create_shader(frag_info)
 }
 
-_create_imdraw_pipeline :: proc(shader: gpu.Shader) -> (pipeline: gpu.Pipeline) {
+_create_imdraw_pipeline :: proc(shader: Shader) -> (pipeline: gpu.Pipeline) {
     info: gpu.Pipeline_Info
     blend: core.Blend_State
     blend.rgb.src_factor = .Src_Alpha
     blend.rgb.dst_factor = .One_Minus_Src_Alpha
     blend.alpha = blend.rgb
     info.color.blend = blend
-    info.shader = shader
+    info.shader = auto_cast shader
     info.index_type = .u32 
     info.primitive_type = .Triangles
     info.polygon_mode = .Fill

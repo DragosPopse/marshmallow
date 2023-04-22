@@ -28,6 +28,6 @@ transform_to_mat4f :: proc(t: Transform) -> (m: Mat4f) {
 // Calculate the ModelViewProjection matrix
 mvp :: proc(transform: Transform, camera: Camera) -> (m: Mat4f) {
     model := transform_to_mat4f(transform)
-    view, projection := camera_to_mat4f(camera)
+    view, projection := camera_to_vp_matrices(camera)
     return projection * view * model
 }

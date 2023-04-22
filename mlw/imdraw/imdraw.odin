@@ -13,19 +13,21 @@ import "core:fmt"
     Initialization/Teardown
 */
 
+// It is distinct from gpu.Shader because you need to make sure that imdraw.create_shader is paired with imdraw.destroy_shader (as opposed to the gpu alternatives)
+Shader :: distinct gpu.Shader
+
 ATLAS_UNIFORM_NAME :: "imdraw_Atlas"
 
 init :: proc() {
     err: Maybe(string)
-    if _shader, err = _create_default_shader(); err != nil {
+    if _default_shader, err = _create_default_shader(); err != nil {
         fmt.printf("Shader Error: %v\n", err.(string))
     }
-    _pipeline = _create_imdraw_pipeline(_shader)
     _input_buffers.buffers[0], _input_buffers.index = _create_imdraw_buffers()
 }
 
 teardown :: proc() {
-
+    delete(_pipelines)
 }
 
 
@@ -45,11 +47,13 @@ set_current_texture :: proc(texture: gpu.Texture) {
 */
 
 // Note(Dragos): This is a bit goofy for now. I think the renderer could defer everything at the end via draw commands, but this is simple for now
-begin :: proc(camera: math.Camera) {
+begin :: proc(camera: math.Camera, shader := _default_shader) {
     _buf_idx = 0
-    gpu.apply_pipeline(_pipeline)
+    pipeline, pipeline_found := _pipelines[shader]
+    assert(pipeline_found, "Invalid shader. Did you create it with imdraw.create_shader?")
+    gpu.apply_pipeline(pipeline)
     gpu.apply_input_buffers(_input_buffers)
-    _uniforms.modelview, _uniforms.projection = math.camera_to_mat4f(camera)
+    _uniforms.modelview, _uniforms.projection = math.camera_to_vp_matrices(camera)
     gpu.apply_uniforms_raw(.Vertex, 0, &_uniforms, size_of(_uniforms))
 }
 
@@ -99,11 +103,10 @@ create_texture :: proc(path: string) -> (texture: gpu.Texture) {
     return gpu.create_texture(info)
 }
 
-create_shader :: proc(frag_info: gpu.Shader_Stage_Info) -> (shader: gpu.Shader, err: Maybe(string)) {
+create_shader :: proc(frag_info: gpu.Shader_Stage_Info) -> (shader: Shader, err: Maybe(string)) {
     vert_info: gpu.Shader_Stage_Info
     vert: gpu.Shader_Stage
     frag: gpu.Shader_Stage
-
 
     // The vertex shader should always stay the same
 
@@ -140,9 +143,21 @@ create_shader :: proc(frag_info: gpu.Shader_Stage_Info) -> (shader: gpu.Shader, 
     shader_info.stages[.Vertex] = vert
     shader_info.stages[.Fragment] = frag
 
-    if shader, err = gpu.create_shader(shader_info, false); err != nil {
+    gpu_shader: gpu.Shader
+    if gpu_shader, err = gpu.create_shader(shader_info, false); err != nil {
         return 0, err
     }
 
-    return shader, nil
+    // Create a pipeline for this shader, similar to the rest. Maybe in the future we can do some more changes in here, by specializing Shader_Stage_Info
+    _pipelines[auto_cast gpu_shader] = _create_imdraw_pipeline(auto_cast gpu_shader)
+
+    return auto_cast gpu_shader, nil
+}
+
+destroy_shader :: proc(shader: Shader) {
+    pipeline, found := _pipelines[shader]
+    assert(found, "Shader not found. Did you create it with imdraw.create_shader?")
+    gpu.destroy_pipeline(pipeline)
+    delete_key(&_pipelines, shader)
+    gpu.destroy_shader(auto_cast shader)
 }
