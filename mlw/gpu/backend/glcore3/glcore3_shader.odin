@@ -232,7 +232,7 @@ apply_uniforms_raw :: proc(stage: core.Shader_Stage_Type, block_index: int, data
     gl_stage, stage_found := &shader.stages[stage].?
 
     assert(stage_found, "Stage not present in the current pipeline shader.")
-    assert(block_index < gl_stage.uniform_blocks_count)
+    assert(block_index < gl_stage.uniform_blocks_count, "Block index specified is bigger than the block count.")
 
     block := &gl_stage.uniform_blocks[block_index]
     assert(block.size == size, "Size mismatch for uniform block.")
