@@ -1,174 +1,99 @@
-package mmlow_imdraw
+package mlw_imdraw
 
-import "../core"
-import "../math"
-import "../gpu"
+import "mlw:gpu"
+import "mlw:core"
+import "mlw:media/image"
+import "mlw:math"
+import "core:slice"
+import "core:math/linalg"
+import "core:fmt"
 
 
-
-_draw_list: Command_Buffer
-
-_in_progress: bool
-
-_sprite_pipeline: gpu.Pipeline
-_line_pipeline: gpu.Pipeline
-_sprite_shader: gpu.Shader
-
-_current_camera: ^math.Camera
-
-_white_texture: gpu.Texture
-
-create_sprite_pipeline :: proc(shader: gpu.Shader) -> (pipeline: gpu.Pipeline) {
-    info: gpu.Pipeline_Info
-    blend: core.Blend_State
-    blend.rgb.src_factor = .Src_Alpha
-    blend.rgb.dst_factor = .One_Minus_Src_Alpha
-    blend.alpha = blend.rgb
-    info.color.blend = blend
-    info.primitive_type = .Triangles
-    info.shader = shader
-    return gpu.create_pipeline(info)
-}
-
-create_line_pipeline :: proc() -> (pipeline: gpu.Pipeline) {
-    info: gpu.Pipeline_Info
-
-    return gpu.create_pipeline(info)
-}
-
-create_sprite_shader :: proc() -> (shader: gpu.Shader, err: Maybe(string)) {
-    vert_info: gpu.Shader_Stage_Info
-    vert: gpu.Shader_Stage
-    vert_info.src = #load("shaders/sprite_vert.glsl", string)
-    vert_info.type = .Vertex
-
-    vert_info.uniform_blocks[0].size = size_of(Sprite_Uniforms)
-    vert_info.uniform_blocks[0].uniforms[0].name = "Model"
-    vert_info.uniform_blocks[0].uniforms[0].type = .mat4f32
-    vert_info.uniform_blocks[0].uniforms[1].name = "Color"
-    vert_info.uniform_blocks[0].uniforms[1].type = .vec4f32
-
-    vert_info.uniform_blocks[1].size = size_of(Camera_Uniforms)
-    vert_info.uniform_blocks[1].uniforms[0].name = "View"
-    vert_info.uniform_blocks[1].uniforms[0].type = .mat4f32
-    vert_info.uniform_blocks[1].uniforms[1].name = "Projection"
-    vert_info.uniform_blocks[1].uniforms[1].type = .mat4f32
-
-    if vert, err = gpu.create_shader_stage(vert_info); err != nil {
-        return 0, err
-    }
-    defer gpu.destroy_shader_stage(vert)
-
-    frag_info: gpu.Shader_Stage_Info
-    frag: gpu.Shader_Stage
-    frag_info.src = #load("shaders/sprite_frag.glsl", string)
-    frag_info.type = .Fragment
-    frag_info.textures[0].name = "Texture"
-    frag_info.textures[0].type = .Texture2D
-
-    if frag, err = gpu.create_shader_stage(frag_info); err != nil {
-        return 0, err
-    }
-    defer gpu.destroy_shader_stage(frag)
-
-    shader_info: gpu.Shader_Info
-    shader_info.stages[.Vertex] = vert
-    shader_info.stages[.Fragment] = frag
-
-    if shader, err = gpu.create_shader(shader_info, false); err != nil {
-        return 0, err
-    }
-
-    return shader, nil
-}
+/*
+    Initialization/Teardown
+*/
 
 
 init :: proc() {
-    _draw_list = make_command_buffer()
-    _sprite_shader, _ = create_sprite_shader() 
-    _sprite_pipeline = create_sprite_pipeline(_sprite_shader)
-
-    {
-        texture_info: gpu.Texture_Info
-        texture_info.format = .RGBA8
-        texture_info.type = .Texture2D
-        texture_info.min_filter = .Nearest
-        texture_info.mag_filter = .Nearest
-        texture_info.size.xy = {1, 1}
-        texture_info.data = []u8{255, 255, 255, 255}
-        _white_texture = gpu.create_texture(texture_info)
+    err: Maybe(string)
+    if _shader, err = _create_default_shader(); err != nil {
+        fmt.printf("Shader Error: %v\n", err.(string))
     }
+    _pipeline = _create_imdraw_pipeline(_shader)
+    _input_buffers.buffers[0], _input_buffers.index = _create_imdraw_buffers()
 }
 
 teardown :: proc() {
-    delete_command_buffer(&_draw_list)
+
 }
 
-begin :: proc() {
-    assert(!_in_progress, "Did you forget to call imdraw.end()?")
-    clear_command_buffer(&_draw_list)
-    _in_progress = true
+
+/*
+    State Changes
+*/
+
+set_current_texture :: proc(texture: gpu.Texture) {
+    if texture != _current_textures.textures[.Fragment][0] do _flush() // This could work no?
+    _current_textures.textures[.Fragment][0] = texture
+    _current_textures_info[.Fragment][0] = gpu.texture_info(texture)
+    gpu.apply_input_textures(_current_textures)
+}
+
+/*
+    Rendering
+*/
+
+// Note(Dragos): This is a bit goofy for now. I think the renderer could defer everything at the end via draw commands, but this is simple for now
+begin :: proc(camera: math.Camera) {
+    _buf_idx = 0
+    gpu.apply_pipeline(_pipeline)
+    gpu.apply_input_buffers(_input_buffers)
+    _uniforms.modelview, _uniforms.projection = math.camera_to_mat4f(camera)
+    gpu.apply_uniforms_raw(.Vertex, 0, &_uniforms, size_of(_uniforms))
 }
 
 end :: proc() {
-    assert(_in_progress, "Did you forget to call imdraw.begin()?")
-    _in_progress = false
-    _sort_command_buffer(&_draw_list)
-    _render_command_buffer(&_draw_list)
+    _flush()
 }
 
-_sort_command_buffer :: proc(commands: ^Command_Buffer) {
 
+sprite_size :: proc(position: math.Vec2f, size: math.Size2f, tex_rect: math.Recti, color := math.FRGBA_WHITE) {
+    _push_quad({position, auto_cast size}, tex_rect, color)
 }
 
-_render_command_buffer :: proc(commands: ^Command_Buffer) {
-    last_texture: gpu.Texture = 0
-    input_textures: gpu.Input_Textures
-    last_camera: ^math.Camera
-    gpu.apply_pipeline(_sprite_pipeline)
-    for sprite in commands.sprites {
-        assert(sprite.camera != nil, "Camera not set. Call imdraw.camera(&cam)")
-        if last_texture != sprite.texture {
-            input_textures.textures[.Fragment][0] = sprite.texture
-            gpu.apply_input_textures(input_textures)
-        }
-        last_texture = sprite.texture
 
-        sprite_uniforms: Sprite_Uniforms
-        sprite_uniforms.model = math.transform_to_mat4f(sprite.transform)
-        sprite_uniforms.color = sprite.color
-        gpu.apply_uniforms_raw(.Vertex, 0, &sprite_uniforms, size_of(sprite_uniforms))
-        if last_camera != sprite.camera {
-            camera_uniforms: Camera_Uniforms
-            camera_uniforms.view, camera_uniforms.projection = math.camera_to_mat4f(_current_camera^)
-            gpu.apply_uniforms_raw(.Vertex, 1, &camera_uniforms, size_of(camera_uniforms))
-        }
-    }
-}
-
-camera :: proc(cam: ^math.Camera) {
-    _current_camera = cam
-}
-
-sprite_vec3 :: proc(texture: gpu.Texture, position: math.Vec3f, rotation: math.Vec3f = {0, 0, 0}, scale: math.Vec3f = {1, 1, 1}, color := math.fWHITE) {
-    cmd: Command_Sprite
-    cmd.color = color
-    cmd.texture = texture
-    cmd.transform = {position, rotation, scale}
-    cmd.camera = _current_camera
-    push_command(&_draw_list, cmd)
-}
-
-sprite_transform :: proc(texture: gpu.Texture, transform: math.Transform, color := math.fWHITE) {
-    cmd: Command_Sprite
-    cmd.color = color
-    cmd.texture = texture
-    cmd.transform = transform
-    cmd.camera = _current_camera
-    push_command(&_draw_list, cmd)
+sprite_scale :: proc(position: math.Vec2f, scale: math.Scale2f, tex_rect: math.Recti, color := math.FRGBA_WHITE) {
+    tex_size_f := math.Vec2f{cast(f32)tex_rect.size.x, cast(f32)tex_rect.size.y}
+    _push_quad({position, tex_size_f * auto_cast scale}, tex_rect, color)
 }
 
 sprite :: proc {
-    sprite_vec3,
-    sprite_transform,
+    sprite_size,
+    sprite_scale,
+}
+
+
+/*
+    Asset Creation
+*/
+
+
+// Note(Dragos): This should be separated in _from_file, _from_image, _from_bytes
+create_texture :: proc(path: string) -> (texture: gpu.Texture) {
+    info: gpu.Texture_Info
+    info.type = .Texture2D
+    info.format = .RGBA8
+    info.min_filter = .Nearest
+    info.mag_filter = .Nearest
+    info.generate_mipmap = false
+    img, err := image.load_from_file(path)
+    if err != nil {
+        fmt.printf("create_sprite_texture error: %v\n", err)
+        return 0
+    }
+    defer image.delete_image(img)
+    assert(img.channels == 4, "Only 4 channels textures are supported atm. Just load a png.")
+    info.size.xy = {img.width, img.height}
+    info.data = slice.to_bytes(img.rgba_pixels)
+    return gpu.create_texture(info)
 }
