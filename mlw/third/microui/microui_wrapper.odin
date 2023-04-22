@@ -70,12 +70,47 @@ process_platform_event :: proc(ctx: ^mu.Context, ev: event.Event) {
     }
 }
 
-
+@(deprecated = "Prefer \"mlw:third/microui.render\"")
 apply_microui_pipeline :: #force_inline proc(viewport_width, viewport_height: int) {
     gpu.apply_pipeline(_pipeline)
     _viewport_width, _viewport_height = viewport_width, viewport_height
 }
 
+render :: proc(ctx: ^mu.Context, viewport_size: [2]int) {
+    _viewport_width, _viewport_height = viewport_size.x, viewport_size.y
+    
+    gpu.apply_pipeline(_pipeline)
+    
+    commands: ^mu.Command
+    for variant in mu.next_command_iterator(ctx, &commands) {
+        switch cmd in variant {
+            case ^mu.Command_Text: {
+                _draw_text(cmd.str, cmd.pos, cmd.color)
+            }
+
+            case ^mu.Command_Rect: {
+                _draw_rect(cmd.rect, cmd.color)
+            }
+
+            case ^mu.Command_Icon: {
+                _draw_icon(cast(int)cmd.id, cmd.rect, cmd.color)
+            }
+
+            case ^mu.Command_Clip: {
+                _flush()
+                //fmt.printf("Clip Command: %v\n", cmd.rect) // TODO(Dragos): Needs gpu implementation
+            }
+
+            case ^mu.Command_Jump: {
+                unreachable()
+            }
+        }
+    }
+
+    _flush()
+}
+
+@(deprecated = "Prefer \"mlw:third/microui.render\"")
 draw :: proc(ctx: ^mu.Context) {
     commands: ^mu.Command
     for variant in mu.next_command_iterator(ctx, &commands) {
