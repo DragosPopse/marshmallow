@@ -11,6 +11,7 @@ import "core:bytes"
 import "../../math"
 
 import "core:image"
+import "core:image/png"
 
 Error :: image.Error
 
