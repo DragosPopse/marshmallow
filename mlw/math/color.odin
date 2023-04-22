@@ -40,14 +40,14 @@ to_colorb :: proc(color: Colorf) -> (result: Colorb) {
 */
 
 // god this naming sucks goof
-byte_rgb_to_float_rgb :: proc(color: Color3b) -> (result: Color3f) {
+color3b_to_color3f :: proc(color: Color3b) -> (result: Color3f) {
     result.r = cast(f32)color.r / 255
     result.g = cast(f32)color.g / 255
     result.b = cast(f32)color.b / 255
     return result
 }
 
-byte_rgba_to_float_rgba :: proc(color: Color4b) -> (result: Color4f) {
+color4b_to_color4f :: proc(color: Color4b) -> (result: Color4f) {
     result.r = cast(f32)color.r / 255
     result.g = cast(f32)color.g / 255
     result.b = cast(f32)color.b / 255
@@ -55,23 +55,23 @@ byte_rgba_to_float_rgba :: proc(color: Color4b) -> (result: Color4f) {
     return result
 }
 
-to_float_rgb :: proc {
-    byte_rgb_to_float_rgb,
+to_color3f :: proc {
+    color3b_to_color3f,
 }
 
-to_float_rgba :: proc {
-    byte_rgba_to_float_rgba,
+to_color4f :: proc {
+    color4b_to_color4f,
 }
 
-float_rgb_to_byte_rgb :: proc(color: Color3f) -> (result: Color3b) {
+color3f_to_color3b :: proc(color: Color3f) -> (result: Color3b) {
     result.r = byte(clamp(color.r, 0, 1) * 255)
     result.g = byte(clamp(color.g, 0, 1) * 255)
     result.b = byte(clamp(color.b, 0, 1) * 255)
     return result
 }
 
-to_byte_rgb :: proc {
-    float_rgb_to_byte_rgb,
+to_color3b :: proc {
+    color3f_to_color3b,
 }
 
 Gradient_Color_Key :: struct {
@@ -97,10 +97,10 @@ gradient_evaluate_from_gradient :: proc(gradient: Gradient, time: f32) -> (resul
     dt := (time - a.time) / (b.time - a.time)
 
     // Convert the byte color to float for easier computations
-    fa := to_float_rgb(a.color)
-    fb := to_float_rgb(b.color)
+    fa := to_color3f(a.color)
+    fb := to_color3f(b.color)
 
-    return to_byte_rgb(fa.rgb + (fb.rgb - fa.rgb) * dt)
+    return to_color3b(fa.rgb + (fb.rgb - fa.rgb) * dt)
 }
 
 gradient_evaluate :: proc {

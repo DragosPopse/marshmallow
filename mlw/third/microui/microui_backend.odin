@@ -81,7 +81,7 @@ _push_quad :: proc(dst, src: mu.Rect, color: mu.Color) {
     _vertices[vert_idx + 2].pos = {f32(dst.x), f32(dst.y + dst.h)}
     _vertices[vert_idx + 3].pos = {f32(dst.x + dst.w), f32(dst.y + dst.h)}
 
-    colorf := math.to_float_rgba(math.Color4b{color.r, color.g, color.b, color.a})
+    colorf := math.to_color4f(math.Color4b{color.r, color.g, color.b, color.a})
     _vertices[vert_idx + 0].col = colorf
     _vertices[vert_idx + 1].col = colorf
     _vertices[vert_idx + 2].col = colorf
