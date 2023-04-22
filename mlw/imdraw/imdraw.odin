@@ -53,7 +53,7 @@ begin :: proc(camera: math.Camera, shader := _default_shader) {
     assert(pipeline_found, "Invalid shader. Did you create it with imdraw.create_shader?")
     gpu.apply_pipeline(pipeline)
     gpu.apply_input_buffers(_input_buffers)
-    _uniforms.modelview, _uniforms.projection = math.camera_to_vp_matrices(camera)
+    _uniforms.imdraw_MVP = math.camera_to_vp_matrix(camera)
     gpu.apply_uniforms_raw(.Vertex, 0, &_uniforms, size_of(_uniforms))
 }
 
@@ -119,10 +119,8 @@ create_shader :: proc(frag_info: gpu.Shader_Stage_Info) -> (shader: Shader, err:
     }
     
     vert_info.uniform_blocks[0].size = size_of(Vertex_Uniforms)
-    vert_info.uniform_blocks[0].uniforms[0].name = "imdraw_ModelView"
+    vert_info.uniform_blocks[0].uniforms[0].name = "imdraw_MVP"
     vert_info.uniform_blocks[0].uniforms[0].type = .mat4f32
-    vert_info.uniform_blocks[0].uniforms[1].name = "imdraw_Projection"
-    vert_info.uniform_blocks[0].uniforms[1].type = .mat4f32
     
     if vert, err = gpu.create_shader_stage(vert_info); err != nil {
         return 0, err

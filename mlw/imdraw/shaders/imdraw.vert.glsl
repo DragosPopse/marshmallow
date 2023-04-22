@@ -8,13 +8,12 @@ out vec4 VertexColor;
 out vec2 TexCoords;
 out vec3 FragPos;
 
-uniform mat4 imdraw_ModelView;
-uniform mat4 imdraw_Projection;
+uniform mat4 imdraw_MVP;
 
 
 void main() 
 {
-    gl_Position = imdraw_Projection * imdraw_ModelView * vec4(aPos, 1.0);
+    gl_Position = imdraw_MVP * vec4(aPos, 1.0);
     VertexColor = aCol;
     TexCoords = aTex;
 }

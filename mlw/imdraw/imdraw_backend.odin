@@ -17,8 +17,7 @@ Vertex :: struct {
 }
 
 Vertex_Uniforms :: struct {
-    modelview: math.Mat4f,
-    projection: math.Mat4f,
+    imdraw_MVP: math.Mat4f,
 }
 
 
