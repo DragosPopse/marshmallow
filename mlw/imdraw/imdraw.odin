@@ -48,6 +48,7 @@ set_current_texture :: proc(texture: gpu.Texture) {
 
 // Note(Dragos): This is a bit goofy for now. I think the renderer could defer everything at the end via draw commands, but this is simple for now
 begin :: proc(camera: math.Camera, shader := _default_shader) {
+    _flush() // Maybe not needed.
     _buf_idx = 0
     pipeline, pipeline_found := _pipelines[shader]
     assert(pipeline_found, "Invalid shader. Did you create it with imdraw.create_shader?")
