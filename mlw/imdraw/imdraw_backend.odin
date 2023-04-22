@@ -41,26 +41,6 @@ _current_textures: gpu.Input_Textures
 _current_textures_info: [core.Shader_Stage_Type][core.MAX_SHADERSTAGE_TEXTURES]gpu.Texture_Info
 
 
-create_sprite_texture :: proc(path: string) -> (texture: gpu.Texture) {
-    info: gpu.Texture_Info
-    info.type = .Texture2D
-    info.format = .RGBA8
-    info.min_filter = .Nearest
-    info.mag_filter = .Nearest
-    info.generate_mipmap = false
-    img, err := image.load_from_file(path)
-    if err != nil {
-        fmt.printf("create_sprite_texture error: %v\n", err)
-        return 0
-    }
-    defer image.delete_image(img)
-    assert(img.channels == 4, "Only 4 channels textures are supported atm. Just load a png.")
-    info.size.xy = {img.width, img.height}
-    info.data = slice.to_bytes(img.rgba_pixels)
-    return gpu.create_texture(info)
-}
-
-
 
 _push_quad :: proc(dst: math.Rectf, src: math.Recti, color: math.FColorRGBA) {
     vert_idx := _buf_idx * 4
