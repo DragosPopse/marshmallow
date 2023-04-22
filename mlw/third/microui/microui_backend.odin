@@ -60,10 +60,26 @@ _push_quad :: proc(dst, src: mu.Rect, color: mu.Color) {
     _vertices[vert_idx + 2].tex = {x, y + h}
     _vertices[vert_idx + 3].tex = {x + w, y + h}
     
+    // Note(Dragos): so this is wrong
+    /*
     _vertices[vert_idx + 0].pos = {f32(dst.x), f32(_viewport_width) - f32(dst.y)}
     _vertices[vert_idx + 1].pos = {f32(dst.x + dst.w), f32(_viewport_width) - f32(dst.y)}
     _vertices[vert_idx + 2].pos = {f32(dst.x), f32(_viewport_width) - f32(dst.y + dst.h)}
     _vertices[vert_idx + 3].pos = {f32(dst.x + dst.w), f32(_viewport_width) - f32(dst.y + dst.h)}
+    */
+
+    // Note(Dragos): This works, but i still feel there is some goof going on because of the viewport thing. Flipping the ortho fixes this
+    /*
+    _vertices[vert_idx + 0].pos = {f32(dst.x), f32(_viewport_height) - f32(dst.y)}
+    _vertices[vert_idx + 1].pos = {f32(dst.x + dst.w), f32(_viewport_height) - f32(dst.y)}
+    _vertices[vert_idx + 2].pos = {f32(dst.x), f32(_viewport_height) - f32(dst.y + dst.h)}
+    _vertices[vert_idx + 3].pos = {f32(dst.x + dst.w), f32(_viewport_height) - f32(dst.y + dst.h)}
+    */
+
+    _vertices[vert_idx + 0].pos = {f32(dst.x), f32(dst.y)}
+    _vertices[vert_idx + 1].pos = {f32(dst.x + dst.w), f32(dst.y)}
+    _vertices[vert_idx + 2].pos = {f32(dst.x), f32(dst.y + dst.h)}
+    _vertices[vert_idx + 3].pos = {f32(dst.x + dst.w), f32(dst.y + dst.h)}
 
     colorf := math.to_float_rgba(math.BColorRGBA{color.r, color.g, color.b, color.a})
     _vertices[vert_idx + 0].col = colorf
@@ -227,7 +243,7 @@ _key_map := [256]mu.Key{
 // Render the data
 _flush :: proc() {
     if (_buf_idx == 0) do return 
-    _uniforms.projection = linalg.matrix_ortho3d_f32(0, cast(f32)_viewport_width, 0, cast(f32)_viewport_height, 0, 100, false)
+    _uniforms.projection = linalg.matrix_ortho3d_f32(0, cast(f32)_viewport_width, cast(f32)_viewport_height, 0, -1, 1, false)
     gpu.apply_uniforms_raw(.Vertex, 0, &_uniforms, size_of(_uniforms))
     vertices := _vertices[:_buf_idx * 4]
     indices := _indices[:_buf_idx * 6]
