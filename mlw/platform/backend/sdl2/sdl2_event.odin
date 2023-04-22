@@ -74,3 +74,9 @@ poll_event :: proc() -> (ev: event.Event, ok: bool) {
 
     return {}, false
 }
+
+key_down :: proc(key: event.Key) -> (down: bool) {
+    keys := sdl.GetKeyboardStateAsSlice()
+    scancode := cast(int)_KEY_TO_SCANCODE[key]
+    return keys[scancode] != 0
+}

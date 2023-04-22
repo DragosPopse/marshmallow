@@ -31,6 +31,8 @@ poll_event: Backend_Poll_Event : backend.poll_event
 
 get_backend_window: Backend_Get_Backend_Window : backend.get_backend_window
 
+key_down: Backend_Key_Down : backend.key_down
+
 when ODIN_OS == .JS {
     default_context :: backend.default_context
 } else {

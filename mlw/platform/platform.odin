@@ -5,6 +5,8 @@ import "core:runtime"
 import "core:time"
 import "core:fmt"
 
+import "event"
+
 Step_Procedure :: core.Step_Procedure
 
 step_proc: Step_Procedure
@@ -25,11 +27,8 @@ when ODIN_OS == .JS {
     quit :: proc "contextless" () {
 
     }
-
-    
 } else {
     is_running := true
-
     start :: proc() {
         clock: time.Stopwatch
         time.stopwatch_start(&clock)
@@ -44,7 +43,5 @@ when ODIN_OS == .JS {
     quit :: proc "contextless" () {
         is_running = false
     }
-
-    
 }
 

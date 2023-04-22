@@ -14,3 +14,5 @@ Backend_Teardown :: #type proc()
 Backend_Update_Window :: #type proc()
 Backend_Poll_Event :: #type proc() -> (ev: event.Event, ok: bool)
 Backend_Get_Backend_Window :: #type proc() -> (window: rawptr)
+
+Backend_Key_Down :: #type proc(key: event.Key) -> (down: bool)
