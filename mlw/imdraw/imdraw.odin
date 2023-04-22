@@ -62,12 +62,12 @@ end :: proc() {
 }
 
 
-sprite_size :: proc(position: math.Vec2f, size: math.Size2f, tex_rect: math.Recti, color := math.FRGBA_WHITE) {
+sprite_size :: proc(position: math.Vec2f, size: math.Size2f, tex_rect: math.Recti, color := math.WHITE_4f) {
     _push_quad({position, auto_cast size}, tex_rect, color)
 }
 
 
-sprite_scale :: proc(position: math.Vec2f, scale: math.Scale2f, tex_rect: math.Recti, color := math.FRGBA_WHITE) {
+sprite_scale :: proc(position: math.Vec2f, scale: math.Scale2f, tex_rect: math.Recti, color := math.WHITE_4f) {
     tex_size_f := math.Vec2f{cast(f32)tex_rect.size.x, cast(f32)tex_rect.size.y}
     _push_quad({position, tex_size_f * auto_cast scale}, tex_rect, color)
 }

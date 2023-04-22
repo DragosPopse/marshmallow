@@ -274,7 +274,7 @@ main :: proc() {
     input_buffers.index = planet_ib 
 
     pass_action = gpu.default_pass_action()
-    //pass_action.colors[0].value = math.FColorRGBA{0.012, 0.533, 0.988, 1.0}
+    //pass_action.colors[0].value = math.Color4f{0.012, 0.533, 0.988, 1.0}
 
     projection = math.Mat4f(1)
     projection = linalg.matrix4_perspective_f32(linalg.radians(cast(f32)45), f32(WIDTH) / f32(HEIGHT), 0.1, 100)

@@ -12,7 +12,7 @@ import "core:fmt"
 
 Vertex :: struct {
     pos: math.Vec2f,
-    col: math.FColorRGBA,
+    col: math.Color4f,
     tex: math.Vec2f,
 }
 
@@ -41,7 +41,7 @@ _current_textures_info: [core.Shader_Stage_Type][core.MAX_SHADERSTAGE_TEXTURES]g
 
 
 
-_push_quad :: proc(dst: math.Rectf, src: math.Recti, color: math.FColorRGBA) {
+_push_quad :: proc(dst: math.Rectf, src: math.Recti, color: math.Color4f) {
     vert_idx := _buf_idx * 4
     index_idx := _buf_idx * 6
     element_idx := _buf_idx * 4

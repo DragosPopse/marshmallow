@@ -21,7 +21,7 @@ Graphics_Settings :: struct {
 
 Planet_Settings :: struct {
 	radius: f32,
-	color: math.FColorRGBA,
+	color: math.Color4f,
 	resolution: int,
 	noise_layers_count: int,
 	noise_layers: [6]Noise_Layer,

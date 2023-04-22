@@ -1,26 +1,27 @@
 package mmlow_math
 
+// RGBA Color
+Color4b :: distinct [4]byte
+Color4f :: distinct [4]f32
 
-BColorRGBA :: distinct [4]byte
-FColorRGBA :: distinct [4]f32
+// RGB Color
+Color3b :: distinct [3]byte
+Color3f :: distinct [3]f32
 
-BColorRGB :: distinct [3]byte
-FColorRGB :: distinct [3]f32
+BRGBA_BLACK :: Color4b{0, 0, 0, 255}
+FRGBA_BLACK :: Color4f{0, 0, 0, 1}
 
-BRGBA_BLACK :: BColorRGBA{0, 0, 0, 255}
-FRGBA_BLACK :: FColorRGBA{0, 0, 0, 1}
+WHITE_4b :: Color4b{255, 255, 255, 255}
+WHITE_4f :: Color4f{1, 1, 1, 1}
 
-BRGBA_WHITE :: BColorRGBA{255, 255, 255, 255}
-FRGBA_WHITE :: FColorRGBA{1, 1, 1, 1}
+RED_4b :: Color4b{255, 0, 0, 255}
+RED_4f :: Color4f{1, 0, 0, 1}
 
-BRGBA_RED :: BColorRGBA{255, 0, 0, 255}
-FRGBA_RED :: FColorRGBA{1, 0, 0, 1}
+GREEN_4b :: Color4b{0, 255, 0, 255}
+GREEN_4f :: Color4f{0, 1, 0, 1}
 
-BRGBA_GREEN :: BColorRGBA{0, 255, 0, 255}
-FRGBA_GREEN :: FColorRGBA{0, 1, 0, 1}
-
-BRGBA_BLUE :: BColorRGBA{0, 0, 255, 255}
-FRGBA_BLUE :: FColorRGBA{0, 0, 1, 1}
+BLUE_4b :: Color4b{0, 0, 255, 255}
+BLUE_4f :: Color4f{0, 0, 1, 1}
 
 
 
@@ -39,14 +40,14 @@ to_colorb :: proc(color: Colorf) -> (result: Colorb) {
 */
 
 // god this naming sucks goof
-byte_rgb_to_float_rgb :: proc(color: BColorRGB) -> (result: FColorRGB) {
+byte_rgb_to_float_rgb :: proc(color: Color3b) -> (result: Color3f) {
     result.r = cast(f32)color.r / 255
     result.g = cast(f32)color.g / 255
     result.b = cast(f32)color.b / 255
     return result
 }
 
-byte_rgba_to_float_rgba :: proc(color: BColorRGBA) -> (result: FColorRGBA) {
+byte_rgba_to_float_rgba :: proc(color: Color4b) -> (result: Color4f) {
     result.r = cast(f32)color.r / 255
     result.g = cast(f32)color.g / 255
     result.b = cast(f32)color.b / 255
@@ -62,7 +63,7 @@ to_float_rgba :: proc {
     byte_rgba_to_float_rgba,
 }
 
-float_rgb_to_byte_rgb :: proc(color: FColorRGB) -> (result: BColorRGB) {
+float_rgb_to_byte_rgb :: proc(color: Color3f) -> (result: Color3b) {
     result.r = byte(clamp(color.r, 0, 1) * 255)
     result.g = byte(clamp(color.g, 0, 1) * 255)
     result.b = byte(clamp(color.b, 0, 1) * 255)
@@ -74,7 +75,7 @@ to_byte_rgb :: proc {
 }
 
 Gradient_Color_Key :: struct {
-    color: BColorRGB,
+    color: Color3b,
     time: f32,
 }
 
@@ -82,8 +83,8 @@ Gradient :: struct {
     color_keys: []Gradient_Color_Key,
 }
 
-gradient_evaluate_from_gradient :: proc(gradient: Gradient, time: f32) -> (result: BColorRGB) {
-    if len(gradient.color_keys) == 0 do return BColorRGB{}
+gradient_evaluate_from_gradient :: proc(gradient: Gradient, time: f32) -> (result: Color3b) {
+    if len(gradient.color_keys) == 0 do return Color3b{}
     if len(gradient.color_keys) == 1 do return gradient.color_keys[0].color
 
     i: int

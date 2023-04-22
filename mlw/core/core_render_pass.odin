@@ -17,7 +17,7 @@ Attachment_Info :: struct {
 
 Color_Action :: struct {
     action: Render_Pass_Action_Type,
-    value: math.FColorRGBA,
+    value: math.Color4f,
 }
 
 Depth_Action :: struct {
