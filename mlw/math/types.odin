@@ -9,6 +9,16 @@ Vec4bt :: distinct [4]byte
 Mat3f :: alg.Matrix3f32
 Mat4f :: alg.Matrix4f32
 
+// Specialized types for usage in overloading functions and making nicer apis
+Scale2f :: distinct Vec2f
+Scale3f :: distinct Vec3f
+
+Pos2f :: distinct Vec2f
+Pos3f :: distinct Vec2f
+
+Size2f :: distinct Vec2f
+Size3f :: distinct Vec3f
+
 
 Recti :: struct {
     using position: [2]int,
