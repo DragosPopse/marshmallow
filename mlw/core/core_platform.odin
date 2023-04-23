@@ -16,6 +16,7 @@ OpenGL_Info :: struct {
 Graphics_Info :: struct {
     color_bits, depth_bits, stencil_bits: int,
     debug: bool,
+    vsync: bool,
     variant: union {
         OpenGL_Info,
     },

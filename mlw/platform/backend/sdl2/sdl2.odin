@@ -105,6 +105,10 @@ _create_gl_context :: proc(info: core.Graphics_Info) {
         // We already have things setup from previous call
         sdl.GL_CreateContext(_window.handle)
     }
+
+    
+    if info.vsync do sdl.GL_SetSwapInterval(1)
+    else do sdl.GL_SetSwapInterval(0)
 }
 
 teardown :: proc() {
