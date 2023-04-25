@@ -1,5 +1,6 @@
 package mmlow_math
 
+import "core:math/linalg"
 
 minmax :: proc(val, min, max: $T) -> (min_result, max_result: T) {
     min_result, max_result = min, max
@@ -33,3 +34,6 @@ aabb :: proc {
     aabb_rectf, 
     aabb_recti,
 }
+
+normalize :: linalg.normalize
+length :: linalg.length
