@@ -21,11 +21,11 @@ Size3f :: distinct Vec3f
 
 
 Recti :: struct {
-    using position: [2]int,
+    using pos: [2]int,
     size: [2]int,
 }
 
 Rectf :: struct {
-    using position: Vec2f,
+    using pos: Vec2f,
     size: Vec2f,
 }
