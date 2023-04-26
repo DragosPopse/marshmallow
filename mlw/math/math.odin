@@ -114,19 +114,25 @@ rectf_rectf_collision :: proc(a, b: Rectf) -> bool {
     return false
 }
 
-recti_recti_collision :: proc(a, b: Recti) -> bool {
-    if a.x < b.x + b.size.x && 
-       a.x + a.size.x > b.x && 
-       a.y < b.y + b.size.y &&
-       a.y + a.size.y > b.y {
+rectf_rectf_collision_origin :: proc(a, b: Rectf, origin: Vec2f) -> bool {
+    return rectf_rectf_collision_origin2(a, b, origin, origin)
+}
+
+rectf_rectf_collision_origin2 :: proc(a, b: Rectf, a_origin, b_origin: Vec2f) -> bool {
+    if a.x - a.size.x * a_origin.x < b.x + b.size.x - b.size.x * b_origin.x && 
+        a.x + a.size.x - a.size.x * a_origin.x > b.x - b.size.x * b_origin.x && 
+        a.y - a.size.y * a_origin.y < b.y + b.size.y - b.size.y * b_origin.y &&
+        a.y + a.size.y - a.size.y * a_origin.y > b.y - b.size.y * b_origin.y {
         return true
     }
     return false
 }
 
+
 rect_rect_collision :: proc {
-    rectf_rectf_collision, 
-    recti_recti_collision,
+    rectf_rectf_collision,
+    rectf_rectf_collision_origin,
+    rectf_rectf_collision_origin2,
 }
 
 rectf_vec2f_collision :: proc(a: Rectf, v: Vec2f) -> bool {
@@ -158,12 +164,12 @@ recti_clamp_outside_recti :: proc(val: Recti, r: Recti) -> (result: Recti) {
 
 rectf_clamp_inside_rectf :: proc(val: Rectf, r: Rectf, val_origin := Vec2f{0, 0}, r_origin := Vec2f{0, 0}) -> (result: Rectf) {
     result.size = val.size
-    result.x = clamp(val.x, r.x, r.x + r.size.x - val.size.x) // Note(Dragos): Implement origin-based rendering before getting this properly
-    result.y = clamp(val.y, r.y, r.y + r.size.y - val.size.y) 
+    result.x = clamp(val.x, r.x - r_origin.x * r.size.x + val_origin.x * val.size.x, r.x + r.size.x - r_origin.x * r.size.x - val_origin.x * val.size.x)
+    result.y = clamp(val.y, r.y - r_origin.y * r.size.y + val_origin.y * val.size.y, r.y + r.size.y - r_origin.y * r.size.y - val_origin.y * val.size.y)
     return result
 }
 
-vec2f_clamp_inside_rectf :: proc(val: Vec2f, r: Rectf) -> (result: Vec2f) {
+vec2f_clamp_inside_rectf :: proc(val: Vec2f, r: Rectf, r_origin := Vec2f{0, 0}) -> (result: Vec2f) {
     result.x = clamp(val.x, r.x, r.x + r.size.x)
     result.y = clamp(val.y, r.pos.y, r.pos.y + r.size.y)
     return result
