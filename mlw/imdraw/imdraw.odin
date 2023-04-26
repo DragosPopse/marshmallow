@@ -63,8 +63,8 @@ end :: proc() {
 }
 
 
-sprite :: proc(dst_rect: math.Rectf, tex_rect: math.Recti, color := math.WHITE_4f) {
-    _push_quad(dst_rect, tex_rect, color)
+sprite :: proc(dst_rect: math.Rectf, dst_origin: math.Vec2f, tex_rect: math.Recti, color := math.WHITE_4f) {
+    _push_quad(dst_rect, tex_rect, color, dst_origin)
 }
 
 

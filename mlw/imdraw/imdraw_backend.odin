@@ -41,7 +41,7 @@ _current_textures_info: [core.Shader_Stage_Type][core.MAX_SHADERSTAGE_TEXTURES]g
 
 
 
-_push_quad :: proc(dst: math.Rectf, src: math.Recti, color: math.Color4f) {
+_push_quad :: proc(dst: math.Rectf, src: math.Recti, color: math.Color4f, origin: math.Vec2f) {
     vert_idx := _buf_idx * 4
     index_idx := _buf_idx * 6
     element_idx := _buf_idx * 4
@@ -63,10 +63,10 @@ _push_quad :: proc(dst: math.Rectf, src: math.Recti, color: math.Color4f) {
     _vertices[vert_idx + 2].tex = {x, y + h}
     _vertices[vert_idx + 3].tex = {x + w, y + h}
 
-    _vertices[vert_idx + 0].pos = {f32(dst.x), f32(dst.y)}
-    _vertices[vert_idx + 1].pos = {f32(dst.x + dst.size.x), f32(dst.y)}
-    _vertices[vert_idx + 2].pos = {f32(dst.x), f32(dst.y + dst.size.y)}
-    _vertices[vert_idx + 3].pos = {f32(dst.x + dst.size.x), f32(dst.y + dst.size.y)}
+    _vertices[vert_idx + 0].pos = {f32(dst.x - origin.x * dst.size.x), f32(dst.y - origin.y * dst.size.y)}
+    _vertices[vert_idx + 1].pos = {f32(dst.x + dst.size.x - origin.x * dst.size.x), f32(dst.y - origin.y * dst.size.y)}
+    _vertices[vert_idx + 2].pos = {f32(dst.x - origin.x * dst.size.x), f32(dst.y + dst.size.y - origin.y * dst.size.y)}
+    _vertices[vert_idx + 3].pos = {f32(dst.x + dst.size.x - origin.x * dst.size.x), f32(dst.y + dst.size.y - origin.y * dst.size.y)}
     
     _vertices[vert_idx + 0].col = color
     _vertices[vert_idx + 1].col = color
