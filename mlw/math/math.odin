@@ -156,17 +156,10 @@ recti_clamp_outside_recti :: proc(val: Recti, r: Recti) -> (result: Recti) {
     return result    
 }
 
-rectf_clamp_inside_rectf :: proc(val: Rectf, r: Rectf) -> (result: Rectf) {
+rectf_clamp_inside_rectf :: proc(val: Rectf, r: Rectf, val_origin := Vec2f{0, 0}, r_origin := Vec2f{0, 0}) -> (result: Rectf) {
     result.size = val.size
-    result.x = clamp(val.x, r.x, r.x + r.size.x)
-    result.y = clamp(val.y, r.y, r.y + r.size.y) // this is kinda wrong, but will check and fix
-    return result
-}
-
-recti_clamp_inside_recti :: proc(val: Recti, r: Recti) -> (result: Recti) {
-    result.size = val.size
-    result.x = clamp(val.x, r.x, r.x + r.size.x)
-    result.y = clamp(val.y, r.y, r.y + r.size.y) // this is kinda wrong, but will check and fix
+    result.x = clamp(val.x, r.x, r.x + r.size.x - val.size.x) // Note(Dragos): Implement origin-based rendering before getting this properly
+    result.y = clamp(val.y, r.y, r.y + r.size.y - val.size.y) 
     return result
 }
 
@@ -175,6 +168,18 @@ vec2f_clamp_inside_rectf :: proc(val: Vec2f, r: Rectf) -> (result: Vec2f) {
     result.y = clamp(val.y, r.pos.y, r.pos.y + r.size.y)
     return result
 }
+
+clamp_inside_rectf :: proc {
+    rectf_clamp_inside_rectf,
+    vec2f_clamp_inside_rectf,
+}
+
+clamp_inside_rect :: proc {
+    rectf_clamp_inside_rectf,
+    vec2f_clamp_inside_rectf,
+}
+
+
 
 
 
