@@ -154,13 +154,32 @@ rect_vec2i_collision :: proc {
     recti_vec2i_collision,
 }
 
-rectf_clamp_outside_rectf :: proc(val: Rectf, r: Rectf) -> (result: Rectf) {
-    return result
+import "core:fmt"
+rectf_rectf_collision_solid_origin2 :: proc(val: Rectf, solid: Rectf, val_origin: Vec2f, solid_origin: Vec2f) -> (new_val: Rectf, collided: bool) {
+    new_val = val
+    collided = rect_rect_collision(val, solid, val_origin, solid_origin)
+
+    if collided {
+        //fmt.printf("%v %v %v\n", val.x - val_origin.x * val.size.x, solid.x - solid_origin.x * solid.size.x, solid.x + solid.size.x - solid_origin.x * solid.size.x)
+        if val.x - val_origin.x * val.size.x < solid.x - solid_origin.x * solid.size.x {
+            new_val.x = solid.x - val.size.x * val_origin.x - solid_origin.x * solid.size.x
+        } else if val.x + val.size.x - val_origin.x * val.size.x > solid.x + solid.size.x - solid_origin.x * solid.size.x {
+            new_val.x = solid.x + solid.size.x + val.size.x * val_origin.x - solid_origin.x * solid.size.x
+        } else if val.y - val_origin.y * val.size.y < solid.y - solid_origin.y * solid.size.y {
+            new_val.y = solid.y - val.size.y * val_origin.y - solid_origin.y * solid.size.y
+        } else if val.y + val.size.y - val_origin.y * val.size.y > solid.y + solid.size.y - solid_origin.y * solid.size.y {
+            new_val.y = solid.y + solid.size.y + val.size.y * val_origin.y - solid_origin.y * solid.size.y
+        }
+        
+    }
+    
+    return new_val, collided
 }
 
-recti_clamp_outside_recti :: proc(val: Recti, r: Recti) -> (result: Recti) {
-    return result    
+rect_rect_collision_solid :: proc {
+    rectf_rectf_collision_solid_origin2,
 }
+
 
 rectf_clamp_inside_rectf :: proc(val: Rectf, r: Rectf, val_origin := Vec2f{0, 0}, r_origin := Vec2f{0, 0}) -> (result: Rectf) {
     result.size = val.size
@@ -170,9 +189,7 @@ rectf_clamp_inside_rectf :: proc(val: Rectf, r: Rectf, val_origin := Vec2f{0, 0}
 }
 
 vec2f_clamp_inside_rectf :: proc(val: Vec2f, r: Rectf, r_origin := Vec2f{0, 0}) -> (result: Vec2f) {
-    result.x = clamp(val.x, r.x, r.x + r.size.x)
-    result.y = clamp(val.y, r.pos.y, r.pos.y + r.size.y)
-    return result
+    unimplemented("To do when needed")
 }
 
 clamp_inside_rectf :: proc {
