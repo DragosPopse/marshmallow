@@ -154,20 +154,24 @@ rect_vec2i_collision :: proc {
     recti_vec2i_collision,
 }
 
-import "core:fmt"
+
 rectf_rectf_collision_solid_origin2 :: proc(val: Rectf, solid: Rectf, val_origin: Vec2f, solid_origin: Vec2f) -> (new_val: Rectf, collided: bool) {
     new_val = val
     collided = rect_rect_collision(val, solid, val_origin, solid_origin)
 
     if collided {
-        //fmt.printf("%v %v %v\n", val.x - val_origin.x * val.size.x, solid.x - solid_origin.x * solid.size.x, solid.x + solid.size.x - solid_origin.x * solid.size.x)
+        c_left, c_right, c_top, c_bottom: bool
+        // Note(Dragos): Some artifact is caused by the collision detection detecting the x collision instead of y, resulting in a fast position change.
         if val.x - val_origin.x * val.size.x < solid.x - solid_origin.x * solid.size.x {
+            c_left = true
             new_val.x = solid.x - val.size.x * val_origin.x - solid_origin.x * solid.size.x
         } else if val.x + val.size.x - val_origin.x * val.size.x > solid.x + solid.size.x - solid_origin.x * solid.size.x {
+            c_right = true
             new_val.x = solid.x + solid.size.x + val.size.x * val_origin.x - solid_origin.x * solid.size.x
         } else if val.y - val_origin.y * val.size.y < solid.y - solid_origin.y * solid.size.y {
             new_val.y = solid.y - val.size.y * val_origin.y - solid_origin.y * solid.size.y
         } else if val.y + val.size.y - val_origin.y * val.size.y > solid.y + solid.size.y - solid_origin.y * solid.size.y {
+            c_bottom = true
             new_val.y = solid.y + solid.size.y + val.size.y * val_origin.y - solid_origin.y * solid.size.y
         }
         
