@@ -96,15 +96,46 @@ to_recti :: proc {
 }
 
 
-minmax :: proc(val, min, max: $T) -> (min_result, max_result: T) {
+minmax_t :: proc(val, min, max: $T) -> (min_result, max_result: T) {
     min_result, max_result = min, max
     if val > max do max_result = val
     if val < min do min_result = val
     return min_result, max_result
 }
 
+minmax_rectf :: proc(r: Rectf) -> (topleft: Vec2f, bottomright: Vec2f) {
+    return r.pos, r.pos + r.size
+}
 
-rectf_rectf_collision :: proc(a, b: Rectf) -> bool {
+minmax_recti :: proc(r: Recti) -> (topleft: Vec2i, bottomright: Vec2i) {
+    return r.pos, r.pos + r.size
+}
+
+minmax :: proc {
+    minmax_t,
+    minmax_rectf,
+    minmax_recti,
+}
+
+rectf_align_with_origin :: proc(r: Rectf, origin: Vec2f) -> (res: Rectf) {
+    res = r
+    res.pos -= origin * r.size
+    return res
+}
+
+recti_align_with_origin :: proc(r: Recti, origin: Vec2f) -> (res: Recti) {
+    res = r
+    res.pos -= to_vec2i(origin * to_vec2f(r.size))
+    return res
+}
+
+rect_align_with_origin :: proc {
+    rectf_align_with_origin,
+    recti_align_with_origin,
+}
+
+
+rectf_intersects_rectf :: proc(a, b: Rectf) -> bool {
     if a.x < b.x + b.size.x && 
        a.x + a.size.x > b.x && 
        a.y < b.y + b.size.y &&
@@ -114,98 +145,9 @@ rectf_rectf_collision :: proc(a, b: Rectf) -> bool {
     return false
 }
 
-rectf_rectf_collision_origin :: proc(a, b: Rectf, origin: Vec2f) -> bool {
-    return rectf_rectf_collision_origin2(a, b, origin, origin)
+rect_intersects_rect :: proc {
+    rectf_intersects_rectf,
 }
-
-rectf_rectf_collision_origin2 :: proc(a, b: Rectf, a_origin, b_origin: Vec2f) -> bool {
-    if a.x - a.size.x * a_origin.x < b.x + b.size.x - b.size.x * b_origin.x && 
-        a.x + a.size.x - a.size.x * a_origin.x > b.x - b.size.x * b_origin.x && 
-        a.y - a.size.y * a_origin.y < b.y + b.size.y - b.size.y * b_origin.y &&
-        a.y + a.size.y - a.size.y * a_origin.y > b.y - b.size.y * b_origin.y {
-        return true
-    }
-    return false
-}
-
-
-rect_rect_collision :: proc {
-    rectf_rectf_collision,
-    rectf_rectf_collision_origin,
-    rectf_rectf_collision_origin2,
-}
-
-rectf_vec2f_collision :: proc(a: Rectf, v: Vec2f) -> bool {
-    if a.x < v.x && a.x + a.size.x > v.x && a.y < v.y && a.y + a.size.y > v.y {
-        return true
-    }
-    return false
-}
-
-recti_vec2i_collision :: proc(a: Recti, v: Vec2i) -> bool {
-    if a.x < v.x && a.x + a.size.x > v.x && a.y < v.y && a.y + a.size.y > v.y {
-        return true
-    }
-    return false
-}
-
-rect_vec2i_collision :: proc {
-    rectf_vec2f_collision,
-    recti_vec2i_collision,
-}
-
-
-rectf_rectf_collision_solid_origin2 :: proc(val: Rectf, solid: Rectf, val_origin: Vec2f, solid_origin: Vec2f) -> (new_val: Rectf, collided: bool) {
-    new_val = val
-    collided = rect_rect_collision(val, solid, val_origin, solid_origin)
-
-    if collided {
-        c_left, c_right, c_top, c_bottom: bool
-        // Note(Dragos): Some artifact is caused by the collision detection detecting the x collision instead of y, resulting in a fast position change.
-        if val.x - val_origin.x * val.size.x < solid.x - solid_origin.x * solid.size.x {
-            c_left = true
-            new_val.x = solid.x - val.size.x * val_origin.x - solid_origin.x * solid.size.x
-        } else if val.x + val.size.x - val_origin.x * val.size.x > solid.x + solid.size.x - solid_origin.x * solid.size.x {
-            c_right = true
-            new_val.x = solid.x + solid.size.x + val.size.x * val_origin.x - solid_origin.x * solid.size.x
-        } else if val.y - val_origin.y * val.size.y < solid.y - solid_origin.y * solid.size.y {
-            new_val.y = solid.y - val.size.y * val_origin.y - solid_origin.y * solid.size.y
-        } else if val.y + val.size.y - val_origin.y * val.size.y > solid.y + solid.size.y - solid_origin.y * solid.size.y {
-            c_bottom = true
-            new_val.y = solid.y + solid.size.y + val.size.y * val_origin.y - solid_origin.y * solid.size.y
-        }
-        
-    }
-    
-    return new_val, collided
-}
-
-rect_rect_collision_solid :: proc {
-    rectf_rectf_collision_solid_origin2,
-}
-
-
-rectf_clamp_inside_rectf :: proc(val: Rectf, r: Rectf, val_origin := Vec2f{0, 0}, r_origin := Vec2f{0, 0}) -> (result: Rectf) {
-    result.size = val.size
-    result.x = clamp(val.x, r.x - r_origin.x * r.size.x + val_origin.x * val.size.x, r.x + r.size.x - r_origin.x * r.size.x - val_origin.x * val.size.x)
-    result.y = clamp(val.y, r.y - r_origin.y * r.size.y + val_origin.y * val.size.y, r.y + r.size.y - r_origin.y * r.size.y - val_origin.y * val.size.y)
-    return result
-}
-
-vec2f_clamp_inside_rectf :: proc(val: Vec2f, r: Rectf, r_origin := Vec2f{0, 0}) -> (result: Vec2f) {
-    unimplemented("To do when needed")
-}
-
-clamp_inside_rectf :: proc {
-    rectf_clamp_inside_rectf,
-    vec2f_clamp_inside_rectf,
-}
-
-clamp_inside_rect :: proc {
-    rectf_clamp_inside_rectf,
-    vec2f_clamp_inside_rectf,
-}
-
 
 
 
