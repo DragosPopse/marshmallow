@@ -1,9 +1,21 @@
 package mmlow_math
 
 import "core:math/linalg"
+import cmath "core:math"
 
 normalize :: linalg.normalize
 length :: linalg.length
+PI :: cmath.PI
+
+// Note(Dragos): These should only accept Deg/Rad
+sin :: cmath.sin
+cos :: cmath.cos
+tan :: cmath.tan
+atan :: cmath.atan
+atan2 :: cmath.atan2
+
+DEG_PER_RAD :: cmath.DEG_PER_RAD
+RAD_PER_DEG :: cmath.RAD_PER_DEG
 
 // Note(Dragos): remove linalg dependency as much as possible
 //              we don't need all of it. It's too large, too 'templated'
@@ -31,6 +43,11 @@ Pos3f :: distinct Vec2f
 Size2f :: distinct Vec2f
 Size3f :: distinct Vec3f
 
+Line2f :: struct {
+    begin: Vec2f,
+    end: Vec2f,
+}
+
 Recti :: struct {
     using pos: Vec2i, 
     size: Vec2i,
@@ -39,6 +56,38 @@ Recti :: struct {
 Rectf :: struct {
     using pos: Vec2f,
     size: Vec2f,
+}
+
+// Conceptual types for handling degrees and radians operations. The resulting code will be a bit more verbose, but the result will be clearer
+Rad :: distinct f32
+Deg :: distinct f32
+Angle :: union {
+    Rad,
+    Deg,
+}
+
+deg_to_rad :: proc(degrees: Deg) -> Rad {
+    return Rad(degrees * RAD_PER_DEG)
+}
+
+rad_to_deg :: proc(radians: Rad) -> Deg {
+    return Deg(radians * DEG_PER_RAD)
+}
+
+angle_deg :: proc(angle: Angle) -> (rad: Deg) {
+    switch var in angle {
+        case Deg: return var
+        case Rad: return #force_inline rad_to_deg(var)
+    }
+    return
+}
+
+angle_rad :: proc(angle: Angle) -> (rad: Rad) {
+    switch var in angle {
+        case Deg: return #force_inline deg_to_rad(var)
+        case Rad: return var
+    }
+    return
 }
 
 vec2i_to_vec2f :: proc(val: Vec2i) -> (res: Vec2f) {
@@ -133,7 +182,6 @@ rect_align_with_origin :: proc {
     rectf_align_with_origin,
     recti_align_with_origin,
 }
-
 
 rectf_intersects_rectf :: proc(a, b: Rectf) -> bool {
     if a.x < b.x + b.size.x && 
