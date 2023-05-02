@@ -1,9 +1,9 @@
 package mlw_imdraw
 
-import "mlw:gpu"
-import "mlw:core"
-import "mlw:media/image"
-import "mlw:math"
+import "../gpu"
+import "../core"
+import "../media/image"
+import "../math"
 import "core:slice"
 import "core:math/linalg"
 import "core:fmt"
