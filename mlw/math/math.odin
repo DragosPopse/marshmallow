@@ -183,7 +183,10 @@ rect_align_with_origin :: proc {
     recti_align_with_origin,
 }
 
-rectf_intersects_rectf :: proc(a, b: Rectf) -> bool {
+check_collision_rectf_rectf :: proc(a, b: Rectf) -> bool {
+    diff := minkowski_diff(a, b)
+    diff_min, diff_max := minmax(diff)
+    /*
     if a.x < b.x + b.size.x && 
        a.x + a.size.x > b.x && 
        a.y < b.y + b.size.y &&
@@ -191,14 +194,27 @@ rectf_intersects_rectf :: proc(a, b: Rectf) -> bool {
         return true
     }
     return false
+    */ 
+    if diff_min.x <= 0 && diff_max.x >= 0 && diff_min.y <= 0 && diff_max.y >= 0 {
+        return true
+    }
+    return false
 }
 
-rect_intersects_rect :: proc {
-    rectf_intersects_rectf,
+check_collision :: proc {
+    check_collision_rectf_rectf,
 }
 
+minkowski_diff_rectf_rectf :: proc(a: Rectf, b: Rectf) -> (result: Rectf) {
+    a_min := a.pos
+    b_max := b.pos + b.size
+    result.pos = a_min - b_max
+    result.size = a.size + b.size
+    return result
+}
 
-
-
+minkowski_diff :: proc {
+    minkowski_diff_rectf_rectf,
+}
 
 
