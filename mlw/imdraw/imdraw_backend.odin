@@ -11,9 +11,10 @@ import "core:fmt"
 // Note(Dragos): This seems good enough to push to package mlw:imdraw
 
 Vertex :: struct {
-    pos: math.Vec2f,
+    pos: math.Vec3f,
     col: math.Color4f,
     tex: math.Vec2f,
+    center: math.Vec2f,
 }
 
 Vertex_Uniforms :: struct {
@@ -103,7 +104,7 @@ _apply_camera :: proc(camera: math.Camera, $check_flush: bool) {
 }
 
 
-_push_quad :: proc(dst: math.Rectf, src: math.Recti, color: math.Color4f, origin: math.Vec2f) {
+_push_quad :: proc(dst: math.Rectf, src: math.Recti, color: math.Color4f, origin: math.Vec2f, rotation: math.Angle) {
     using _state
 
     if buf_idx * 4 == size_of(vertices) do _flush()
@@ -129,10 +130,12 @@ _push_quad :: proc(dst: math.Rectf, src: math.Recti, color: math.Color4f, origin
     vertices[vert_idx + 2].tex = {x, y + h}
     vertices[vert_idx + 3].tex = {x + w, y + h}
 
-    vertices[vert_idx + 0].pos = {f32(dst.x), f32(dst.y)}
-    vertices[vert_idx + 1].pos = {f32(dst.x + dst.size.x), f32(dst.y)}
-    vertices[vert_idx + 2].pos = {f32(dst.x), f32(dst.y + dst.size.y)}
-    vertices[vert_idx + 3].pos = {f32(dst.x + dst.size.x), f32(dst.y + dst.size.y)}
+    rads := cast(f32)math.angle_rad(rotation)
+
+    vertices[vert_idx + 0].pos = {f32(dst.x), f32(dst.y), rads}
+    vertices[vert_idx + 1].pos = {f32(dst.x + dst.size.x), f32(dst.y), rads}
+    vertices[vert_idx + 2].pos = {f32(dst.x), f32(dst.y + dst.size.y), rads}
+    vertices[vert_idx + 3].pos = {f32(dst.x + dst.size.x), f32(dst.y + dst.size.y), rads}
 
     vertices[vert_idx + 0].col = color
     vertices[vert_idx + 1].col = color
@@ -145,6 +148,12 @@ _push_quad :: proc(dst: math.Rectf, src: math.Recti, color: math.Color4f, origin
     indices[index_idx + 3] = u32(element_idx + 2)
     indices[index_idx + 4] = u32(element_idx + 3)
     indices[index_idx + 5] = u32(element_idx + 1)
+
+    center := (vertices[vert_idx + 0].pos + vertices[vert_idx + 1].pos + vertices[vert_idx + 2].pos + vertices[vert_idx + 3].pos) / 4
+    vertices[vert_idx + 0].center = center.xy
+    vertices[vert_idx + 1].center = center.xy
+    vertices[vert_idx + 2].center = center.xy
+    vertices[vert_idx + 3].center = center.xy
 }
 
 _create_empty_texture :: proc() -> (texture: Texture) {
