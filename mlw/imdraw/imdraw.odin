@@ -15,19 +15,20 @@ import "core:fmt"
 
 // It is distinct from gpu.Shader because you need to make sure that imdraw.create_shader is paired with imdraw.destroy_shader (as opposed to the gpu alternatives)
 Shader :: distinct gpu.Shader
+Texture :: struct {
+    texture: gpu.Texture,
+    size: [2]int,
+}
 
 ATLAS_UNIFORM_NAME :: "imdraw_Atlas"
 
 init :: proc() {
-    err: Maybe(string)
-    if _default_shader, err = _create_default_shader(); err != nil {
-        fmt.printf("Shader Error: %v\n", err.(string))
-    }
-    _input_buffers.buffers[0], _input_buffers.index = _create_imdraw_buffers()
+    state_init(&_state)
 }
 
 teardown :: proc() {
-    delete(_pipelines)
+    // Todo(Dragos): This is not complete
+    delete(_state.pipelines)
 }
 
 
@@ -35,39 +36,39 @@ teardown :: proc() {
     State Changes
 */
 
-set_current_texture :: proc(texture: gpu.Texture) {
-    if texture != _current_textures.textures[.Fragment][0] do _flush() // This could work no?
-    _current_textures.textures[.Fragment][0] = texture
-    _current_textures_info[.Fragment][0] = gpu.texture_info(texture)
-    gpu.apply_input_textures(_current_textures)
-}
-
 /*
     Rendering
 */
 
 // Note(Dragos): This is a bit goofy for now. I think the renderer could defer everything at the end via draw commands, but this is simple for now
-begin :: proc(camera: math.Camera, shader := _default_shader) {
+begin :: proc() {
+    using _state
     _flush() // Maybe not needed.
-    _buf_idx = 0
-    pipeline, pipeline_found := _pipelines[shader]
-    assert(pipeline_found, "Invalid shader. Did you create it with imdraw.create_shader?")
-    gpu.apply_pipeline(pipeline)
-    gpu.apply_input_buffers(_input_buffers)
-    _uniforms.imdraw_MVP = math.camera_to_vp_matrix(camera)
-    gpu.apply_uniforms_raw(.Vertex, 0, &_uniforms, size_of(_uniforms))
+    _apply_shader(default_shader, true)
 }
 
 end :: proc() {
     _flush()
 }
 
+apply_camera :: proc(cam: math.Camera) {
+    #force_inline _apply_camera(cam, true)
+}
 
-sprite :: proc(dst_rect: math.Rectf, dst_origin: math.Vec2f, tex_rect: math.Recti, color := math.WHITE_4f) {
+apply_shader :: proc(s: Shader) {
+    #force_inline _apply_shader(s, false)
+}
+
+sprite :: proc(texture: Texture, dst_rect: math.Rectf, dst_origin: math.Vec2f, tex_rect: math.Recti, color := math.WHITE_4f) {
+    _apply_texture(texture, true)
     _push_quad(dst_rect, tex_rect, color, dst_origin)
 }
 
-
+rect :: proc(dst: math.Rectf, origin: math.Vec2f, color := math.WHITE_4f) {
+    using _state
+    _apply_texture(empty_texture, true)
+    _push_quad(dst, {{0, 0}, {1, 1}}, color, origin)
+}
 
 /*
     Asset Creation
@@ -75,7 +76,7 @@ sprite :: proc(dst_rect: math.Rectf, dst_origin: math.Vec2f, tex_rect: math.Rect
 
 
 // Note(Dragos): This should be separated in _from_file, _from_image, _from_bytes
-create_texture :: proc(path: string) -> (texture: gpu.Texture) {
+create_texture_from_file :: proc(path: string) -> (texture: Texture) {
     info: gpu.Texture_Info
     info.type = .Texture2D
     info.format = .RGBA8
@@ -85,16 +86,20 @@ create_texture :: proc(path: string) -> (texture: gpu.Texture) {
     img, err := image.load_from_file(path)
     if err != nil {
         fmt.printf("create_sprite_texture error: %v\n", err)
-        return 0
+        return {}
     }
     defer image.delete_image(img)
     assert(img.channels == 4, "Only 4 channels textures are supported atm. Just load a png.")
     info.size.xy = {img.width, img.height}
     info.data = slice.to_bytes(img.rgba_pixels)
-    return gpu.create_texture(info)
+
+    texture.texture = gpu.create_texture(info)
+    texture.size = info.size.xy
+    return texture
 }
 
 create_shader :: proc(frag_info: gpu.Shader_Stage_Info) -> (shader: Shader, err: Maybe(string)) {
+    using _state
     vert_info: gpu.Shader_Stage_Info
     vert: gpu.Shader_Stage
     frag: gpu.Shader_Stage
@@ -138,15 +143,16 @@ create_shader :: proc(frag_info: gpu.Shader_Stage_Info) -> (shader: Shader, err:
     }
 
     // Create a pipeline for this shader, similar to the rest. Maybe in the future we can do some more changes in here, by specializing Shader_Stage_Info
-    _pipelines[auto_cast gpu_shader] = _create_imdraw_pipeline(auto_cast gpu_shader)
+    pipelines[auto_cast gpu_shader] = _create_imdraw_pipeline(auto_cast gpu_shader)
 
     return auto_cast gpu_shader, nil
 }
 
 destroy_shader :: proc(shader: Shader) {
-    pipeline, found := _pipelines[shader]
+    using _state
+    pipeline, found := pipelines[shader]
     assert(found, "Shader not found. Did you create it with imdraw.create_shader?")
     gpu.destroy_pipeline(pipeline)
-    delete_key(&_pipelines, shader)
+    delete_key(&pipelines, shader)
     gpu.destroy_shader(auto_cast shader)
 }

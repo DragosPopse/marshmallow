@@ -124,7 +124,7 @@ create_texture :: proc(desc: core.Texture_Info) -> (texture: core.Texture) {
             }
 
             case .RGBA8:
-                assert(len(desc.data) == desc.size.x * desc.size.y * 4 || desc.data == nil, "Texture size and data mismatch")
+                fmt.assertf(len(desc.data) == desc.size.x * desc.size.y * 4 || desc.data == nil, "Texture size and data mismatch. Expected %v, got %v", desc.size.x * desc.size.y * 4, len(desc.data))
                 internal_format = gl.RGBA
                 format = gl.RGBA
                 data_type = gl.UNSIGNED_BYTE

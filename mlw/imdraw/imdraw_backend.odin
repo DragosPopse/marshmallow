@@ -20,39 +20,103 @@ Vertex_Uniforms :: struct {
     imdraw_MVP: math.Mat4f,
 }
 
+DEFAULT_BUFFER_SIZE :: 16384
 
-BUFFER_SIZE :: 16384
-_buf_idx := 0
-_vertices: [BUFFER_SIZE * 4]Vertex
-_indices: [BUFFER_SIZE * 6]u32
+GPU_State :: struct {
+    pipeline: gpu.Pipeline,
+    shader: Shader,
+    texture: Texture,
+    camera: math.Camera,
+    vertex_uniforms: Vertex_Uniforms,
+    input_buffers: gpu.Input_Buffers,
+}
+
+// We can implement a stack-state API
+State :: struct {
+    pipelines: map[Shader]gpu.Pipeline,
+    buf_idx: int,
+    vertices: [DEFAULT_BUFFER_SIZE * 4]Vertex,
+    indices: [DEFAULT_BUFFER_SIZE * 6]u32,
+    default_shader: Shader,
+    empty_texture: Texture,
+    
+    gs: GPU_State,
+}
+
+state_init :: proc(state: ^State) {
+    err: Maybe(string)
+    if state.default_shader, err = _create_default_shader(); err != nil {
+        fmt.printf("Imdraw shader error: %s\n", err.(string))
+    }
+    state.empty_texture = _create_empty_texture()
+    state.gs.input_buffers.buffers[0], state.gs.input_buffers.index = _create_imdraw_buffers()
+}
 
 
-// gpu data
-_pipelines: map[Shader]gpu.Pipeline
-_default_shader: Shader
-_uniforms: Vertex_Uniforms
-_input_buffers: gpu.Input_Buffers
+_state: State
 
-// Note(Dragos): Hope we won't need this in the future
-_viewport_width, _viewport_height: int
+// Note(Dragos): Let's keep it simple for now
 
-_current_textures: gpu.Input_Textures
-_current_textures_info: [core.Shader_Stage_Type][core.MAX_SHADERSTAGE_TEXTURES]gpu.Texture_Info
+_apply_texture :: proc(texture: Texture, $check_flush: bool) {
+    using _state
+    
+    when check_flush do if gs.texture.texture != texture.texture {
+        _flush()
+    }
+    gs.texture = texture
+}
 
+_apply_shader :: proc(shader: Shader, $force_reapply: bool) {
+    using _state
+    when force_reapply {
+        _flush()
+        pipeline, pipeline_found := pipelines[shader]
+        assert(pipeline_found, "Invalid shader. Did you create it with imdraw.create_shader?")
+        gs.pipeline = pipeline
+        gs.shader = shader
+
+        gpu.apply_pipeline(gs.pipeline)
+        gpu.apply_input_buffers(gs.input_buffers)
+        _apply_texture(gs.texture, false)
+        _apply_camera(gs.camera, false)
+    } else do if gs.shader != shader {
+        _flush()
+        pipeline, pipeline_found := pipelines[shader]
+        assert(pipeline_found, "Invalid shader. Did you create it with imdraw.create_shader?")
+        gs.pipeline = pipeline
+        gs.shader = shader
+
+        gpu.apply_pipeline(gs.pipeline)
+        gpu.apply_input_buffers(gs.input_buffers)
+        _apply_texture(gs.texture, false)
+        _apply_camera(gs.camera, false)
+    }
+}
+
+_apply_camera :: proc(camera: math.Camera, $check_flush: bool) {
+    using _state
+    when check_flush do if gs.camera != camera {
+        _flush()
+    }
+    gs.camera = camera
+    gs.vertex_uniforms.imdraw_MVP = math.camera_to_vp_matrix(gs.camera)
+}
 
 
 _push_quad :: proc(dst: math.Rectf, src: math.Recti, color: math.Color4f, origin: math.Vec2f) {
+    using _state
+
+    if buf_idx * 4 == size_of(vertices) do _flush()
+    
     dst := math.rect_align_with_origin(dst, origin)
 
-    vert_idx := _buf_idx * 4
-    index_idx := _buf_idx * 6
-    element_idx := _buf_idx * 4
-    _buf_idx += 1
-    
-    tinfo := &_current_textures_info[.Fragment][0]
+    vert_idx := buf_idx * 4
+    index_idx := buf_idx * 6
+    element_idx := buf_idx * 4
+    buf_idx += 1
 
-    texture_width := cast(f32)tinfo.size.x
-    texture_height := cast(f32)tinfo.size.y
+    texture_width := cast(f32)gs.texture.size.x
+    texture_height := cast(f32)gs.texture.size.y
 
     x := cast(f32)src.x / texture_width
     y := cast(f32)src.y / texture_height
@@ -60,29 +124,44 @@ _push_quad :: proc(dst: math.Rectf, src: math.Recti, color: math.Color4f, origin
     h := cast(f32)src.size.y / texture_height
 
     
-    _vertices[vert_idx + 0].tex = {x, y}
-    _vertices[vert_idx + 1].tex = {x + w, y}
-    _vertices[vert_idx + 2].tex = {x, y + h}
-    _vertices[vert_idx + 3].tex = {x + w, y + h}
+    vertices[vert_idx + 0].tex = {x, y}
+    vertices[vert_idx + 1].tex = {x + w, y}
+    vertices[vert_idx + 2].tex = {x, y + h}
+    vertices[vert_idx + 3].tex = {x + w, y + h}
 
-    _vertices[vert_idx + 0].pos = {f32(dst.x), f32(dst.y)}
-    _vertices[vert_idx + 1].pos = {f32(dst.x + dst.size.x), f32(dst.y)}
-    _vertices[vert_idx + 2].pos = {f32(dst.x), f32(dst.y + dst.size.y)}
-    _vertices[vert_idx + 3].pos = {f32(dst.x + dst.size.x), f32(dst.y + dst.size.y)}
-    
-    _vertices[vert_idx + 0].col = color
-    _vertices[vert_idx + 1].col = color
-    _vertices[vert_idx + 2].col = color
-    _vertices[vert_idx + 3].col = color
+    vertices[vert_idx + 0].pos = {f32(dst.x), f32(dst.y)}
+    vertices[vert_idx + 1].pos = {f32(dst.x + dst.size.x), f32(dst.y)}
+    vertices[vert_idx + 2].pos = {f32(dst.x), f32(dst.y + dst.size.y)}
+    vertices[vert_idx + 3].pos = {f32(dst.x + dst.size.x), f32(dst.y + dst.size.y)}
 
-    _indices[index_idx + 0] = u32(element_idx + 0)
-    _indices[index_idx + 1] = u32(element_idx + 1)
-    _indices[index_idx + 2] = u32(element_idx + 2)
-    _indices[index_idx + 3] = u32(element_idx + 2)
-    _indices[index_idx + 4] = u32(element_idx + 3)
-    _indices[index_idx + 5] = u32(element_idx + 1)
+    vertices[vert_idx + 0].col = color
+    vertices[vert_idx + 1].col = color
+    vertices[vert_idx + 2].col = color
+    vertices[vert_idx + 3].col = color
+
+    indices[index_idx + 0] = u32(element_idx + 0)
+    indices[index_idx + 1] = u32(element_idx + 1)
+    indices[index_idx + 2] = u32(element_idx + 2)
+    indices[index_idx + 3] = u32(element_idx + 2)
+    indices[index_idx + 4] = u32(element_idx + 3)
+    indices[index_idx + 5] = u32(element_idx + 1)
 }
 
+_create_empty_texture :: proc() -> (texture: Texture) {
+    info: gpu.Texture_Info
+    info.size.xy = {1, 1}
+    white := math.WHITE_4b
+    info.format = .RGBA8
+    info.type = .Texture2D
+    info.min_filter = .Nearest
+    info.mag_filter = .Nearest
+    info.generate_mipmap = false
+    info.data = slice.to_bytes(slice.from_ptr(&white, 1))
+
+    texture.texture = gpu.create_texture(info)
+    texture.size = info.size.xy
+    return 
+}
 
 _create_default_shader :: proc() -> (shader: Shader, err: Maybe(string)) {
     frag_info: gpu.Shader_Stage_Info
@@ -121,15 +200,17 @@ _create_imdraw_pipeline :: proc(shader: Shader) -> (pipeline: gpu.Pipeline) {
 }
 
 _create_imdraw_buffers :: proc() -> (vertex_buffer, index_buffer: gpu.Buffer) {
+    using _state
+
     vert_info, index_info: gpu.Buffer_Info
 
     vert_info.type = .Vertex
     vert_info.usage_hint = .Dynamic
-    vert_info.size = len(_vertices) * size_of(Vertex)
+    vert_info.size = len(vertices) * size_of(Vertex)
 
     index_info.type = .Index
     index_info.usage_hint = .Dynamic
-    index_info.size = len(_indices) * size_of(u32)
+    index_info.size = len(indices) * size_of(u32)
 
     return gpu.create_buffer(vert_info), gpu.create_buffer(index_info)
 }
@@ -138,16 +219,20 @@ _create_imdraw_buffers :: proc() -> (vertex_buffer, index_buffer: gpu.Buffer) {
 // Render the data
 // I don't need all this gpu calls now that i have a being and end, but we'll see
 _flush :: proc() {
-    if (_buf_idx == 0) do return 
-    //_uniforms.projection = linalg.matrix_ortho3d_f32(0, cast(f32)_viewport_width, 0, cast(f32)_viewport_height, 0, 100, false)
-    gpu.apply_uniforms_raw(.Vertex, 0, &_uniforms, size_of(_uniforms))
-    vertices := _vertices[:_buf_idx * 4]
-    indices := _indices[:_buf_idx * 6]
-    gpu.buffer_data(_input_buffers.buffers[0], slice.to_bytes(vertices))
-    gpu.buffer_data(_input_buffers.index.(gpu.Buffer), slice.to_bytes(indices))
-    gpu.apply_input_buffers(_input_buffers)
-    gpu.apply_input_textures(_current_textures)
-    gpu.draw(0, _buf_idx * 6, 1)
-    _buf_idx = 0
+    using _state
+    if buf_idx == 0 do return 
+    
+
+    gpu.apply_uniforms_raw(.Vertex, 0, &gs.vertex_uniforms, size_of(gs.vertex_uniforms))
+    v_slice := vertices[:buf_idx * 4]
+    i_slice := indices[:buf_idx * 6]
+    gpu.buffer_data(gs.input_buffers.buffers[0], slice.to_bytes(v_slice))
+    gpu.buffer_data(gs.input_buffers.index.(gpu.Buffer), slice.to_bytes(i_slice))
+    gpu.apply_input_buffers(gs.input_buffers)
+    textures: gpu.Input_Textures
+    textures.textures[.Fragment][0] = gs.texture.texture
+    gpu.apply_input_textures(textures)
+    gpu.draw(0, buf_idx * 6, 1)
+    buf_idx = 0
 }
 

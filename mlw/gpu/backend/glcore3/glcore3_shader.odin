@@ -235,7 +235,7 @@ apply_uniforms_raw :: proc(stage: core.Shader_Stage_Type, block_index: int, data
     assert(block_index < gl_stage.uniform_blocks_count, "Block index specified is bigger than the block count.")
 
     block := &gl_stage.uniform_blocks[block_index]
-    assert(block.size == size, "Size mismatch for uniform block.")
+    fmt.assertf(block.size == size, "Size mismatch for uniform block. Expected %v, got %v", block.size, size)
     for uniform_i := 0; uniform_i < block.uniform_count; uniform_i += 1 {
         uniform := &block.uniforms[uniform_i]
         assert(uniform.count > 0, "Uniform count cannot be 0.")
