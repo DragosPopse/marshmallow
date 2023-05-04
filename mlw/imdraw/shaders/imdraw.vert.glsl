@@ -8,6 +8,7 @@ layout (location = 3) in vec2 aCenter;
 out vec4 VertexColor;
 out vec2 TexCoords;
 out vec3 FragPos;
+flat out vec2 Center;
 
 uniform mat4 imdraw_MVP;
 
@@ -20,15 +21,6 @@ mat4 rotate(float angle) {
         0.0, 0.0, 0.0, 1.0);
 }
 
-mat4 translate(vec2 pos) {
-    return mat4(1.0, 0.0, 0.0, 0.0,
-            0.0, 1.0, 0.0, 0.0,
-            0.0, 0.0, 1.0, 0.0,
-            pos.x, pos.y, 0.0, 1.0);
-}
-
-
-
 void main() {
     vec4 position = vec4(aPos.xy, 0.0, 1.0);
     position.xy -= aCenter;
@@ -37,4 +29,5 @@ void main() {
     gl_Position = imdraw_MVP * position;
     VertexColor = aCol;
     TexCoords = aTex;
+    Center = aCenter;
 }

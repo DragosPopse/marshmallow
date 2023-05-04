@@ -149,11 +149,12 @@ _push_quad :: proc(dst: math.Rectf, src: math.Recti, color: math.Color4f, origin
     indices[index_idx + 4] = u32(element_idx + 3)
     indices[index_idx + 5] = u32(element_idx + 1)
 
-    center := (vertices[vert_idx + 0].pos + vertices[vert_idx + 1].pos + vertices[vert_idx + 2].pos + vertices[vert_idx + 3].pos) / 4
-    vertices[vert_idx + 0].center = center.xy
-    vertices[vert_idx + 1].center = center.xy
-    vertices[vert_idx + 2].center = center.xy
-    vertices[vert_idx + 3].center = center.xy
+    //center := math.Vec2f((vertices[vert_idx + 0].pos.xy + vertices[vert_idx + 1].pos.xy + vertices[vert_idx + 2].pos.xy + vertices[vert_idx + 3].pos.xy) / 4)
+    center := math.rect_center(dst, origin)
+    vertices[vert_idx + 0].center = center
+    vertices[vert_idx + 1].center = center
+    vertices[vert_idx + 2].center = center
+    vertices[vert_idx + 3].center = center
 }
 
 _create_empty_texture :: proc() -> (texture: Texture) {

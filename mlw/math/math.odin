@@ -183,6 +183,14 @@ rect_align_with_origin :: proc {
     recti_align_with_origin,
 }
 
+rectf_center :: proc(r: Rectf, origin: Vec2f) -> (res: Vec2f) {
+    return r.pos + r.size * origin
+}
+
+rect_center :: proc {
+    rectf_center,
+}
+
 check_collision_rectf_rectf :: proc(a, b: Rectf) -> bool {
     diff := minkowski_diff(a, b)
     diff_min, diff_max := minmax(diff)
