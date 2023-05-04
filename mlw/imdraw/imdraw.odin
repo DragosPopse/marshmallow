@@ -64,7 +64,7 @@ sprite :: proc(texture: Texture, dst_rect: math.Rectf, dst_origin: math.Vec2f, t
     _push_quad(dst_rect, tex_rect, color, dst_origin)
 }
 
-rect :: proc(dst: math.Rectf, origin: math.Vec2f, color := math.WHITE_4f) {
+quad :: proc(dst: math.Rectf, origin: math.Vec2f = {0, 0}, color := math.WHITE_4f) {
     using _state
     _apply_texture(empty_texture, true)
     _push_quad(dst, {{0, 0}, {1, 1}}, color, origin)
