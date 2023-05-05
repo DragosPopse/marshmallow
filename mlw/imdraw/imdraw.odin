@@ -80,23 +80,24 @@ line_quad :: proc(dst: math.Rectf, origin: math.Vec2f, line_width: f32, rotation
     
     topleft := dst.pos
     topright := math.Vec2f{dst.pos.x + dst.size.x, dst.pos.y}
-    bottomleft := math.Vec2f{dst.pos.x + dst.size.x, dst.pos.y + dst.size.y}
-    bottomright := math.Vec2f{dst.pos.x, dst.pos.y + dst.size.y}
+    bottomright := math.Vec2f{dst.pos.x + dst.size.x, dst.pos.y + dst.size.y}
+    bottomleft := math.Vec2f{dst.pos.x, dst.pos.y + dst.size.y}
 
+    
     top, left, right, bottom: math.Rectf
     line_size := math.Vec2f{line_width, dst.size.y}
-    top.size = line_size
-    left.size = line_size
-    right.size = line_size
-    bottom.size = line_size
+    top.size = {dst.size.x, line_width}
+    left.size = {line_width, dst.size.y}
+    right.size = {line_width, dst.size.y}
+    bottom.size = {dst.size.x, line_width}
     top.pos = topleft
     left.pos = topleft
     right.pos = topright
     bottom.pos = bottomleft
 
-    quad(top, {0, -1 / dst.size.y}, math.angle_deg(rotation) - 90, color)
+    quad(top, {0, -1 / dst.size.y}, rotation, color)
     quad(left, {-1 / dst.size.y, 0}, rotation, color)
-    quad(bottom, {0, 1 / dst.size.y}, math.angle_deg(rotation) + 90, color)
+    quad(bottom, {0, 1 / dst.size.y}, rotation, color)
     quad(right, {1 / dst.size.y, 0}, rotation, color)
 
     /*
