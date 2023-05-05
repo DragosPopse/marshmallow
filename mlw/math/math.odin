@@ -184,12 +184,32 @@ rect_align_with_origin :: proc {
     recti_align_with_origin,
 }
 
+
+// Todo(Dragos): Rename this as `rect_origin_point`. The center is just a center
 rectf_center :: proc(r: Rectf, origin: Vec2f) -> (res: Vec2f) {
     return r.pos + r.size * origin
 }
 
 rect_center :: proc {
     rectf_center,
+}
+
+rectf_origin_from_world_point :: proc(r: Rectf, point: Vec2f) -> (origin: Vec2f) {
+
+    return
+}
+
+rectf_origin_from_relative_point :: proc(r: Rectf, point: Vec2f) -> (origin: Vec2f) {
+    origin = point / r.size 
+    return origin
+}
+
+rect_origin_from_world_point :: proc {
+    rectf_origin_from_world_point, 
+}
+
+rect_origin_from_relative_point :: proc {
+    rectf_origin_from_relative_point, 
 }
 
 check_collision_rectf_rectf :: proc(a, b: Rectf) -> bool {

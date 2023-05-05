@@ -76,7 +76,7 @@ quad :: proc(dst: math.Rectf, origin: math.Vec2f = {0, 0}, rotation: math.Angle 
 
 line_quad :: proc(dst: math.Rectf, origin: math.Vec2f, line_width: f32, rotation: math.Angle, color := math.WHITE_4f) {
     dst := math.rect_align_with_origin(dst, origin)
-    center := math.rect_center(dst, origin)
+    center := math.rect_center(dst, {0.5, 0.5})
     
     topleft := dst.pos
     topright := math.Vec2f{dst.pos.x + dst.size.x, dst.pos.y}
@@ -86,26 +86,34 @@ line_quad :: proc(dst: math.Rectf, origin: math.Vec2f, line_width: f32, rotation
     
     top, left, right, bottom: math.Rectf
     line_size := math.Vec2f{line_width, dst.size.y}
+
     top.size = {dst.size.x, line_width}
-    left.size = {line_width, dst.size.y}
-    right.size = {line_width, dst.size.y}
-    bottom.size = {dst.size.x, line_width}
     top.pos = topleft
+
+    left.size = {line_width, dst.size.y}
     left.pos = topleft
+
+    right.size = {line_width, dst.size.y}
     right.pos = topright
+
+    bottom.size = {dst.size.x, line_width}
     bottom.pos = bottomleft
 
-    quad(top, {0, -1 / dst.size.y}, rotation, color)
-    quad(left, {-1 / dst.size.y, 0}, rotation, color)
-    quad(bottom, {0, 1 / dst.size.y}, rotation, color)
-    quad(right, {1 / dst.size.y, 0}, rotation, color)
-
     /*
-    line(topleft, topright, line_width, color)
-    line(topright, bottomright, line_width, color)
-    line(bottomright, bottomleft, line_width, color)
-    line(bottomleft, topleft, line_width, color)
+    top = math.rect_align_with_origin(top, origin)
+    left = math.rect_align_with_origin(top, origin)
+    right = math.rect_align_with_origin(top, origin)
+    bottom = math.rect_align_with_origin(top, origin)
     */
+
+    quad(top, math.rect_origin_from_relative_point(top, center - dst.pos), rotation, color)
+    //quad(left, math.rect_origin_from_relative_point(left, center - dst.pos), rotation, color)
+    //quad(bottom, math.rect_origin_from_relative_point(bottom, center - dst.pos), rotation, color)
+    //quad(right, math.rect_origin_from_relative_point(right, center - dst.pos), rotation, color)
+    
+    //quad(top, origin, rotation, color)
+    //quad(left, origin, rotation, color)
+    //quad(bottom, origin, rotation, color)
 }
 
 line :: proc(begin: math.Vec2f, end: math.Vec2f, width: f32, color := math.WHITE_4f) {
