@@ -6,6 +6,7 @@ import cmath "core:math"
 normalize :: linalg.normalize
 length :: linalg.length
 PI :: cmath.PI
+vec_length :: linalg.vector_length
 
 // Note(Dragos): These should only accept Deg/Rad
 sin :: cmath.sin
@@ -225,4 +226,10 @@ minkowski_diff :: proc {
     minkowski_diff_rectf_rectf,
 }
 
+vec2f_slope :: proc(a, b: Vec2f) -> f32 {
+    return (b.y - a.y) / (b.x - a.x)
+}
 
+slope :: proc {
+    vec2f_slope,
+}

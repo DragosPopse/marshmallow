@@ -59,6 +59,10 @@ apply_shader :: proc(s: Shader) {
     #force_inline _apply_shader(s, false)
 }
 
+/*
+    Rendering
+*/
+
 sprite :: proc(texture: Texture, dst_rect: math.Rectf, dst_origin: math.Vec2f, tex_rect: math.Recti, rotation: math.Angle = math.Rad(0), color := math.WHITE_4f) {
     _apply_texture(texture, true)
     _push_quad(dst_rect, tex_rect, color, dst_origin, rotation)
@@ -68,6 +72,50 @@ quad :: proc(dst: math.Rectf, origin: math.Vec2f = {0, 0}, rotation: math.Angle 
     using _state
     _apply_texture(empty_texture, true)
     _push_quad(dst, {{0, 0}, {1, 1}}, color, origin, rotation)
+}
+
+line_quad :: proc(dst: math.Rectf, origin: math.Vec2f, line_width: f32, rotation: math.Angle, color := math.WHITE_4f) {
+    dst := math.rect_align_with_origin(dst, origin)
+    center := math.rect_center(dst, origin)
+    
+    topleft := dst.pos
+    topright := math.Vec2f{dst.pos.x + dst.size.x, dst.pos.y}
+    bottomleft := math.Vec2f{dst.pos.x + dst.size.x, dst.pos.y + dst.size.y}
+    bottomright := math.Vec2f{dst.pos.x, dst.pos.y + dst.size.y}
+
+    top, left, right, bottom: math.Rectf
+    line_size := math.Vec2f{line_width, dst.size.y}
+    top.size = line_size
+    left.size = line_size
+    right.size = line_size
+    bottom.size = line_size
+    top.pos = topleft
+    left.pos = topleft
+    right.pos = topright
+    bottom.pos = bottomleft
+
+    quad(top, {0, -1 / dst.size.y}, math.angle_deg(rotation) - 90, color)
+    quad(left, {-1 / dst.size.y, 0}, rotation, color)
+    quad(bottom, {0, 1 / dst.size.y}, math.angle_deg(rotation) + 90, color)
+    quad(right, {1 / dst.size.y, 0}, rotation, color)
+
+    /*
+    line(topleft, topright, line_width, color)
+    line(topright, bottomright, line_width, color)
+    line(bottomright, bottomleft, line_width, color)
+    line(bottomleft, topleft, line_width, color)
+    */
+}
+
+line :: proc(begin: math.Vec2f, end: math.Vec2f, width: f32, color := math.WHITE_4f) {
+    slope := math.slope(begin, end)
+    rads := cast(math.Rad)math.atan(slope)
+    length := math.length(end - begin)
+    dst: math.Rectf
+    dst.pos = begin
+    dst.size.x = length
+    dst.size.y = width
+    quad(dst, {0, 0}, rads, color)
 }
 
 /*
