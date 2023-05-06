@@ -75,36 +75,43 @@ quad :: proc(dst: math.Rectf, origin: math.Vec2f = {0, 0}, rotation: math.Angle 
 }
 
 line_quad :: proc(dst: math.Rectf, origin: math.Vec2f, line_width: f32, rotation: math.Angle, color := math.WHITE_4f) {
-    //dst := math.rect_align_with_origin(dst, origin)
-    dst := dst
-    center := math.rect_center(dst, origin)
+    dst := math.rect_align_with_origin(dst, origin)
+    //dst := dst
     
+
     topleft := dst.pos
     topright := math.Vec2f{dst.pos.x + dst.size.x, dst.pos.y}
     bottomright := math.Vec2f{dst.pos.x + dst.size.x, dst.pos.y + dst.size.y}
     bottomleft := math.Vec2f{dst.pos.x, dst.pos.y + dst.size.y}
-
+    
     
     top, left, right, bottom: math.Rectf
     line_size := math.Vec2f{line_width, dst.size.y}
     
+    center := math.rect_center(dst, origin)
 
     top.size = {dst.size.x, line_width}
+    top.pos = topleft
     to := math.rectf_origin_from_world_point(top, center)
     top.pos = topleft + to * top.size
     
     left.size = {line_width, dst.size.y}
+    left.pos = topleft
     lo := math.rectf_origin_from_world_point(left, center)
     left.pos = topleft + lo * left.size
     
 
     bottom.size = {dst.size.x, line_width}
+    bottom.pos = bottomleft
     bo := math.rectf_origin_from_world_point(bottom, center)
+    //bo.y = -bo.y
     bottom.pos = bottomleft + bo * bottom.size
     
 
     right.size = {line_width, dst.size.y}
+    right.pos = topright
     ro := math.rectf_origin_from_world_point(right, center)
+    //ro.x = -ro.x
     right.pos = topright + ro * right.size
     
 

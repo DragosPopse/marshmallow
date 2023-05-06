@@ -195,7 +195,7 @@ rect_center :: proc {
 }
 
 rectf_origin_from_world_point :: proc(r: Rectf, point: Vec2f) -> (origin: Vec2f) {
-    return (r.pos - point) / r.size
+    return (point - r.pos) / r.size
 }
 
 rectf_origin_from_relative_point :: proc(r: Rectf, point: Vec2f) -> (origin: Vec2f) {
