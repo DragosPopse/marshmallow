@@ -101,7 +101,7 @@ line_quad :: proc(dst: math.Rectf, origin: math.Vec2f, line_width: f32, rotation
     left.pos = topleft + lo * left.size
     
 
-    bottom.size = {dst.size.x, line_width}
+    bottom.size = {dst.size.x + line_width, line_width}
     bottom.pos = bottomleft
     bo := math.rectf_origin_from_world_point(bottom, center)
     //bo.y = -bo.y
