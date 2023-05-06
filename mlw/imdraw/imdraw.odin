@@ -87,24 +87,31 @@ line_quad :: proc(dst: math.Rectf, origin: math.Vec2f, line_width: f32, rotation
     
     top, left, right, bottom: math.Rectf
     line_size := math.Vec2f{line_width, dst.size.y}
+    
 
     top.size = {dst.size.x, line_width}
-    top.pos = topleft
-
+    to := math.rectf_origin_from_world_point(top, center)
+    top.pos = topleft + to * top.size
+    
     left.size = {line_width, dst.size.y}
-    left.pos = topleft
-
-    right.size = {line_width, dst.size.y}
-    right.pos = topright
+    lo := math.rectf_origin_from_world_point(left, center)
+    left.pos = topleft + lo * left.size
+    
 
     bottom.size = {dst.size.x, line_width}
-    bottom.pos = bottomleft
+    bo := math.rectf_origin_from_world_point(bottom, center)
+    bottom.pos = bottomleft + bo * bottom.size
+    
 
+    right.size = {line_width, dst.size.y}
+    ro := math.rectf_origin_from_world_point(right, center)
+    right.pos = topright + ro * right.size
+    
 
-    quad(top, math.rect_origin_from_relative_point(top, center - dst.pos), rotation, color)
-    quad(left, math.rect_origin_from_relative_point(left, center - dst.pos), rotation, color)
-    quad(top, math.rect_origin_from_relative_point(top, center - dst.pos), math.angle_deg(rotation) + 180, color)
-    quad(left, math.rect_origin_from_relative_point(left, center - dst.pos), math.angle_deg(rotation) + 180, color)
+    quad(top, to, rotation, color)
+    quad(left, lo, rotation, color)
+    quad(bottom, bo, rotation, color)
+    quad(right, ro, rotation, color)
 }
 
 line :: proc(begin: math.Vec2f, end: math.Vec2f, width: f32, color := math.WHITE_4f) {
