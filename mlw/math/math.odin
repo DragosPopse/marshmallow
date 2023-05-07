@@ -220,6 +220,19 @@ check_collision_rectf_rectf :: proc(a, b: Rectf) -> bool {
     return false
 }
 
+solve_collision_rectf_rectf :: proc(a, b: Rectf) -> (penetration_vector: Maybe(Vec2f)) {
+    diff := minkowski_diff(a, b)
+    diff_min, diff_max := minmax(diff)
+    if diff_min.x <= 0 && diff_max.x >= 0 && diff_min.y <= 0 && diff_max.y >= 0 {
+        return rectf_closest_point_on_bounds_to_point(diff, {0, 0})
+    }
+    return nil
+}
+
+solve_collision :: proc {
+    solve_collision_rectf_rectf,
+}
+
 check_collision :: proc {
     check_collision_rectf_rectf,
 }
