@@ -214,15 +214,6 @@ rect_origin_from_relative_point :: proc {
 check_collision_rectf_rectf :: proc(a, b: Rectf) -> bool {
     diff := minkowski_diff(a, b)
     diff_min, diff_max := minmax(diff)
-    /*
-    if a.x < b.x + b.size.x && 
-       a.x + a.size.x > b.x && 
-       a.y < b.y + b.size.y &&
-       a.y + a.size.y > b.y {
-        return true
-    }
-    return false
-    */ 
     if diff_min.x <= 0 && diff_max.x >= 0 && diff_min.y <= 0 && diff_max.y >= 0 {
         return true
     }
@@ -234,15 +225,38 @@ check_collision :: proc {
 }
 
 minkowski_diff_rectf_rectf :: proc(a: Rectf, b: Rectf) -> (result: Rectf) {
-    a_min := a.pos
-    b_max := b.pos + b.size
-    result.pos = a_min - b_max
+    result.pos = a.pos - b.pos - b.size
     result.size = a.size + b.size
     return result
 }
 
 minkowski_diff :: proc {
     minkowski_diff_rectf_rectf,
+}
+
+rectf_closest_point_on_bounds_to_point :: proc(r: Rectf, point: Vec2f) -> (bounds_point: Vec2f) {
+    topleft, bottomright := minmax(r)
+    min_dist := abs(point.x - topleft.x)
+    bounds_point = {topleft.x, point.y}
+
+    if m := abs(bottomright.x - point.x); m < min_dist {
+        min_dist = m
+        bounds_point = {bottomright.x, point.y}
+    }
+    if m := abs(bottomright.y - point.y); m < min_dist {
+        min_dist = m
+        bounds_point = {point.x, bottomright.y}
+    }
+    if m := abs(topleft.y - point.y); m < min_dist {
+        min_dist = m
+        bounds_point = {point.x, topleft.y}
+    }
+
+    return bounds_point
+}
+
+rect_closest_point_on_bounds_to_point :: proc {
+    rectf_closest_point_on_bounds_to_point,
 }
 
 vec2f_slope :: proc(a, b: Vec2f) -> f32 {
