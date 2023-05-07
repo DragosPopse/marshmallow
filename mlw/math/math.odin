@@ -2,7 +2,9 @@ package mmlow_math
 
 import "core:math/linalg"
 import cmath "core:math"
+import "core:intrinsics"
 
+floor :: cmath.floor
 normalize :: linalg.normalize
 length :: linalg.length
 PI :: cmath.PI
@@ -17,6 +19,10 @@ atan2 :: cmath.atan2
 
 DEG_PER_RAD :: cmath.DEG_PER_RAD
 RAD_PER_DEG :: cmath.RAD_PER_DEG
+
+floor_to_int :: proc(v: $T) -> int where intrinsics.type_is_float(T) {
+    return cast(int)floor(v)
+}
 
 // Note(Dragos): remove linalg dependency as much as possible
 //              we don't need all of it. It's too large, too 'templated'
