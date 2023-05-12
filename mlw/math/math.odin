@@ -103,23 +103,11 @@ vec2i_to_vec2f :: proc(val: Vec2i) -> (res: Vec2f) {
     return res
 }
 
-expand_to_array_len :: proc(val: $T, $array_len: int) -> (res: [array_len]T) {
-    for i in i..<array_len {
-        res[i] = val
+array_cast :: proc(v: $Array_Type/[$Array_Len]$Elem_Type, $Cast_Elem_Type: typeid) -> (res: [Array_Len]Cast_Elem_Type) {
+    for i in 0..<Array_Len {
+        res[i] = cast(Cast_Elem_Type)v[i]
     }
     return res
-}
-
-expand_to_array_type :: proc(val: $T, $array_type: typeid) -> (res: array_type) where intrinsics.type_is_array(array_type) {
-    for i in i..<len(array_type) {
-        res[i] = val
-    }
-    return res
-}
-
-expand_to_array :: proc {
-    expand_to_array_len,
-    expand_to_array_type,
 }
 
 to_vec2f :: proc {

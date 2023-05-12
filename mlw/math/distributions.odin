@@ -82,8 +82,8 @@ eval_uniform_dist :: proc(d: Uniform_Distribution($T), r: ^rand.Rand = nil) -> (
         result.x = cast(type_of(result.x))(rect.x + rect.size.x * rand.float32(r))
         result.y = cast(type_of(result.y))(rect.y + rect.size.y * rand.float32(r))
         return result
-    } else when intrinsics.type_is_float(T) || intrinsics.type_is_integer(T) {
-        return cast(T)(f64(d.max - d.min) * rand.float64(r)) + d.max // Todo(Dragos): Make this work for vectors
+    } else when intrinsics.type_is_float(T) || intrinsics.type_is_integer(T) {r
+        return cast(T)(f64(d.max - d.min) * rand.float64(r)) + d.max 
     } else {
         fmt.panicf("The type %v is not implemented in eval_uniform_distribution.", T)
     }

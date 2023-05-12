@@ -10,11 +10,11 @@ import "core:fmt"
 
 Particle :: struct {
     rect: math.Rectf,
+    gradient: math.Gradient,
     tex: math.Recti,
     rotation: math.Angle,
-    direction: math.Vec2f,
-    speed: f32,
-    acceleration: f32,
+    velocity: math.Vec2f,
+    drag: f32,
 }
 
 Particle_Type :: struct {
@@ -22,7 +22,7 @@ Particle_Type :: struct {
 }
 
 Particle_System :: struct {
-    
+
 }
 
 Particle_Emitter :: struct {
