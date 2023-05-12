@@ -1,4 +1,4 @@
-package mmlow_math
+package mlw_math
 
 
 import alg "core:math/linalg"

@@ -1,4 +1,4 @@
-package mmlow_math
+package mlw_math
 
 // RGBA Color
 Color4b :: distinct [4]byte

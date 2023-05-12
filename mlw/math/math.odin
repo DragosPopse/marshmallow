@@ -1,4 +1,4 @@
-package mmlow_math
+package mlw_math
 
 import "core:math/linalg"
 import cmath "core:math"
@@ -101,6 +101,25 @@ vec2i_to_vec2f :: proc(val: Vec2i) -> (res: Vec2f) {
     res.x = cast(f32)val.x
     res.y = cast(f32)val.y
     return res
+}
+
+expand_to_array_len :: proc(val: $T, $array_len: int) -> (res: [array_len]T) {
+    for i in i..<array_len {
+        res[i] = val
+    }
+    return res
+}
+
+expand_to_array_type :: proc(val: $T, $array_type: typeid) -> (res: array_type) where intrinsics.type_is_array(array_type) {
+    for i in i..<len(array_type) {
+        res[i] = val
+    }
+    return res
+}
+
+expand_to_array :: proc {
+    expand_to_array_len,
+    expand_to_array_type,
 }
 
 to_vec2f :: proc {
