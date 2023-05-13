@@ -72,8 +72,8 @@ update :: proc(ps: ^Particle_System, dt: f32) {
         for em_key, em in &ps._emitters {
             lifetime, has_lifetime := &em.remaining_lifetime.(f32)
             if has_lifetime {
-                lifetime -= dt
-                if lifetime <= 0 {
+                lifetime^ -= dt
+                if lifetime^ <= 0 {
                     delete_key(&ps._emitters, em_key)
                     continue // should i?
                 }

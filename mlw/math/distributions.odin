@@ -73,7 +73,7 @@ eval :: proc {
 }
 
 eval_uniform_dist :: proc(d: Uniform_Distribution($T), r: ^rand.Rand = nil) -> (result: T) {
-    when intrinsics.type_is_array(T) && len(T) == 2 {
+    when intrinsics.type_is_array(T) {
         rect: Rectf
         rect.x = cast(f32)d.min.x
         rect.y = cast(f32)d.min.y
@@ -90,18 +90,16 @@ eval_uniform_dist :: proc(d: Uniform_Distribution($T), r: ^rand.Rand = nil) -> (
 }
 
 eval_circle_dist :: proc(d: Circle_Distribution($T), r: ^rand.Rand = nil) -> (result: T) {
-    when !(intrinsics.type_is_array(T) && len(T) == 2) {
-        #assert("Unsupported type for circle distribution")
-    }
-
-    // Rejection sampling as they call it, would this be ok? It seems goofy
-    for {
-        result.x = rand.floa32_range(-1, 1, r) 
-        result.y = rand.float32_range(-1, 1, r)
-        if result.x * result.x + result.y * result.y <= 1 {
-            return d.pos + result * d.radius
+    when intrinsics.type_is_array(T) {
+        // Rejection sampling as they call it, would this be ok? It seems goofy
+        for {
+            result.x = rand.float32_range(-1, 1, r) 
+            result.y = rand.float32_range(-1, 1, r)
+            if result.x * result.x + result.y * result.y <= 1 {
+                return d.pos + result * d.radius
+            }
         }
-    }
+    } 
 
     return result
 }
