@@ -1,4 +1,4 @@
-package mmlow_core
+package mlw_core
 
 Step_Procedure :: #type proc(dt: f32)
 

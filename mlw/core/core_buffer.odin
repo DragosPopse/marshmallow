@@ -1,4 +1,4 @@
-package mmlow_core
+package mlw_core
 
 MAX_SHADERSTAGE_BUFFERS :: 8
 

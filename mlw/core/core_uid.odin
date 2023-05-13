@@ -1,4 +1,4 @@
-package mmlow_core 
+package mlw_core 
 
 @(private = "file") _next_buffer_id: Buffer = 1
 @(private = "file") _next_texture_id: Texture = 1

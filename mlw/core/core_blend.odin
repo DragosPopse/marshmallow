@@ -1,4 +1,4 @@
-package mmlow_core
+package mlw_core
 
 Blend_Op :: enum {
     Add,

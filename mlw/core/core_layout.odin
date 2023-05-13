@@ -1,4 +1,4 @@
-package mmlow_core
+package mlw_core
 
 import refl "core:reflect"
 import "core:fmt"

@@ -1,4 +1,4 @@
-package mmlow_core 
+package mlw_core 
 
 STR_UNDEFINED_CONFIG :: "UNDEFINED"
 
