@@ -65,6 +65,9 @@ emit_stream :: proc(ps: ^Particle_System, em: core.Value_Or_Ref(Particle_Emitter
     psem: Particle_System_Emitter
     psem.remaining_lifetime = math.eval(lifetime.(math.Distribution(f32)), r) if lifetime != nil else nil
     map_insert(&ps._emitters, ps._em_connection_index, psem)
+    conn = ps._em_connection_index
+    ps._em_connection_index += 1
+    return conn
 }
 
 update :: proc(ps: ^Particle_System, dt: f32) {
@@ -101,7 +104,7 @@ draw :: proc(ps: ^Particle_System) {
     if ps.texture != nil do for particle in ps._particles {
         imdraw.sprite(ps.texture.(imdraw.Texture), particle.rect, particle.origin, particle.tex, particle.rotation, particle.color)
     } else do for particle in ps._particles {
-        imdraw.rect(particle.rect, particle.origin, particle.rotation, particle.color)
+        imdraw.quad(particle.rect, particle.origin, particle.rotation, particle.color)
     }     
 }
 

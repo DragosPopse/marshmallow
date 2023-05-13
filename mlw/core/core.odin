@@ -10,7 +10,7 @@ Value_Or_Ref :: union($T: typeid) {
 }
 
 value_or_ref_ptr :: #force_inline proc(v: ^Value_Or_Ref($T)) -> ^T {
-    switch var in &v {
+    switch var in v {
         case Ref_Type(T): return var.ref
         case T: return &var
     }
