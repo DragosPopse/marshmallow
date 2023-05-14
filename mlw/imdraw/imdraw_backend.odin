@@ -21,7 +21,7 @@ Vertex_Uniforms :: struct {
     imdraw_MVP: math.Mat4f,
 }
 
-DEFAULT_BUFFER_SIZE :: 16384
+DEFAULT_BUFFER_SIZE :: 16384 * 4
 
 GPU_State :: struct {
     pipeline: gpu.Pipeline,
@@ -106,8 +106,9 @@ _apply_camera :: proc(camera: math.Camera, $check_flush: bool) {
 
 _push_quad :: proc(dst: math.Rectf, src: math.Recti, color: math.Color4f, origin: math.Vec2f, rotation: math.Angle) {
     using _state
+    
 
-    if buf_idx * 4 == size_of(vertices) do _flush()
+    if buf_idx * 4 * size_of(vertices[0]) >= size_of(vertices) do _flush()
     
     dst := math.rect_align_with_origin(dst, origin)
 
