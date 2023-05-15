@@ -67,6 +67,7 @@ State :: struct {
     default_shader: Shader,
     empty_texture: Texture,
     
+    draw_states: [dynamic]Draw_State,
     gs: GPU_State,
 }
 
