@@ -20,9 +20,10 @@ Quad :: struct {
     ind: [6]u32,
 }
 
+// This can be extended further to allow triangle buffers too. But for now we only support quads.
 Render_Buffer :: struct {
-    vertices: [dynamic]Vertex,
-    indices: [dynamic]u32,
+    quads: #soa [DEFAULT_BUFFER_SIZE]Quad, // Todo(Dragos): this needs to be dynamic, but rn we are refactoring
+    vertex_buffer, index_buffer: gpu.Buffer,
 }
 
 Render_Buffer_View :: struct {
@@ -56,14 +57,14 @@ GPU_State :: struct {
     texture: Texture,
     camera: math.Camera,
     vertex_uniforms: Vertex_Uniforms,
-    input_buffers: gpu.Input_Buffers,
+    // vert/ind buffer should go here somehow
 }
 
 // We can implement a stack-state API
 State :: struct {
     pipelines: map[Shader]gpu.Pipeline,
     buf_idx: int,
-    quads: #soa [DEFAULT_BUFFER_SIZE]Quad,
+    buffer: Render_Buffer,
     default_shader: Shader,
     empty_texture: Texture,
     
@@ -76,7 +77,7 @@ state_init :: proc(state: ^State) {
         fmt.printf("Imdraw shader error: %s\n", err.(string))
     }
     state.empty_texture = _create_empty_texture()
-    state.gs.input_buffers.buffers[0], state.gs.input_buffers.index = _create_imdraw_buffers()
+    state.buffer.vertex_buffer, state.buffer.index_buffer = _create_imdraw_buffers()
 }
 
 
@@ -93,6 +94,7 @@ _apply_texture :: proc(texture: Texture, $check_flush: bool) {
     gs.texture = texture
 }
 
+// This needs some refactoring too, because we are no longer flushing
 _apply_shader :: proc(shader: Shader, $force_reapply: bool) {
     using _state
     when force_reapply {
@@ -103,7 +105,10 @@ _apply_shader :: proc(shader: Shader, $force_reapply: bool) {
         gs.shader = shader
 
         gpu.apply_pipeline(gs.pipeline)
-        gpu.apply_input_buffers(gs.input_buffers)
+        input_buffers: gpu.Input_Buffers
+        input_buffers.buffers[0] = buffer.vertex_buffer
+        input_buffers.index = buffer.index_buffer
+        gpu.apply_input_buffers(input_buffers)
         _apply_texture(gs.texture, false)
         _apply_camera(gs.camera, false)
     } else do if gs.shader != shader {
@@ -114,7 +119,10 @@ _apply_shader :: proc(shader: Shader, $force_reapply: bool) {
         gs.shader = shader
 
         gpu.apply_pipeline(gs.pipeline)
-        gpu.apply_input_buffers(gs.input_buffers)
+        input_buffers: gpu.Input_Buffers
+        input_buffers.buffers[0] = buffer.vertex_buffer
+        input_buffers.index = buffer.index_buffer
+        gpu.apply_input_buffers(input_buffers)
         _apply_texture(gs.texture, false)
         _apply_camera(gs.camera, false)
     }
@@ -135,7 +143,7 @@ _push_quad :: proc(dst: math.Rectf, src: math.Recti, color: math.Color4f, origin
     
 
     //if buf_idx * 4 * size_of(vertices[0]) >= size_of(vertices) do _flush()
-    if buf_idx * size_of(quads[0]) >= size_of(quads) do _flush()
+    if buf_idx * size_of(buffer.quads[0]) >= size_of(buffer.quads) do _flush()
     
     dst := math.rect_align_with_origin(dst, origin)
 
@@ -153,36 +161,36 @@ _push_quad :: proc(dst: math.Rectf, src: math.Recti, color: math.Color4f, origin
     h := cast(f32)src.size.y / texture_height
 
     
-    quads[vert_idx].vert[0].tex = {x, y}
-    quads[vert_idx].vert[1].tex = {x + w, y}
-    quads[vert_idx].vert[2].tex = {x, y + h}
-    quads[vert_idx].vert[3].tex = {x + w, y + h}
+    buffer.quads[vert_idx].vert[0].tex = {x, y}
+    buffer.quads[vert_idx].vert[1].tex = {x + w, y}
+    buffer.quads[vert_idx].vert[2].tex = {x, y + h}
+    buffer.quads[vert_idx].vert[3].tex = {x + w, y + h}
 
     rads := cast(f32)math.angle_rad(rotation)
 
-    quads[vert_idx].vert[0].pos = {f32(dst.x), f32(dst.y), rads}
-    quads[vert_idx].vert[1].pos = {f32(dst.x + dst.size.x), f32(dst.y), rads}
-    quads[vert_idx].vert[2].pos = {f32(dst.x), f32(dst.y + dst.size.y), rads}
-    quads[vert_idx].vert[3].pos = {f32(dst.x + dst.size.x), f32(dst.y + dst.size.y), rads}
+    buffer.quads[vert_idx].vert[0].pos = {f32(dst.x), f32(dst.y), rads}
+    buffer.quads[vert_idx].vert[1].pos = {f32(dst.x + dst.size.x), f32(dst.y), rads}
+    buffer.quads[vert_idx].vert[2].pos = {f32(dst.x), f32(dst.y + dst.size.y), rads}
+    buffer.quads[vert_idx].vert[3].pos = {f32(dst.x + dst.size.x), f32(dst.y + dst.size.y), rads}
 
-    quads[vert_idx].vert[0].col = color
-    quads[vert_idx].vert[1].col = color
-    quads[vert_idx].vert[2].col = color
-    quads[vert_idx].vert[3].col = color
+    buffer.quads[vert_idx].vert[0].col = color
+    buffer.quads[vert_idx].vert[1].col = color
+    buffer.quads[vert_idx].vert[2].col = color
+    buffer.quads[vert_idx].vert[3].col = color
 
-    quads[index_idx].ind[0] = u32(element_idx + 0)
-    quads[index_idx].ind[1] = u32(element_idx + 1)
-    quads[index_idx].ind[2] = u32(element_idx + 2)
-    quads[index_idx].ind[3] = u32(element_idx + 2)
-    quads[index_idx].ind[4] = u32(element_idx + 3)
-    quads[index_idx].ind[5] = u32(element_idx + 1)
+    buffer.quads[index_idx].ind[0] = u32(element_idx + 0)
+    buffer.quads[index_idx].ind[1] = u32(element_idx + 1)
+    buffer.quads[index_idx].ind[2] = u32(element_idx + 2)
+    buffer.quads[index_idx].ind[3] = u32(element_idx + 2)
+    buffer.quads[index_idx].ind[4] = u32(element_idx + 3)
+    buffer.quads[index_idx].ind[5] = u32(element_idx + 1)
 
     //center := math.Vec2f((vertices[vert_idx + 0].pos.xy + vertices[vert_idx + 1].pos.xy + vertices[vert_idx + 2].pos.xy + vertices[vert_idx + 3].pos.xy) / 4)
     center := math.rect_center(dst, origin)
-    quads[vert_idx].vert[0].center = center
-    quads[vert_idx].vert[1].center = center
-    quads[vert_idx].vert[2].center = center
-    quads[vert_idx].vert[3].center = center
+    buffer.quads[vert_idx].vert[0].center = center
+    buffer.quads[vert_idx].vert[1].center = center
+    buffer.quads[vert_idx].vert[2].center = center
+    buffer.quads[vert_idx].vert[3].center = center
 }
 
 _create_empty_texture :: proc() -> (texture: Texture) {
@@ -262,14 +270,17 @@ _flush :: proc() {
     
 
     gpu.apply_uniforms_raw(.Vertex, 0, &gs.vertex_uniforms, size_of(gs.vertex_uniforms))
-    verters, indecers := soa_unzip(quads[:])
+    verters, indecers := soa_unzip(buffer.quads[:])
     v_slice := verters[:buf_idx]
     i_slice := indecers[:buf_idx]
     //v_slice := vertices[:buf_idx * 4]
     //i_slice := indices[:buf_idx * 6]
-    gpu.buffer_data(gs.input_buffers.buffers[0], slice.to_bytes(v_slice))
-    gpu.buffer_data(gs.input_buffers.index.(gpu.Buffer), slice.to_bytes(i_slice))
-    gpu.apply_input_buffers(gs.input_buffers)
+    gpu.buffer_data(buffer.vertex_buffer, slice.to_bytes(v_slice))
+    gpu.buffer_data(buffer.index_buffer, slice.to_bytes(i_slice))
+    input_buffers: gpu.Input_Buffers
+    input_buffers.buffers[0] = buffer.vertex_buffer
+    input_buffers.index = buffer.index_buffer
+    gpu.apply_input_buffers(input_buffers)
     textures: gpu.Input_Textures
     textures.textures[.Fragment][0] = gs.texture.texture
     gpu.apply_input_textures(textures)
