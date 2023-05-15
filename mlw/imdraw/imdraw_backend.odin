@@ -21,27 +21,27 @@ Quad :: struct {
 }
 
 // This can be extended further to allow triangle buffers too. But for now we only support quads.
+// The Render_Buffer should be treated as a readonly thing. Make a view if you wanna modify shit.
 Render_Buffer :: struct {
-    quads: #soa [DEFAULT_BUFFER_SIZE]Quad, // Todo(Dragos): this needs to be dynamic, but rn we are refactoring
+    quads: #soa [dynamic]Quad, 
     vertex_buffer, index_buffer: gpu.Buffer,
+    next_quad: int,
 }
 
 Render_Buffer_View :: struct {
-    vertices: []Vertex,
-    indices: []u32,
+    buffer: ^Render_Buffer,
+    buffer_index: int,
+    quads: #soa []Quad,
 }
 
 // Nah. Make the draw states a linked list that can be merged. Similar to free list
 
 // This can also contain blend mode, Depth check, whatever
 Draw_State :: struct {
-    outer: ^Render_Buffer,
-    outer_vert_start: int,
-    outer_ind_start: int,
-    vertices: []Vertex,
-    indices: []u32,
+    buffer_view: Render_Buffer_View,
     texture: Texture,
     shader: Shader,
+    camera: math.Camera,
 }
 
 
@@ -63,7 +63,6 @@ GPU_State :: struct {
 // We can implement a stack-state API
 State :: struct {
     pipelines: map[Shader]gpu.Pipeline,
-    buf_idx: int,
     buffer: Render_Buffer,
     default_shader: Shader,
     empty_texture: Texture,
@@ -78,6 +77,7 @@ state_init :: proc(state: ^State) {
     }
     state.empty_texture = _create_empty_texture()
     state.buffer.vertex_buffer, state.buffer.index_buffer = _create_imdraw_buffers()
+    resize_soa(&state.buffer.quads, DEFAULT_BUFFER_SIZE)
 }
 
 
@@ -143,14 +143,14 @@ _push_quad :: proc(dst: math.Rectf, src: math.Recti, color: math.Color4f, origin
     
 
     //if buf_idx * 4 * size_of(vertices[0]) >= size_of(vertices) do _flush()
-    if buf_idx * size_of(buffer.quads[0]) >= size_of(buffer.quads) do _flush()
+    if buffer.next_quad >= len(buffer.quads) do resize_soa(&buffer.quads, len(buffer.quads) * 2)
     
     dst := math.rect_align_with_origin(dst, origin)
 
-    vert_idx := buf_idx
-    index_idx := buf_idx
-    element_idx := buf_idx * 4
-    buf_idx += 1
+    vert_idx := buffer.next_quad
+    index_idx := buffer.next_quad
+    element_idx := buffer.next_quad * 4
+    buffer.next_quad += 1
 
     texture_width := cast(f32)gs.texture.size.x
     texture_height := cast(f32)gs.texture.size.y
@@ -264,17 +264,16 @@ _create_imdraw_buffers :: proc() -> (vertex_buffer, index_buffer: gpu.Buffer) {
 
 // Render the data
 // I don't need all this gpu calls now that i have a being and end, but we'll see
+// Flush should be removed in favor of adding a new draw state object
 _flush :: proc() {
     using _state
-    if buf_idx == 0 do return 
+    if buffer.next_quad == 0 do return 
     
 
     gpu.apply_uniforms_raw(.Vertex, 0, &gs.vertex_uniforms, size_of(gs.vertex_uniforms))
     verters, indecers := soa_unzip(buffer.quads[:])
-    v_slice := verters[:buf_idx]
-    i_slice := indecers[:buf_idx]
-    //v_slice := vertices[:buf_idx * 4]
-    //i_slice := indices[:buf_idx * 6]
+    v_slice := verters[:buffer.next_quad]
+    i_slice := indecers[:buffer.next_quad]
     gpu.buffer_data(buffer.vertex_buffer, slice.to_bytes(v_slice))
     gpu.buffer_data(buffer.index_buffer, slice.to_bytes(i_slice))
     input_buffers: gpu.Input_Buffers
@@ -284,7 +283,7 @@ _flush :: proc() {
     textures: gpu.Input_Textures
     textures.textures[.Fragment][0] = gs.texture.texture
     gpu.apply_input_textures(textures)
-    gpu.draw(0, buf_idx * 6, 1)
-    buf_idx = 0
+    gpu.draw(0, buffer.next_quad * 6, 1)
+    buffer.next_quad = 0
 }
 
