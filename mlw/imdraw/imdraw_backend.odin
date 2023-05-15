@@ -46,15 +46,6 @@ Draw_State :: struct {
     shader: Shader,
 }
 
-draw_state_merge :: proc(a, b: Draw_State) -> (result: Draw_State) {
-    assert(a.outer == b.outer, "Draw States are not mergeable.")
-    assert(a.outer_vert_start + len(a.vertices) == b.outer_vert_start, "Draw States are not mergeable.")
-    assert(a.outer_ind_start + len(a.indices) == b.outer_ind_start, "Draw States are not mergeable.")
-    assert(a.texure == b.texture && a.shader == b.shader, "Draw States are not mergeable.")
-    result.outer = a.outer
-    result.texture = a.texture
-    
-}
 
 Vertex_Uniforms :: struct {
     imdraw_MVP: math.Mat4f,
