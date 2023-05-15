@@ -8,8 +8,6 @@ import "core:slice"
 import "core:math/linalg"
 import "core:fmt"
 
-// Note(Dragos): This seems good enough to push to package mlw:imdraw
-
 Vertex :: struct {
     pos: math.Vec3f,
     col: math.Color4f,
@@ -103,7 +101,7 @@ _apply_camera :: proc(camera: math.Camera, $check_flush: bool) {
     gs.vertex_uniforms.imdraw_MVP = math.camera_to_vp_matrix(gs.camera)
 }
 
-
+// Make the buffer an argument to this somehow. We need to be able to multithread this shit
 _push_quad :: proc(dst: math.Rectf, src: math.Recti, color: math.Color4f, origin: math.Vec2f, rotation: math.Angle) {
     using _state
     
