@@ -3,6 +3,7 @@ package mlw_ps
 import "../../core"
 import "../../math"
 import "../../imdraw"
+import "../../math/random"
 
 import "core:slice"
 import "core:math/linalg"
@@ -46,35 +47,35 @@ Particle_System :: struct {
 }
 
 Emitter :: struct {
-    part_position: math.Distribution(math.Vec2f),
-    part_size: math.Distribution(f32),
+    part_position: random.Distribution(math.Vec2f),
+    part_size: random.Distribution(f32),
     part_origin: math.Vec2f,
     emission_rate: int,
-    part_velocity: math.Distribution(math.Vec2f),
-    part_lifetime: math.Distribution(f32),
-    part_tex_index: math.Distribution(int),
+    part_velocity: random.Distribution(math.Vec2f),
+    part_lifetime: random.Distribution(f32),
+    part_tex_index: random.Distribution(int),
     part_color: math.Color4f,
 }
 
-particle_update :: proc(particle: ^Particle, dt: f32, r: ^rand.Rand = nil) {
+particle_update :: proc(particle: ^Particle, dt: f32, r: ^random.Generator) {
     particle.rect.pos += particle.velocity * dt
 }
 
-emit_create_particle :: proc(em: Emitter, r: ^rand.Rand = nil) -> (particle: Particle) {
-    particle.rect.pos = math.eval(em.part_position, r)
-    particle.rect.size = math.eval(em.part_size, r)
+emit_create_particle :: proc(em: Emitter, r: ^random.Generator) -> (particle: Particle) {
+    particle.rect.pos = random.eval(em.part_position, r)
+    particle.rect.size = random.eval(em.part_size, r)
     particle.origin = em.part_origin
     particle.color = em.part_color // Todo(Dragos): this should also be some sort of distribution. Maybe a gradient
-    particle.tex_index = math.eval(em.part_tex_index, r)
+    particle.tex_index = random.eval(em.part_tex_index, r)
     particle.rotation = math.Rad(0) // Todo(Dragos): distribution this
-    particle.velocity = math.eval(em.part_velocity, r)
-    particle.remaining_life = math.eval(em.part_lifetime, r)
+    particle.velocity = random.eval(em.part_velocity, r)
+    particle.remaining_life = random.eval(em.part_lifetime, r)
     return particle
 }
 
-emit_stream :: proc(ps: ^Particle_System, em: core.Value_Or_Ref(Emitter), lifetime: Maybe(math.Distribution(f32)) = nil, r: ^rand.Rand = nil) -> (conn: Emitter_Connection) {
+emit_stream :: proc(ps: ^Particle_System, em: core.Value_Or_Ref(Emitter), lifetime: Maybe(random.Distribution(f32)) = nil, r: ^random.Generator) -> (conn: Emitter_Connection) {
     psem: Stream_Emitter
-    psem.remaining_lifetime = math.eval(lifetime.(math.Distribution(f32)), r) if lifetime != nil else nil
+    psem.remaining_lifetime = random.eval(lifetime.(random.Distribution(f32)), r) if lifetime != nil else nil
     psem.emitter = em
     map_insert(&ps._emitters, ps._em_connection_index, psem)
     conn = ps._em_connection_index
@@ -82,7 +83,7 @@ emit_stream :: proc(ps: ^Particle_System, em: core.Value_Or_Ref(Emitter), lifeti
     return conn
 }
 
-update :: proc(ps: ^Particle_System, dt: f32, r: ^rand.Rand = nil) {
+update :: proc(ps: ^Particle_System, dt: f32, r: ^random.Generator) {
     { // Update emitters
         for em_key, em in &ps._emitters {
             lifetime, has_lifetime := &em.remaining_lifetime.(f32)
