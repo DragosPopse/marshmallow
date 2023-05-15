@@ -8,83 +8,7 @@ import "core:slice"
 import "core:math/linalg"
 import "core:fmt"
 
-Vertex :: struct {
-    pos: math.Vec3f,
-    col: math.Color4f,
-    tex: math.Vec2f,
-    center: math.Vec2f,
-}
-
-Quad :: struct {
-    vert: [4]Vertex,
-    ind: [6]u32,
-}
-
-// This can be extended further to allow triangle buffers too. But for now we only support quads.
-// The Render_Buffer should be treated as a readonly thing. Make a view if you wanna modify shit.
-Render_Buffer :: struct {
-    quads: #soa [dynamic]Quad, 
-    vertex_buffer, index_buffer: gpu.Buffer,
-    next_quad: int,
-}
-
-Render_Buffer_View :: struct {
-    buffer: ^Render_Buffer,
-    buffer_index: int,
-    quads: #soa []Quad,
-}
-
-// Nah. Make the draw states a linked list that can be merged. Similar to free list
-
-// This can also contain blend mode, Depth check, whatever
-Draw_State :: struct {
-    buffer_view: Render_Buffer_View,
-    texture: Texture,
-    shader: Shader,
-    camera: math.Camera,
-}
-
-
-Vertex_Uniforms :: struct {
-    imdraw_MVP: math.Mat4f,
-}
-
-DEFAULT_BUFFER_SIZE :: 16384 * 4
-
-GPU_State :: struct {
-    pipeline: gpu.Pipeline,
-    shader: Shader,
-    texture: Texture,
-    camera: math.Camera,
-    vertex_uniforms: Vertex_Uniforms,
-    // vert/ind buffer should go here somehow
-}
-
-// We can implement a stack-state API
-State :: struct {
-    pipelines: map[Shader]gpu.Pipeline,
-    buffer: Render_Buffer,
-    default_shader: Shader,
-    empty_texture: Texture,
-    
-    draw_states: [dynamic]Draw_State,
-    gs: GPU_State,
-}
-
-state_init :: proc(state: ^State) {
-    err: Maybe(string)
-    if state.default_shader, err = _create_default_shader(); err != nil {
-        fmt.printf("Imdraw shader error: %s\n", err.(string))
-    }
-    state.empty_texture = _create_empty_texture()
-    state.buffer.vertex_buffer, state.buffer.index_buffer = _create_imdraw_buffers()
-    resize_soa(&state.buffer.quads, DEFAULT_BUFFER_SIZE)
-}
-
-
-_state: State
-
-// Note(Dragos): Let's keep it simple for now
+// we'll remove this eventually
 
 _apply_texture :: proc(texture: Texture, $check_flush: bool) {
     using _state
@@ -136,6 +60,147 @@ _apply_camera :: proc(camera: math.Camera, $check_flush: bool) {
     }
     gs.camera = camera
     gs.vertex_uniforms.imdraw_MVP = math.camera_to_vp_matrix(gs.camera)
+}
+GPU_State :: struct {
+    pipeline: gpu.Pipeline,
+    shader: Shader,
+    texture: Texture,
+    camera: math.Camera,
+    vertex_uniforms: Vertex_Uniforms,
+    // vert/ind buffer should go here somehow
+}
+
+Vertex :: struct {
+    pos: math.Vec3f,
+    col: math.Color4f,
+    tex: math.Vec2f,
+    center: math.Vec2f,
+}
+
+Quad :: struct {
+    vert: [4]Vertex,
+    ind: [6]u32,
+}
+
+// This can be extended further to allow triangle buffers too. But for now we only support quads.
+// The Render_Buffer should be treated as a readonly thing. Make a view if you wanna modify shit.
+Render_Buffer :: struct {
+    quads: #soa [dynamic]Quad, 
+    vertex_buffer, index_buffer: gpu.Buffer,
+    next_quad: int,
+}
+
+Render_Buffer_View :: struct {
+    buffer: ^Render_Buffer,
+    buffer_index: int,
+    quads: #soa []Quad,
+    draw_state: ^Draw_State,
+}
+
+Draw_State :: struct {
+    buffer_view: Render_Buffer_View,
+    texture: Texture,
+    shader: Shader,
+    camera: math.Camera,
+}
+
+
+Vertex_Uniforms :: struct {
+    imdraw_MVP: math.Mat4f,
+}
+
+DEFAULT_BUFFER_SIZE :: 16384 * 4
+
+
+// We can implement a stack-state API
+State :: struct {
+    pipelines: map[Shader]gpu.Pipeline,
+    buffer: Render_Buffer,
+    default_shader: Shader,
+    empty_texture: Texture,
+    
+    draw_states: [dynamic]Draw_State,
+    gs: GPU_State,
+}
+
+
+
+// Use with care. This can read into another buffer views
+expand_buffer_view_safe :: proc(view: ^Render_Buffer_View, n: int) {
+    if view.buffer_index + len(view.quads) + n > len(view.buffer.quads) {
+        resize_soa(&view.buffer.quads, len(view.buffer.quads) * 2)
+    }
+    view.quads = view.buffer.quads[view.buffer_index : len(view.quads) + n]
+}
+
+push_draw_state :: proc(draw_states: ^[dynamic]Draw_State, state: Draw_State) { 
+    if len(draw_states) == 0 {
+        append(draw_states, state)
+    } else {
+        last_state := &draw_states[len(draw_states) - 1]
+        new_camera := state.camera != last_state.camera
+        new_shader := state.shader != last_state.shader
+        new_texture := state.texture != last_state.texture 
+        if new_camera || new_shader || new_texture {
+            append(draw_states, state)
+        }
+    }
+}
+
+state_init :: proc(state: ^State) {
+    err: Maybe(string)
+    if state.default_shader, err = _create_default_shader(); err != nil {
+        fmt.printf("Imdraw shader error: %s\n", err.(string))
+    }
+    state.empty_texture = _create_empty_texture()
+    state.buffer.vertex_buffer, state.buffer.index_buffer = _create_imdraw_buffers()
+    resize_soa(&state.buffer.quads, DEFAULT_BUFFER_SIZE)
+}
+
+
+_state: State
+
+set_quad :: proc(view: ^Render_Buffer_View, idx: int, dst: math.Rectf, src: math.Recti, color: math.Color4f, origin: math.Vec2f, rotation: math.Angle) {
+    dst := math.rect_align_with_origin(dst, origin)
+
+    element_idx := idx * 4 // should this be idx + 1??
+
+    texture_width := cast(f32)view.draw_state.texture.size.x
+    texture_height := cast(f32)view.draw_state.texture.size.y
+
+    x := cast(f32)src.x / texture_width
+    y := cast(f32)src.y / texture_height
+    w := cast(f32)src.size.x / texture_width
+    h := cast(f32)src.size.y / texture_height
+
+    view.quads[idx].vert[0].tex = {x, y}
+    view.quads[idx].vert[1].tex = {x + w, y}
+    view.quads[idx].vert[2].tex = {x, y + h}
+    view.quads[idx].vert[3].tex = {x + w, y + h}
+
+    rads := cast(f32)math.angle_rad(rotation)
+    view.quads[idx].vert[0].pos = {f32(dst.x), f32(dst.y), rads}
+    view.quads[idx].vert[1].pos = {f32(dst.x + dst.size.x), f32(dst.y), rads}
+    view.quads[idx].vert[2].pos = {f32(dst.x), f32(dst.y + dst.size.y), rads}
+    view.quads[idx].vert[3].pos = {f32(dst.x + dst.size.x), f32(dst.y + dst.size.y), rads}
+
+    view.quads[idx].vert[0].col = color
+    view.quads[idx].vert[1].col = color
+    view.quads[idx].vert[2].col = color
+    view.quads[idx].vert[3].col = color
+
+    center := math.rect_center(dst, origin)
+    view.quads[idx].vert[0].center = center
+    view.quads[idx].vert[1].center = center
+    view.quads[idx].vert[2].center = center
+    view.quads[idx].vert[3].center = center
+
+    view.quads[idx].ind[0] = u32(element_idx + 0)
+    view.quads[idx].ind[1] = u32(element_idx + 1)
+    view.quads[idx].ind[2] = u32(element_idx + 2)
+    view.quads[idx].ind[3] = u32(element_idx + 2)
+    view.quads[idx].ind[4] = u32(element_idx + 3)
+    view.quads[idx].ind[5] = u32(element_idx + 1)
 }
 
 // Make the buffer an argument to this somehow. We need to be able to multithread this shit
