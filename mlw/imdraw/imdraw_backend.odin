@@ -17,10 +17,7 @@ Vertex :: struct {
 
 Quad :: struct {
     vert: [4]Vertex,
-}
-
-Quad_Indices :: struct {
-    indices: [6]u32,
+    ind: [6]u32,
 }
 
 Render_Buffer :: struct {
@@ -66,8 +63,7 @@ GPU_State :: struct {
 State :: struct {
     pipelines: map[Shader]gpu.Pipeline,
     buf_idx: int,
-    vertices: [DEFAULT_BUFFER_SIZE * 4]Vertex,
-    indices: [DEFAULT_BUFFER_SIZE * 6]u32,
+    quads: #soa [DEFAULT_BUFFER_SIZE]Quad,
     default_shader: Shader,
     empty_texture: Texture,
     
@@ -138,12 +134,13 @@ _push_quad :: proc(dst: math.Rectf, src: math.Recti, color: math.Color4f, origin
     using _state
     
 
-    if buf_idx * 4 * size_of(vertices[0]) >= size_of(vertices) do _flush()
+    //if buf_idx * 4 * size_of(vertices[0]) >= size_of(vertices) do _flush()
+    if buf_idx * size_of(quads[0]) >= size_of(quads) do _flush()
     
     dst := math.rect_align_with_origin(dst, origin)
 
-    vert_idx := buf_idx * 4
-    index_idx := buf_idx * 6
+    vert_idx := buf_idx
+    index_idx := buf_idx
     element_idx := buf_idx * 4
     buf_idx += 1
 
@@ -156,36 +153,36 @@ _push_quad :: proc(dst: math.Rectf, src: math.Recti, color: math.Color4f, origin
     h := cast(f32)src.size.y / texture_height
 
     
-    vertices[vert_idx + 0].tex = {x, y}
-    vertices[vert_idx + 1].tex = {x + w, y}
-    vertices[vert_idx + 2].tex = {x, y + h}
-    vertices[vert_idx + 3].tex = {x + w, y + h}
+    quads[vert_idx].vert[0].tex = {x, y}
+    quads[vert_idx].vert[1].tex = {x + w, y}
+    quads[vert_idx].vert[2].tex = {x, y + h}
+    quads[vert_idx].vert[3].tex = {x + w, y + h}
 
     rads := cast(f32)math.angle_rad(rotation)
 
-    vertices[vert_idx + 0].pos = {f32(dst.x), f32(dst.y), rads}
-    vertices[vert_idx + 1].pos = {f32(dst.x + dst.size.x), f32(dst.y), rads}
-    vertices[vert_idx + 2].pos = {f32(dst.x), f32(dst.y + dst.size.y), rads}
-    vertices[vert_idx + 3].pos = {f32(dst.x + dst.size.x), f32(dst.y + dst.size.y), rads}
+    quads[vert_idx].vert[0].pos = {f32(dst.x), f32(dst.y), rads}
+    quads[vert_idx].vert[1].pos = {f32(dst.x + dst.size.x), f32(dst.y), rads}
+    quads[vert_idx].vert[2].pos = {f32(dst.x), f32(dst.y + dst.size.y), rads}
+    quads[vert_idx].vert[3].pos = {f32(dst.x + dst.size.x), f32(dst.y + dst.size.y), rads}
 
-    vertices[vert_idx + 0].col = color
-    vertices[vert_idx + 1].col = color
-    vertices[vert_idx + 2].col = color
-    vertices[vert_idx + 3].col = color
+    quads[vert_idx].vert[0].col = color
+    quads[vert_idx].vert[1].col = color
+    quads[vert_idx].vert[2].col = color
+    quads[vert_idx].vert[3].col = color
 
-    indices[index_idx + 0] = u32(element_idx + 0)
-    indices[index_idx + 1] = u32(element_idx + 1)
-    indices[index_idx + 2] = u32(element_idx + 2)
-    indices[index_idx + 3] = u32(element_idx + 2)
-    indices[index_idx + 4] = u32(element_idx + 3)
-    indices[index_idx + 5] = u32(element_idx + 1)
+    quads[index_idx].ind[0] = u32(element_idx + 0)
+    quads[index_idx].ind[1] = u32(element_idx + 1)
+    quads[index_idx].ind[2] = u32(element_idx + 2)
+    quads[index_idx].ind[3] = u32(element_idx + 2)
+    quads[index_idx].ind[4] = u32(element_idx + 3)
+    quads[index_idx].ind[5] = u32(element_idx + 1)
 
     //center := math.Vec2f((vertices[vert_idx + 0].pos.xy + vertices[vert_idx + 1].pos.xy + vertices[vert_idx + 2].pos.xy + vertices[vert_idx + 3].pos.xy) / 4)
     center := math.rect_center(dst, origin)
-    vertices[vert_idx + 0].center = center
-    vertices[vert_idx + 1].center = center
-    vertices[vert_idx + 2].center = center
-    vertices[vert_idx + 3].center = center
+    quads[vert_idx].vert[0].center = center
+    quads[vert_idx].vert[1].center = center
+    quads[vert_idx].vert[2].center = center
+    quads[vert_idx].vert[3].center = center
 }
 
 _create_empty_texture :: proc() -> (texture: Texture) {
@@ -247,11 +244,11 @@ _create_imdraw_buffers :: proc() -> (vertex_buffer, index_buffer: gpu.Buffer) {
 
     vert_info.type = .Vertex
     vert_info.usage_hint = .Dynamic
-    vert_info.size = len(vertices) * size_of(Vertex)
+    vert_info.size = DEFAULT_BUFFER_SIZE * 4 * size_of(Vertex)
 
     index_info.type = .Index
     index_info.usage_hint = .Dynamic
-    index_info.size = len(indices) * size_of(u32)
+    index_info.size = DEFAULT_BUFFER_SIZE * 6 * size_of(u32)
 
     return gpu.create_buffer(vert_info), gpu.create_buffer(index_info)
 }
@@ -265,8 +262,11 @@ _flush :: proc() {
     
 
     gpu.apply_uniforms_raw(.Vertex, 0, &gs.vertex_uniforms, size_of(gs.vertex_uniforms))
-    v_slice := vertices[:buf_idx * 4]
-    i_slice := indices[:buf_idx * 6]
+    verters, indecers := soa_unzip(quads[:])
+    v_slice := verters[:buf_idx]
+    i_slice := indecers[:buf_idx]
+    //v_slice := vertices[:buf_idx * 4]
+    //i_slice := indices[:buf_idx * 6]
     gpu.buffer_data(gs.input_buffers.buffers[0], slice.to_bytes(v_slice))
     gpu.buffer_data(gs.input_buffers.index.(gpu.Buffer), slice.to_bytes(i_slice))
     gpu.apply_input_buffers(gs.input_buffers)
