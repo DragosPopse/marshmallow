@@ -15,6 +15,47 @@ Vertex :: struct {
     center: math.Vec2f,
 }
 
+Quad :: struct {
+    vert: [4]Vertex,
+}
+
+Quad_Indices :: struct {
+    indices: [6]u32,
+}
+
+Render_Buffer :: struct {
+    vertices: [dynamic]Vertex,
+    indices: [dynamic]u32,
+}
+
+Render_Buffer_View :: struct {
+    vertices: []Vertex,
+    indices: []u32,
+}
+
+// Nah. Make the draw states a linked list that can be merged. Similar to free list
+
+// This can also contain blend mode, Depth check, whatever
+Draw_State :: struct {
+    outer: ^Render_Buffer,
+    outer_vert_start: int,
+    outer_ind_start: int,
+    vertices: []Vertex,
+    indices: []u32,
+    texture: Texture,
+    shader: Shader,
+}
+
+draw_state_merge :: proc(a, b: Draw_State) -> (result: Draw_State) {
+    assert(a.outer == b.outer, "Draw States are not mergeable.")
+    assert(a.outer_vert_start + len(a.vertices) == b.outer_vert_start, "Draw States are not mergeable.")
+    assert(a.outer_ind_start + len(a.indices) == b.outer_ind_start, "Draw States are not mergeable.")
+    assert(a.texure == b.texture && a.shader == b.shader, "Draw States are not mergeable.")
+    result.outer = a.outer
+    result.texture = a.texture
+    
+}
+
 Vertex_Uniforms :: struct {
     imdraw_MVP: math.Mat4f,
 }
