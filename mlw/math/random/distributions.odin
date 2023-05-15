@@ -3,6 +3,7 @@ package mlw_random
 import "../../math"
 import "core:fmt"
 import "core:intrinsics"
+import cmath "core:math"
 
 Uniform_Distribution :: struct($T: typeid) {
     min: T,
@@ -14,10 +15,18 @@ Circle_Distribution :: struct($T: typeid) {
     radius: f32,
 }
 
+// Haha, annulus
+Annulus_Distribution :: struct($T: typeid) {
+    pos: T,
+    inner: f32,
+    outer: f32,
+}
+
 Distribution :: union($T: typeid) {
     T, 
     Uniform_Distribution(T),
     Circle_Distribution(T),
+    Annulus_Distribution(T),
 }
 
 uniform_int :: proc "contextless" (min, max: int) -> (result: Uniform_Distribution(int)) {
@@ -55,13 +64,21 @@ circle_dist :: proc "contextless" (pos: math.Vec2f, radius: f32) -> (result: Cir
     result.pos = pos
     result.radius = radius
     return result
-} 
+}
+
+annulus_dist :: proc "contextless" (pos: math.Vec2f, inner, outer: f32) -> (result: Annulus_Distribution(math.Vec2f)) {
+    result.pos = pos
+    result.inner = inner
+    result.outer = outer
+    return result
+}
 
 eval_dist :: proc(d: Distribution($T), r: ^Generator) -> (result: T) {
     switch var in d {
         case T: return var
         case Uniform_Distribution(T): return #force_inline eval_uniform_dist(var, r)
         case Circle_Distribution(T): return #force_inline eval_circle_dist(var, r)
+        case Annulus_Distribution(T): return #force_inline eval_annulus_dist(var, r)
     }
     return //unreachable
 }
@@ -102,3 +119,14 @@ eval_circle_dist :: proc(d: Circle_Distribution($T), r: ^Generator) -> (result: 
     return result
 }
 
+eval_annulus_dist :: proc(d: Annulus_Distribution($T), r: ^Generator) -> (result: T) {
+    when intrinsics.type_is_array(T) {
+        theta := float(r) * 2 * math.PI
+        distance := cmath.sqrt_f32(float(r) * (d.inner * d.inner - d.outer * d.outer) + d.outer * d.outer)
+        result.x = distance * math.cos(theta)
+        result.y = distance * math.sin(theta)
+        result += d.pos
+    }
+
+    return result
+}
