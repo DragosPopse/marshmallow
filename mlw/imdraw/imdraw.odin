@@ -45,11 +45,13 @@ begin :: proc() {
     using _state
     buffer.next_quad = 0 // Reset render buffer
     resize(&draw_states, 0) // Reset draw states
+    resize(&cameras, 0)
 
      // Push the first state as a default, with an empty bufferv view
     first_state: Internal_Draw_State
     first_state.texture = empty_texture
     first_state.shader = default_shader
+    first_state.camera_index = -1
     append(&draw_states, first_state)
 }
 
@@ -77,7 +79,7 @@ end :: proc() {
         gpu.apply_input_textures(in_tex)
         
         vert_uniforms: Vertex_Uniforms
-        vert_uniforms.imdraw_MVP = state.camera_mvp
+        vert_uniforms.imdraw_MVP = _state.cameras[state.camera_index]
         gpu.apply_uniforms_raw(.Vertex, 0, &vert_uniforms, size_of(vert_uniforms))
         
         
@@ -86,7 +88,8 @@ end :: proc() {
 }
 
 apply_camera :: proc(cam: math.Camera) {
-    _state.camera_mvp = math.camera_to_vp_matrix(cam) 
+    append(&_state.cameras, math.camera_to_vp_matrix(cam)) 
+    _state.current_camera_index = len(_state.cameras) - 1
 }
 
 /*
@@ -99,7 +102,7 @@ sprite :: proc(texture: Texture, dst_rect: math.Rectf, dst_origin: math.Vec2f, t
 
     // This is way less efficient than what we had before probably, but let's make things work first
     state: Draw_State
-    state.camera_mvp = _state.camera_mvp
+    state.camera_index = _state.current_camera_index
     state.shader = _state.default_shader
     state.texture = texture
     view := reserve_buffer(1, state)
@@ -112,7 +115,7 @@ quad :: proc(dst: math.Rectf, origin: math.Vec2f = {0, 0}, rotation: math.Angle 
     //_apply_texture(empty_texture, true)
     //_push_quad(dst, {{0, 0}, {1, 1}}, color, origin, rotation)
     state: Draw_State
-    state.camera_mvp = _state.camera_mvp
+    state.camera_index = _state.current_camera_index
     state.shader = _state.default_shader
     state.texture = _state.empty_texture
     view := reserve_buffer(1, state)

@@ -41,13 +41,13 @@ Internal_Draw_State :: struct {
     buffer_view: Render_Buffer_View,
     texture: Texture,
     shader: Shader,
-    camera_mvp: math.Mat4f, // This can be made into vertex uniforms directly to avoid some copies
+    camera_index: int, // This can be made into vertex uniforms directly to avoid some copies
 }
 
 Draw_State :: struct {
     texture: Texture,
     shader: Shader,
-    camera_mvp: math.Mat4f,
+    camera_index: int,
 }
 
 
@@ -64,8 +64,9 @@ State :: struct {
     buffer: Render_Buffer,
     default_shader: Shader,
     empty_texture: Texture,
-    camera_mvp: math.Mat4f,
     draw_states: [dynamic]Internal_Draw_State,
+    cameras: [dynamic]math.Mat4f,
+    current_camera_index: int,
 }
 
 /*
@@ -73,18 +74,18 @@ State :: struct {
 */
 reserve_buffer :: proc(n_quads: int, draw_state: Draw_State) -> (view: Render_Buffer_View) {
     using _state
-    curr_state := &draw_states[len(draw_states) - 1]
+    #no_bounds_check curr_state := &draw_states[len(draw_states) - 1]
 
     ids: Internal_Draw_State
     ids.shader = draw_state.shader
     ids.texture = draw_state.texture
-    ids.camera_mvp = draw_state.camera_mvp 
+    ids.camera_index = draw_state.camera_index 
     
     
 
     new_shader := ids.shader != curr_state.shader
     new_texture := ids.texture != curr_state.texture
-    new_camera := ids.camera_mvp != curr_state.camera_mvp // Need to get this check simpler. Maybe make a pointer to the camera mvp?
+    new_camera := ids.camera_index != curr_state.camera_index // Need to get this check simpler. Maybe make a pointer to the camera mvp?
 
     view.buffer = &buffer
     view.texture_size.xy = ids.texture.size.xy
@@ -95,7 +96,7 @@ reserve_buffer :: proc(n_quads: int, draw_state: Draw_State) -> (view: Render_Bu
     }
 
     view.buffer_index = view.buffer.next_quad
-    view.quads = view.buffer.quads[view.buffer.next_quad : view.buffer.next_quad + n_quads] 
+    #no_bounds_check view.quads = view.buffer.quads[view.buffer.next_quad : view.buffer.next_quad + n_quads] 
     view.buffer.next_quad += n_quads
 
     if new_camera || new_shader || new_texture { // Create a new state and a buffer view
@@ -103,7 +104,7 @@ reserve_buffer :: proc(n_quads: int, draw_state: Draw_State) -> (view: Render_Bu
         append(&draw_states, ids) 
     } else { // Merge the last state with this one and expand the last state buffer view
         view.subview_index = len(curr_state.buffer_view.quads)
-        curr_state.buffer_view.quads = curr_state.buffer_view.buffer.quads[curr_state.buffer_view.buffer_index : curr_state.buffer_view.buffer_index + len(curr_state.buffer_view.quads) + len(view.quads)]
+        #no_bounds_check curr_state.buffer_view.quads = curr_state.buffer_view.buffer.quads[curr_state.buffer_view.buffer_index : curr_state.buffer_view.buffer_index + len(curr_state.buffer_view.quads) + len(view.quads)]
     }
     
     return view
