@@ -77,16 +77,16 @@ end :: proc() {
         gpu.apply_input_textures(in_tex)
         
         vert_uniforms: Vertex_Uniforms
-        vert_uniforms.imdraw_MVP = math.camera_to_vp_matrix(state.camera)
+        vert_uniforms.imdraw_MVP = state.camera_mvp
         gpu.apply_uniforms_raw(.Vertex, 0, &vert_uniforms, size_of(vert_uniforms))
         
-        // I know the problem! It indexes in a buffer that has null values. The indices should be modified.
+        
         gpu.draw(0, len(indices) * 6, 1)
     }
 }
 
 apply_camera :: proc(cam: math.Camera) {
-    _state.gs.camera = cam // This will be removed
+    _state.camera_mvp = math.camera_to_vp_matrix(cam) 
 }
 
 /*
@@ -99,8 +99,8 @@ sprite :: proc(texture: Texture, dst_rect: math.Rectf, dst_origin: math.Vec2f, t
 
     // This is way less efficient than what we had before probably, but let's make things work first
     state: Draw_State
-    state.camera = _state.gs.camera
-    state.shader = _state.default_shader
+    state.camera = nil
+    state.shader = nil
     state.texture = texture
     view := reserve_buffer(1, state)
     set_quad(&view, 0, dst_rect, tex_rect, color, dst_origin, rotation)
@@ -112,8 +112,8 @@ quad :: proc(dst: math.Rectf, origin: math.Vec2f = {0, 0}, rotation: math.Angle 
     //_apply_texture(empty_texture, true)
     //_push_quad(dst, {{0, 0}, {1, 1}}, color, origin, rotation)
     state: Draw_State
-    state.camera = _state.gs.camera
-    state.shader = _state.default_shader
+    state.camera = nil
+    state.shader = nil
     state.texture = _state.empty_texture
     view := reserve_buffer(1, state)
     set_quad(&view, 0, dst, {{0, 0}, {1, 1}}, color, origin, rotation)

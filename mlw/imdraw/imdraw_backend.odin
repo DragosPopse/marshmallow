@@ -8,16 +8,6 @@ import "core:slice"
 import "core:math/linalg"
 import "core:fmt"
 
-
-GPU_State :: struct {
-    pipeline: gpu.Pipeline,
-    shader: Shader,
-    texture: Texture,
-    camera: math.Camera,
-    vertex_uniforms: Vertex_Uniforms,
-    // vert/ind buffer should go here somehow
-}
-
 Vertex :: struct {
     pos: math.Vec3f,
     col: math.Color4f,
@@ -43,14 +33,14 @@ Render_Buffer_View :: struct {
     buffer_index: int,
     subview_index: int,
     quads: #soa []Quad,
-    texture_size: math.Vec2i, // Internal use
+    texture_size: [2]int, // Internal use
 }
 
 Internal_Draw_State :: struct {
     buffer_view: Render_Buffer_View,
     texture: Texture,
     shader: Shader,
-    camera: math.Camera,
+    camera_mvp: math.Mat4f, // This can be made into vertex uniforms directly to avoid some copies
 }
 
 Draw_State :: struct {
@@ -73,9 +63,8 @@ State :: struct {
     buffer: Render_Buffer,
     default_shader: Shader,
     empty_texture: Texture,
-    
+    camera_mvp: math.Mat4f,
     draw_states: [dynamic]Internal_Draw_State,
-    gs: GPU_State,
 }
 
 /*
@@ -88,16 +77,16 @@ reserve_buffer :: proc(n_quads: int, draw_state: Draw_State) -> (view: Render_Bu
     ids: Internal_Draw_State
     ids.shader = draw_state.shader.? if draw_state.shader != nil else default_shader
     ids.texture = draw_state.texture.? if draw_state.texture != nil else empty_texture
-    ids.camera = draw_state.camera.? if draw_state.camera != nil else curr_state.camera // hmmm, should we default this aswell to something else? Should we setup a global default camera?
+    ids.camera_mvp = math.camera_to_vp_matrix(draw_state.camera.?) if draw_state.camera != nil else camera_mvp 
     
     
 
     new_shader := ids.shader != curr_state.shader
     new_texture := ids.texture != curr_state.texture
-    new_camera := ids.camera != curr_state.camera // This is quite a complicated operation. We'll need to benchmark this shit
+    new_camera := ids.camera_mvp != curr_state.camera_mvp // This is quite a complicated operation. We'll need to benchmark this shit
 
     view.buffer = &buffer
-    view.texture_size.xy = gpu.texture_info(ids.texture.texture).size.xy
+    view.texture_size.xy = gpu.texture_info(ids.texture.texture).size.xy if new_texture else curr_state.texture.size
 
     // Resize internal buffer to support the number of required quads
     if buffer.next_quad + n_quads > len(buffer.quads) {
@@ -177,6 +166,7 @@ set_quad :: proc(view: ^Render_Buffer_View, idx: int, dst: math.Rectf, src: math
 }
 
 // Make the buffer an argument to this somehow. We need to be able to multithread this shit
+/*
 _push_quad :: proc(dst: math.Rectf, src: math.Recti, color: math.Color4f, origin: math.Vec2f, rotation: math.Angle) {
     using _state
     
@@ -231,6 +221,7 @@ _push_quad :: proc(dst: math.Rectf, src: math.Recti, color: math.Color4f, origin
     buffer.quads[vert_idx].vert[2].center = center
     buffer.quads[vert_idx].vert[3].center = center
 }
+*/
 
 _create_empty_texture :: proc() -> (texture: Texture) {
     info: gpu.Texture_Info
@@ -304,6 +295,7 @@ _create_imdraw_buffers :: proc() -> (vertex_buffer, index_buffer: gpu.Buffer) {
 // Render the data
 // I don't need all this gpu calls now that i have a being and end, but we'll see
 // Flush should be removed in favor of adding a new draw state object
+/*
 _flush :: proc() {
     using _state
     if buffer.next_quad == 0 do return 
@@ -326,3 +318,4 @@ _flush :: proc() {
     buffer.next_quad = 0
 }
 
+*/
