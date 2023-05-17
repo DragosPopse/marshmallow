@@ -156,19 +156,13 @@ reserve_buffer :: proc(n_quads: int, draw_state: Draw_State) -> (view: Render_Bu
         resize_soa(&buffer.quads, len(buffer.quads) * 2)
     }
 
-    if new_camera || new_shader || new_texture { // Create a new state and a buffer view
-        view.buffer_index = view.buffer.next_quad
-        view.quads = view.buffer.quads[view.buffer.next_quad : n_quads] // brand new view
-        view.buffer.next_quad += n_quads
-        append(&draw_states, ids) // We had a new state, so append the newly made internal state to the list of states
-    } else { // Merge the last state with this one and expand the last state buffer view
-        // No need for append here, we'll need to expand the view of the last state (curr_state)
-        view.buffer_index = view.buffer.next_quad
-        view.quads = view.buffer.quads[view.buffer.next_quad : n_quads]
-        curr_state.buffer_view.buffer.next_quad += n_quads
+    view.buffer_index = view.buffer.next_quad
+    view.quads = view.buffer.quads[view.buffer.next_quad : n_quads] 
+    view.buffer.next_quad += n_quads
 
-        // Expand the last state
-        // Is this math aight? Maybedge
+    if new_camera || new_shader || new_texture { // Create a new state and a buffer view
+        append(&draw_states, ids) 
+    } else { // Merge the last state with this one and expand the last state buffer view
         curr_state.buffer_view.quads = curr_state.buffer_view.buffer.quads[curr_state.buffer_view.buffer_index : len(curr_state.buffer_view.quads) + len(view.quads)]
     }
 
