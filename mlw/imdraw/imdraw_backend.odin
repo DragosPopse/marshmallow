@@ -98,7 +98,7 @@ Render_Buffer_View :: struct {
 }
 
 Internal_Draw_State :: struct {
-    buffer_view: ^Render_Buffer_View,
+    buffer_view: Render_Buffer_View,
     texture: Texture,
     shader: Shader,
     camera: math.Camera,
@@ -137,7 +137,6 @@ reserve_buffer :: proc(n_quads: int, draw_state: Draw_State) -> (view: Render_Bu
     curr_state := &draw_states[len(draw_states) - 1]
 
     ids: Internal_Draw_State
-    ids.buffer_view = &view
     ids.shader = draw_state.shader.? if draw_state.shader != nil else default_shader
     ids.texture = draw_state.texture.? if draw_state.texture != nil else empty_texture
     ids.camera = draw_state.camera.? if draw_state.camera != nil else curr_state.camera // hmmm, should we default this aswell to something else? Should we setup a global default camera?
@@ -161,6 +160,7 @@ reserve_buffer :: proc(n_quads: int, draw_state: Draw_State) -> (view: Render_Bu
     view.buffer.next_quad += n_quads
 
     if new_camera || new_shader || new_texture { // Create a new state and a buffer view
+        ids.buffer_view = view
         append(&draw_states, ids) 
     } else { // Merge the last state with this one and expand the last state buffer view
         curr_state.buffer_view.quads = curr_state.buffer_view.buffer.quads[curr_state.buffer_view.buffer_index : len(curr_state.buffer_view.quads) + len(view.quads)]
