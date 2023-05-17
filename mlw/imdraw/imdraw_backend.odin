@@ -41,6 +41,7 @@ Render_Buffer :: struct {
 Render_Buffer_View :: struct {
     buffer: ^Render_Buffer,
     buffer_index: int,
+    subview_index: int,
     quads: #soa []Quad,
     texture_size: math.Vec2i, // Internal use
 }
@@ -111,9 +112,10 @@ reserve_buffer :: proc(n_quads: int, draw_state: Draw_State) -> (view: Render_Bu
         ids.buffer_view = view
         append(&draw_states, ids) 
     } else { // Merge the last state with this one and expand the last state buffer view
+        view.subview_index = len(curr_state.buffer_view.quads)
         curr_state.buffer_view.quads = curr_state.buffer_view.buffer.quads[curr_state.buffer_view.buffer_index : curr_state.buffer_view.buffer_index + len(curr_state.buffer_view.quads) + len(view.quads)]
     }
-
+    
     return view
 }
 
@@ -134,7 +136,7 @@ _state: State
 set_quad :: proc(view: ^Render_Buffer_View, idx: int, dst: math.Rectf, src: math.Recti, color: math.Color4f, origin: math.Vec2f, rotation: math.Angle) {
     dst := math.rect_align_with_origin(dst, origin)
 
-    element_idx := (idx + view.buffer_index) * 4 // should this be idx + 1??
+    element_idx := (view.subview_index + idx) * 4 // should this be idx + 1??
 
     texture_width := cast(f32)view.texture_size.x
     texture_height := cast(f32)view.texture_size.y

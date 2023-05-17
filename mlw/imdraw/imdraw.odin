@@ -62,6 +62,11 @@ end :: proc() {
         assert(pipeline_found, "Unable to find shader.")
         gpu.apply_pipeline(pipeline)
 
+        vertices, indices := soa_unzip(state.buffer_view.quads)
+        //fmt.printf("%v %v\n%#v\n", len(vertices), len(slice.to_bytes(vertices[:])), vertices)
+        gpu.buffer_data(state.buffer_view.buffer.vertex_buffer, slice.to_bytes(vertices[:]))
+        gpu.buffer_data(state.buffer_view.buffer.index_buffer, slice.to_bytes(indices[:]))
+
         in_buff: gpu.Input_Buffers
         in_buff.buffers[0] = state.buffer_view.buffer.vertex_buffer
         in_buff.index = state.buffer_view.buffer.index_buffer
@@ -75,11 +80,7 @@ end :: proc() {
         vert_uniforms.imdraw_MVP = math.camera_to_vp_matrix(state.camera)
         gpu.apply_uniforms_raw(.Vertex, 0, &vert_uniforms, size_of(vert_uniforms))
         
-        vertices, indices := soa_unzip(state.buffer_view.quads)
-        // Todo(Dragos): This should be placed in a for loop to ensure that we don't draw more than the gpu buffer can store
-        // Note(Dragos): Seems like the vertices overlap eachother. I'm writing into something I'm not supposed to
-        gpu.buffer_data(state.buffer_view.buffer.vertex_buffer, slice.to_bytes(vertices[:]))
-        gpu.buffer_data(state.buffer_view.buffer.index_buffer, slice.to_bytes(indices[:]))
+        // I know the problem! It indexes in a buffer that has null values. The indices should be modified.
         gpu.draw(0, len(indices) * 6, 1)
     }
 }
@@ -103,6 +104,7 @@ sprite :: proc(texture: Texture, dst_rect: math.Rectf, dst_origin: math.Vec2f, t
     state.texture = texture
     view := reserve_buffer(1, state)
     set_quad(&view, 0, dst_rect, tex_rect, color, dst_origin, rotation)
+    return // debug
 }
 
 quad :: proc(dst: math.Rectf, origin: math.Vec2f = {0, 0}, rotation: math.Angle = math.Rad(0), color := math.WHITE_4f) {
@@ -115,6 +117,7 @@ quad :: proc(dst: math.Rectf, origin: math.Vec2f = {0, 0}, rotation: math.Angle 
     state.texture = _state.empty_texture
     view := reserve_buffer(1, state)
     set_quad(&view, 0, dst, {{0, 0}, {1, 1}}, color, origin, rotation)
+    return // debug
 }
 
 line_quad :: proc(dst: math.Rectf, origin: math.Vec2f, line_width: f32, rotation: math.Angle, color := math.WHITE_4f) {
