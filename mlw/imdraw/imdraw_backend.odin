@@ -94,14 +94,20 @@ Render_Buffer_View :: struct {
     buffer: ^Render_Buffer,
     buffer_index: int,
     quads: #soa []Quad,
-    draw_state: ^Draw_State,
+    texture_size: math.Vec2i, // Internal use
 }
 
-Draw_State :: struct {
-    buffer_view: Render_Buffer_View,
+Internal_Draw_State :: struct {
+    buffer_view: ^Render_Buffer_View,
     texture: Texture,
     shader: Shader,
     camera: math.Camera,
+}
+
+Draw_State :: struct {
+    texture: Maybe(Texture),
+    shader: Maybe(Shader),
+    camera: Maybe(math.Camera),
 }
 
 
@@ -119,37 +125,54 @@ State :: struct {
     default_shader: Shader,
     empty_texture: Texture,
     
-    draw_states: [dynamic]Draw_State,
+    draw_states: [dynamic]Internal_Draw_State,
     gs: GPU_State,
 }
 
+/*
+    Reserve a certain number of quads to be drawn at the end of the frame. its similar to other draw functions, but it will return to you a writable buffer that will be renderer
+*/
+reserve_buffer :: proc(n_quads: int, draw_state: Draw_State) -> (view: Render_Buffer_View) {
+    using _state
+    curr_state := &draw_states[len(draw_states) - 1]
 
-
-// Use with care. This can read into another buffer views
-expand_buffer_view_safe :: proc(view: ^Render_Buffer_View, n: int) {
-    if view.buffer_index + len(view.quads) + n > len(view.buffer.quads) {
-        resize_soa(&view.buffer.quads, len(view.buffer.quads) * 2)
-    }
-    view.quads = view.buffer.quads[view.buffer_index : len(view.quads) + n]
-}
-
-push_draw_state :: proc(draw_states: ^[dynamic]Draw_State, state: Draw_State) { 
-    if len(draw_states) == 0 {
-        append(draw_states, state)
-    } else {
-        last_state := &draw_states[len(draw_states) - 1]
-        new_camera := state.camera != last_state.camera
-        new_shader := state.shader != last_state.shader
-        new_texture := state.texture != last_state.texture 
-        if new_camera || new_shader || new_texture {
-            append(draw_states, state)
-        }
-    }
-}
-
-// First lets get the new state system working
-make_buffer_view :: proc(n: int, texture: Maybe(Texture), shader: Maybe(Shader), camera: Maybe(math.Camera)) -> (view: Render_Buffer_View) {
+    ids: Internal_Draw_State
+    ids.buffer_view = &view
+    ids.shader = draw_state.shader.? if draw_state.shader != nil else default_shader
+    ids.texture = draw_state.texture.? if draw_state.texture != nil else empty_texture
+    ids.camera = draw_state.camera.? if draw_state.camera != nil else curr_state.camera // hmmm, should we default this aswell to something else? Should we setup a global default camera?
     
+    
+
+    new_shader := ids.shader != curr_state.shader
+    new_texture := ids.texture != curr_state.texture
+    new_camera := ids.camera != curr_state.camera // This is quite a complicated operation. We'll need to benchmark this shit
+
+    view.buffer = &buffer
+    view.texture_size.xy = gpu.texture_info(ids.texture.texture).size.xy
+
+    // Resize internal buffer to support the number of required quads
+    if buffer.next_quad + n_quads > len(buffer.quads) {
+        resize_soa(&buffer.quads, len(buffer.quads) * 2)
+    }
+
+    if new_camera || new_shader || new_texture { // Create a new state and a buffer view
+        view.buffer_index = view.buffer.next_quad
+        view.quads = view.buffer.quads[view.buffer.next_quad : n_quads] // brand new view
+        view.buffer.next_quad += n_quads
+        append(&draw_states, ids) // We had a new state, so append the newly made internal state to the list of states
+    } else { // Merge the last state with this one and expand the last state buffer view
+        // No need for append here, we'll need to expand the view of the last state (curr_state)
+        view.buffer_index = view.buffer.next_quad
+        view.quads = view.buffer.quads[view.buffer.next_quad : n_quads]
+        curr_state.buffer_view.buffer.next_quad += n_quads
+
+        // Expand the last state
+        // Is this math aight? Maybedge
+        curr_state.buffer_view.quads = curr_state.buffer_view.buffer.quads[curr_state.buffer_view.buffer_index : len(curr_state.buffer_view.quads) + len(view.quads)]
+    }
+
+    return view
 }
 
 
@@ -171,8 +194,8 @@ set_quad :: proc(view: ^Render_Buffer_View, idx: int, dst: math.Rectf, src: math
 
     element_idx := idx * 4 // should this be idx + 1??
 
-    texture_width := cast(f32)view.draw_state.texture.size.x
-    texture_height := cast(f32)view.draw_state.texture.size.y
+    texture_width := cast(f32)view.texture_size.x
+    texture_height := cast(f32)view.texture_size.y
 
     x := cast(f32)src.x / texture_width
     y := cast(f32)src.y / texture_height
