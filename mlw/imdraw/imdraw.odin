@@ -74,6 +74,13 @@ end :: proc() {
         vert_uniforms: Vertex_Uniforms
         vert_uniforms.imdraw_MVP = math.camera_to_vp_matrix(state.camera)
         gpu.apply_uniforms_raw(.Vertex, 0, &vert_uniforms, size_of(vert_uniforms))
+        
+        vertices, indices := soa_unzip(state.buffer_view.quads)
+
+        // Todo(Dragos): This should be placed in a for loop to ensure that we don't draw more than the gpu buffer can store
+        gpu.buffer_data(state.buffer_view.buffer.vertex_buffer, slice.to_bytes(vertices[:]))
+        gpu.buffer_data(state.buffer_view.buffer.index_buffer, slice.to_bytes(indices[:]))
+        gpu.draw(0, len(indices) * 6, 1)
     }
 }
 
