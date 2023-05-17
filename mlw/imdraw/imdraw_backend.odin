@@ -147,6 +147,12 @@ push_draw_state :: proc(draw_states: ^[dynamic]Draw_State, state: Draw_State) {
     }
 }
 
+// First lets get the new state system working
+make_buffer_view :: proc(n: int, texture: Maybe(Texture), shader: Maybe(Shader), camera: Maybe(math.Camera)) -> (view: Render_Buffer_View) {
+    
+}
+
+
 state_init :: proc(state: ^State) {
     err: Maybe(string)
     if state.default_shader, err = _create_default_shader(); err != nil {
