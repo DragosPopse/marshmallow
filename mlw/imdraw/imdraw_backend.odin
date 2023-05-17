@@ -156,14 +156,14 @@ reserve_buffer :: proc(n_quads: int, draw_state: Draw_State) -> (view: Render_Bu
     }
 
     view.buffer_index = view.buffer.next_quad
-    view.quads = view.buffer.quads[view.buffer.next_quad : n_quads] 
+    view.quads = view.buffer.quads[view.buffer.next_quad : view.buffer.next_quad + n_quads] 
     view.buffer.next_quad += n_quads
 
     if new_camera || new_shader || new_texture { // Create a new state and a buffer view
         ids.buffer_view = view
         append(&draw_states, ids) 
     } else { // Merge the last state with this one and expand the last state buffer view
-        curr_state.buffer_view.quads = curr_state.buffer_view.buffer.quads[curr_state.buffer_view.buffer_index : len(curr_state.buffer_view.quads) + len(view.quads)]
+        curr_state.buffer_view.quads = curr_state.buffer_view.buffer.quads[curr_state.buffer_view.buffer_index : curr_state.buffer_view.buffer_index + len(curr_state.buffer_view.quads) + len(view.quads)]
     }
 
     return view
