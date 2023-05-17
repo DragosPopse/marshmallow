@@ -99,8 +99,8 @@ sprite :: proc(texture: Texture, dst_rect: math.Rectf, dst_origin: math.Vec2f, t
 
     // This is way less efficient than what we had before probably, but let's make things work first
     state: Draw_State
-    state.camera = nil
-    state.shader = nil
+    state.camera_mvp = _state.camera_mvp
+    state.shader = _state.default_shader
     state.texture = texture
     view := reserve_buffer(1, state)
     set_quad(&view, 0, dst_rect, tex_rect, color, dst_origin, rotation)
@@ -112,8 +112,8 @@ quad :: proc(dst: math.Rectf, origin: math.Vec2f = {0, 0}, rotation: math.Angle 
     //_apply_texture(empty_texture, true)
     //_push_quad(dst, {{0, 0}, {1, 1}}, color, origin, rotation)
     state: Draw_State
-    state.camera = nil
-    state.shader = nil
+    state.camera_mvp = _state.camera_mvp
+    state.shader = _state.default_shader
     state.texture = _state.empty_texture
     view := reserve_buffer(1, state)
     set_quad(&view, 0, dst, {{0, 0}, {1, 1}}, color, origin, rotation)

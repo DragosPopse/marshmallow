@@ -36,6 +36,7 @@ Render_Buffer_View :: struct {
     texture_size: [2]int, // Internal use
 }
 
+// Removing this will increase performance further
 Internal_Draw_State :: struct {
     buffer_view: Render_Buffer_View,
     texture: Texture,
@@ -44,9 +45,9 @@ Internal_Draw_State :: struct {
 }
 
 Draw_State :: struct {
-    texture: Maybe(Texture),
-    shader: Maybe(Shader),
-    camera: Maybe(math.Camera),
+    texture: Texture,
+    shader: Shader,
+    camera_mvp: math.Mat4f,
 }
 
 
@@ -75,18 +76,18 @@ reserve_buffer :: proc(n_quads: int, draw_state: Draw_State) -> (view: Render_Bu
     curr_state := &draw_states[len(draw_states) - 1]
 
     ids: Internal_Draw_State
-    ids.shader = draw_state.shader.? if draw_state.shader != nil else default_shader
-    ids.texture = draw_state.texture.? if draw_state.texture != nil else empty_texture
-    ids.camera_mvp = math.camera_to_vp_matrix(draw_state.camera.?) if draw_state.camera != nil else camera_mvp 
+    ids.shader = draw_state.shader
+    ids.texture = draw_state.texture
+    ids.camera_mvp = draw_state.camera_mvp 
     
     
 
     new_shader := ids.shader != curr_state.shader
     new_texture := ids.texture != curr_state.texture
-    new_camera := ids.camera_mvp != curr_state.camera_mvp // This is quite a complicated operation. We'll need to benchmark this shit
+    new_camera := ids.camera_mvp != curr_state.camera_mvp // Need to get this check simpler. Maybe make a pointer to the camera mvp?
 
     view.buffer = &buffer
-    view.texture_size.xy = gpu.texture_info(ids.texture.texture).size.xy if new_texture else curr_state.texture.size
+    view.texture_size.xy = ids.texture.size.xy
 
     // Resize internal buffer to support the number of required quads
     if buffer.next_quad + n_quads > len(buffer.quads) {
@@ -122,7 +123,8 @@ state_init :: proc(state: ^State) {
 
 _state: State
 
-set_quad :: proc(view: ^Render_Buffer_View, idx: int, dst: math.Rectf, src: math.Recti, color: math.Color4f, origin: math.Vec2f, rotation: math.Angle) {
+set_quad :: proc(view: ^Render_Buffer_View, idx: int, dst: math.Rectf, src: math.Recti, color: math.Color4f, origin: math.Vec2f, rotation: math.Angle) #no_bounds_check {
+    assert(idx >= 0 && idx < len(view.quads), "Index out of bounds")
     dst := math.rect_align_with_origin(dst, origin)
 
     element_idx := (view.subview_index + idx) * 4 // should this be idx + 1??
