@@ -8,59 +8,7 @@ import "core:slice"
 import "core:math/linalg"
 import "core:fmt"
 
-// we'll remove this eventually
 
-_apply_texture :: proc(texture: Texture, $check_flush: bool) {
-    using _state
-    
-    when check_flush do if gs.texture.texture != texture.texture {
-        _flush()
-    }
-    gs.texture = texture
-}
-
-// This needs some refactoring too, because we are no longer flushing
-_apply_shader :: proc(shader: Shader, $force_reapply: bool) {
-    using _state
-    when force_reapply {
-        _flush()
-        pipeline, pipeline_found := pipelines[shader]
-        assert(pipeline_found, "Invalid shader. Did you create it with imdraw.create_shader?")
-        gs.pipeline = pipeline
-        gs.shader = shader
-
-        gpu.apply_pipeline(gs.pipeline)
-        input_buffers: gpu.Input_Buffers
-        input_buffers.buffers[0] = buffer.vertex_buffer
-        input_buffers.index = buffer.index_buffer
-        gpu.apply_input_buffers(input_buffers)
-        _apply_texture(gs.texture, false)
-        _apply_camera(gs.camera, false)
-    } else do if gs.shader != shader {
-        _flush()
-        pipeline, pipeline_found := pipelines[shader]
-        assert(pipeline_found, "Invalid shader. Did you create it with imdraw.create_shader?")
-        gs.pipeline = pipeline
-        gs.shader = shader
-
-        gpu.apply_pipeline(gs.pipeline)
-        input_buffers: gpu.Input_Buffers
-        input_buffers.buffers[0] = buffer.vertex_buffer
-        input_buffers.index = buffer.index_buffer
-        gpu.apply_input_buffers(input_buffers)
-        _apply_texture(gs.texture, false)
-        _apply_camera(gs.camera, false)
-    }
-}
-
-_apply_camera :: proc(camera: math.Camera, $check_flush: bool) {
-    using _state
-    when check_flush do if gs.camera != camera {
-        _flush()
-    }
-    gs.camera = camera
-    gs.vertex_uniforms.imdraw_MVP = math.camera_to_vp_matrix(gs.camera)
-}
 GPU_State :: struct {
     pipeline: gpu.Pipeline,
     shader: Shader,
@@ -186,7 +134,7 @@ _state: State
 set_quad :: proc(view: ^Render_Buffer_View, idx: int, dst: math.Rectf, src: math.Recti, color: math.Color4f, origin: math.Vec2f, rotation: math.Angle) {
     dst := math.rect_align_with_origin(dst, origin)
 
-    element_idx := idx * 4 // should this be idx + 1??
+    element_idx := (idx + view.buffer_index) * 4 // should this be idx + 1??
 
     texture_width := cast(f32)view.texture_size.x
     texture_height := cast(f32)view.texture_size.y

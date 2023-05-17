@@ -76,8 +76,8 @@ end :: proc() {
         gpu.apply_uniforms_raw(.Vertex, 0, &vert_uniforms, size_of(vert_uniforms))
         
         vertices, indices := soa_unzip(state.buffer_view.quads)
-
         // Todo(Dragos): This should be placed in a for loop to ensure that we don't draw more than the gpu buffer can store
+        // Note(Dragos): Seems like the vertices overlap eachother. I'm writing into something I'm not supposed to
         gpu.buffer_data(state.buffer_view.buffer.vertex_buffer, slice.to_bytes(vertices[:]))
         gpu.buffer_data(state.buffer_view.buffer.index_buffer, slice.to_bytes(indices[:]))
         gpu.draw(0, len(indices) * 6, 1)
@@ -85,11 +85,7 @@ end :: proc() {
 }
 
 apply_camera :: proc(cam: math.Camera) {
-    #force_inline _apply_camera(cam, true)
-}
-
-apply_shader :: proc(s: Shader) {
-    #force_inline _apply_shader(s, false)
+    _state.gs.camera = cam // This will be removed
 }
 
 /*
