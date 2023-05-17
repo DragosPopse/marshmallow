@@ -28,6 +28,9 @@ Render_Buffer :: struct {
     next_quad: int,
 }
 
+// Note(Dragos): When a new allocation happens mid frame, the view buffers could get invalidated....
+// Todo(Dragos): Somehow needs to be fixed. Maybe storing indices in the buffer rather than the #soa quads, and converting to slice on user side.
+// We can store indices in the internal Draw State, and keep the view as a #soa slice
 Render_Buffer_View :: struct {
     buffer: ^Render_Buffer,
     buffer_index: int,
@@ -36,6 +39,7 @@ Render_Buffer_View :: struct {
     texture_size: [2]int, // Internal use
 }
 
+// Todo(Dragos): This one gots to have indices, not a view, otherwise it might get invalidated
 // Removing this will increase performance further
 Internal_Draw_State :: struct {
     buffer_view: Render_Buffer_View,
@@ -71,6 +75,7 @@ State :: struct {
 
 /*
     Reserve a certain number of quads to be drawn at the end of the frame. its similar to other draw functions, but it will return to you a writable buffer that will be renderer
+    
 */
 reserve_buffer :: proc(n_quads: int, draw_state: Draw_State) -> (view: Render_Buffer_View) {
     using _state
@@ -84,7 +89,7 @@ reserve_buffer :: proc(n_quads: int, draw_state: Draw_State) -> (view: Render_Bu
     
 
     new_shader := ids.shader != curr_state.shader
-    new_texture := ids.texture != curr_state.texture
+    new_texture := ids.texture.texture != curr_state.texture.texture
     new_camera := ids.camera_index != curr_state.camera_index // Need to get this check simpler. Maybe make a pointer to the camera mvp?
 
     view.buffer = &buffer
