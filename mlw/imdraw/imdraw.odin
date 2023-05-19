@@ -405,7 +405,8 @@ set_quad :: proc(view: ^Render_Buffer_View, idx: int, dst: math.Rectf, src: math
     dst := math.rect_align_with_origin(dst, origin)
 
     element_idx := (view.parent_length + idx) * 4 // should this be idx + 1??
-    quads := buffer_view_slice(view)
+    //quads := buffer_view_slice(view)
+    quad := &view.buffer.quads[view.start + idx]
     texture_width := cast(f32)view.texture_size.x
     texture_height := cast(f32)view.texture_size.y
 
@@ -414,34 +415,34 @@ set_quad :: proc(view: ^Render_Buffer_View, idx: int, dst: math.Rectf, src: math
     w := cast(f32)src.size.x / texture_width
     h := cast(f32)src.size.y / texture_height
 
-    quads[idx].vert[0].tex = {x, y}
-    quads[idx].vert[1].tex = {x + w, y}
-    quads[idx].vert[2].tex = {x, y + h}
-    quads[idx].vert[3].tex = {x + w, y + h}
+    quad.vert[0].tex = {x, y}
+    quad.vert[1].tex = {x + w, y}
+    quad.vert[2].tex = {x, y + h}
+    quad.vert[3].tex = {x + w, y + h}
 
     rads := cast(f32)math.angle_rad(rotation)
-    quads[idx].vert[0].pos = {f32(dst.x), f32(dst.y), rads}
-    quads[idx].vert[1].pos = {f32(dst.x + dst.size.x), f32(dst.y), rads}
-    quads[idx].vert[2].pos = {f32(dst.x), f32(dst.y + dst.size.y), rads}
-    quads[idx].vert[3].pos = {f32(dst.x + dst.size.x), f32(dst.y + dst.size.y), rads}
+    quad.vert[0].pos = {f32(dst.x), f32(dst.y), rads}
+    quad.vert[1].pos = {f32(dst.x + dst.size.x), f32(dst.y), rads}
+    quad.vert[2].pos = {f32(dst.x), f32(dst.y + dst.size.y), rads}
+    quad.vert[3].pos = {f32(dst.x + dst.size.x), f32(dst.y + dst.size.y), rads}
 
-    quads[idx].vert[0].col = color
-    quads[idx].vert[1].col = color
-    quads[idx].vert[2].col = color
-    quads[idx].vert[3].col = color
+    quad.vert[0].col = color
+    quad.vert[1].col = color
+    quad.vert[2].col = color
+    quad.vert[3].col = color
 
     center := math.rect_center(dst, origin)
-    quads[idx].vert[0].center = center
-    quads[idx].vert[1].center = center
-    quads[idx].vert[2].center = center
-    quads[idx].vert[3].center = center
+    quad.vert[0].center = center
+    quad.vert[1].center = center
+    quad.vert[2].center = center
+    quad.vert[3].center = center
 
-    quads[idx].ind[0] = u32(element_idx + 0)
-    quads[idx].ind[1] = u32(element_idx + 1)
-    quads[idx].ind[2] = u32(element_idx + 2)
-    quads[idx].ind[3] = u32(element_idx + 2)
-    quads[idx].ind[4] = u32(element_idx + 3)
-    quads[idx].ind[5] = u32(element_idx + 1)
+    quad.ind[0] = u32(element_idx + 0)
+    quad.ind[1] = u32(element_idx + 1)
+    quad.ind[2] = u32(element_idx + 2)
+    quad.ind[3] = u32(element_idx + 2)
+    quad.ind[4] = u32(element_idx + 3)
+    quad.ind[5] = u32(element_idx + 1)
 }
 
 
