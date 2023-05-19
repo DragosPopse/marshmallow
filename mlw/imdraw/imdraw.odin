@@ -34,7 +34,7 @@ Render_Buffer :: struct {
 Render_Buffer_View :: struct {
     buffer: ^Render_Buffer, 
     start: int,
-    parent_start: int,
+    parent_length: int, // The length of the view this view is derived from. Used for setting up the element index
     quads: #soa []Quad, // make this buffer_index + len(quads). Transform it to a slice for convenience via a utility proc. Internal_Draw_States needs indices to be fully realloc safe
     texture_size: [2]int, // Internal use
 }
@@ -371,7 +371,7 @@ reserve_buffer :: proc(n_quads: int, draw_state: Draw_State) -> (view: Render_Bu
         ids.buffer_view = view
         append(&draw_states, ids) 
     } else { // Merge the last state with this one and expand the last state buffer view
-        view.parent_start = len(curr_state.buffer_view.quads)
+        view.parent_length = len(curr_state.buffer_view.quads)
         #no_bounds_check curr_state.buffer_view.quads = curr_state.buffer_view.buffer.quads[curr_state.buffer_view.start : curr_state.buffer_view.start + len(curr_state.buffer_view.quads) + len(view.quads)]
     }
     
@@ -397,7 +397,7 @@ set_quad :: proc(view: ^Render_Buffer_View, idx: int, dst: math.Rectf, src: math
     assert(idx >= 0 && idx < len(view.quads), "Index out of bounds")
     dst := math.rect_align_with_origin(dst, origin)
 
-    element_idx := (view.parent_start + idx) * 4 // should this be idx + 1??
+    element_idx := (view.parent_length + idx) * 4 // should this be idx + 1??
 
     texture_width := cast(f32)view.texture_size.x
     texture_height := cast(f32)view.texture_size.y
