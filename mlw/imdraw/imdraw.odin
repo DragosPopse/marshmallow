@@ -35,8 +35,13 @@ Render_Buffer_View :: struct {
     buffer: ^Render_Buffer, 
     start: int,
     parent_length: int, // The length of the view this view is derived from. Used for setting up the element index
-    quads: #soa []Quad, // make this buffer_index + len(quads). Transform it to a slice for convenience via a utility proc. Internal_Draw_States needs indices to be fully realloc safe
+    length: int,
+    //quads: #soa []Quad, // make this buffer_index + len(quads). Transform it to a slice for convenience via a utility proc. Internal_Draw_States needs indices to be fully realloc safe
     texture_size: [2]int, // Internal use
+}
+
+buffer_view_slice :: proc(view: ^Render_Buffer_View) -> #soa []Quad {
+    return view.buffer.quads[view.start : view.start + view.length]
 }
 
 // Todo(Dragos): This one gots to have indices, not a view, otherwise it might get invalidated
@@ -123,13 +128,13 @@ begin :: proc() {
 end :: proc() {
     using _state
     if buffer.next_quad == 0 do return
-    for state in draw_states {
-        if len(state.buffer_view.quads) == 0 do continue
+    for state in &draw_states {
+        if state.buffer_view.length == 0 do continue
         pipeline, pipeline_found := pipelines[state.shader]
         assert(pipeline_found, "Unable to find shader.")
         gpu.apply_pipeline(pipeline)
-
-        vertices, indices := soa_unzip(state.buffer_view.quads)
+        quads := buffer_view_slice(&state.buffer_view)
+        vertices, indices := soa_unzip(quads)
         //fmt.printf("%v %v\n%#v\n", len(vertices), len(slice.to_bytes(vertices[:])), vertices)
         gpu.buffer_data(state.buffer_view.buffer.vertex_buffer, slice.to_bytes(vertices[:]))
         gpu.buffer_data(state.buffer_view.buffer.index_buffer, slice.to_bytes(indices[:]))
@@ -364,15 +369,17 @@ reserve_buffer :: proc(n_quads: int, draw_state: Draw_State) -> (view: Render_Bu
     }
 
     view.start = view.buffer.next_quad
-    #no_bounds_check view.quads = view.buffer.quads[view.buffer.next_quad : view.buffer.next_quad + n_quads] 
+    //#no_bounds_check view.quads = view.buffer.quads[view.buffer.next_quad : view.buffer.next_quad + n_quads] 
+    view.length = n_quads
     view.buffer.next_quad += n_quads
 
     if new_camera || new_shader || new_texture { // Create a new state and a buffer view
         ids.buffer_view = view
         append(&draw_states, ids) 
     } else { // Merge the last state with this one and expand the last state buffer view
-        view.parent_length = len(curr_state.buffer_view.quads)
-        #no_bounds_check curr_state.buffer_view.quads = curr_state.buffer_view.buffer.quads[curr_state.buffer_view.start : curr_state.buffer_view.start + len(curr_state.buffer_view.quads) + len(view.quads)]
+        view.parent_length = curr_state.buffer_view.length
+        //#no_bounds_check curr_state.buffer_view.quads = curr_state.buffer_view.buffer.quads[curr_state.buffer_view.start : curr_state.buffer_view.start + len(curr_state.buffer_view.quads) + len(view.quads)]
+        curr_state.buffer_view.length += view.length
     }
     
     return view
@@ -394,11 +401,11 @@ state_init :: proc(state: ^State) {
 
 // Todo(Dragos): remove #no_bounds_check in many places in favor of referencing things
 set_quad :: proc(view: ^Render_Buffer_View, idx: int, dst: math.Rectf, src: math.Recti, color: math.Color4f, origin: math.Vec2f, rotation: math.Angle) #no_bounds_check {
-    assert(idx >= 0 && idx < len(view.quads), "Index out of bounds")
+    assert(idx >= 0 && idx < view.length, "Index out of bounds")
     dst := math.rect_align_with_origin(dst, origin)
 
     element_idx := (view.parent_length + idx) * 4 // should this be idx + 1??
-
+    quads := buffer_view_slice(view)
     texture_width := cast(f32)view.texture_size.x
     texture_height := cast(f32)view.texture_size.y
 
@@ -407,34 +414,34 @@ set_quad :: proc(view: ^Render_Buffer_View, idx: int, dst: math.Rectf, src: math
     w := cast(f32)src.size.x / texture_width
     h := cast(f32)src.size.y / texture_height
 
-    view.quads[idx].vert[0].tex = {x, y}
-    view.quads[idx].vert[1].tex = {x + w, y}
-    view.quads[idx].vert[2].tex = {x, y + h}
-    view.quads[idx].vert[3].tex = {x + w, y + h}
+    quads[idx].vert[0].tex = {x, y}
+    quads[idx].vert[1].tex = {x + w, y}
+    quads[idx].vert[2].tex = {x, y + h}
+    quads[idx].vert[3].tex = {x + w, y + h}
 
     rads := cast(f32)math.angle_rad(rotation)
-    view.quads[idx].vert[0].pos = {f32(dst.x), f32(dst.y), rads}
-    view.quads[idx].vert[1].pos = {f32(dst.x + dst.size.x), f32(dst.y), rads}
-    view.quads[idx].vert[2].pos = {f32(dst.x), f32(dst.y + dst.size.y), rads}
-    view.quads[idx].vert[3].pos = {f32(dst.x + dst.size.x), f32(dst.y + dst.size.y), rads}
+    quads[idx].vert[0].pos = {f32(dst.x), f32(dst.y), rads}
+    quads[idx].vert[1].pos = {f32(dst.x + dst.size.x), f32(dst.y), rads}
+    quads[idx].vert[2].pos = {f32(dst.x), f32(dst.y + dst.size.y), rads}
+    quads[idx].vert[3].pos = {f32(dst.x + dst.size.x), f32(dst.y + dst.size.y), rads}
 
-    view.quads[idx].vert[0].col = color
-    view.quads[idx].vert[1].col = color
-    view.quads[idx].vert[2].col = color
-    view.quads[idx].vert[3].col = color
+    quads[idx].vert[0].col = color
+    quads[idx].vert[1].col = color
+    quads[idx].vert[2].col = color
+    quads[idx].vert[3].col = color
 
     center := math.rect_center(dst, origin)
-    view.quads[idx].vert[0].center = center
-    view.quads[idx].vert[1].center = center
-    view.quads[idx].vert[2].center = center
-    view.quads[idx].vert[3].center = center
+    quads[idx].vert[0].center = center
+    quads[idx].vert[1].center = center
+    quads[idx].vert[2].center = center
+    quads[idx].vert[3].center = center
 
-    view.quads[idx].ind[0] = u32(element_idx + 0)
-    view.quads[idx].ind[1] = u32(element_idx + 1)
-    view.quads[idx].ind[2] = u32(element_idx + 2)
-    view.quads[idx].ind[3] = u32(element_idx + 2)
-    view.quads[idx].ind[4] = u32(element_idx + 3)
-    view.quads[idx].ind[5] = u32(element_idx + 1)
+    quads[idx].ind[0] = u32(element_idx + 0)
+    quads[idx].ind[1] = u32(element_idx + 1)
+    quads[idx].ind[2] = u32(element_idx + 2)
+    quads[idx].ind[3] = u32(element_idx + 2)
+    quads[idx].ind[4] = u32(element_idx + 3)
+    quads[idx].ind[5] = u32(element_idx + 1)
 }
 
 
