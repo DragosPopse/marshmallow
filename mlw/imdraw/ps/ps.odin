@@ -126,4 +126,3 @@ draw :: proc(ps: Particle_System) {
         imdraw.quad(particle.rect, particle.origin, particle.rotation, particle.color)
     }     
 }
-
