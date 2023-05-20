@@ -36,7 +36,6 @@ Render_Buffer_View :: struct {
     start: int,
     parent_length: int, // The length of the view this view is derived from. Used for setting up the element index
     length: int,
-    //quads: #soa []Quad, // make this buffer_index + len(quads). Transform it to a slice for convenience via a utility proc. Internal_Draw_States needs indices to be fully realloc safe
     texture_size: [2]int, // Internal use
 }
 
@@ -167,10 +166,6 @@ apply_camera :: proc(cam: math.Camera) {
 */
 
 sprite :: proc(texture: Texture, dst_rect: math.Rectf, dst_origin: math.Vec2f, tex_rect: math.Recti, rotation: math.Angle = math.Rad(0), color := math.WHITE_4f) {
-    //_apply_texture(texture, true)
-    //_push_quad(dst_rect, tex_rect, color, dst_origin, rotation)
-
-    // This is way less efficient than what we had before probably, but let's make things work first
     state: Draw_State
     state.camera_index = _state.current_camera_index
     state.shader = _state.default_shader
@@ -405,7 +400,6 @@ set_quad :: proc(view: ^Render_Buffer_View, idx: int, dst: math.Rectf, src: math
     dst := math.rect_align_with_origin(dst, origin)
 
     element_idx := (view.parent_length + idx) * 4 // should this be idx + 1??
-    //quads := buffer_view_slice(view)
     quad := &view.buffer.quads[view.start + idx]
     texture_width := cast(f32)view.texture_size.x
     texture_height := cast(f32)view.texture_size.y
@@ -478,6 +472,9 @@ _create_default_shader :: proc() -> (shader: Shader, err: Maybe(string)) {
     return create_shader(frag_info)
 }
 
+// Note(Dragos): The pipeline is tied to blend state + shader, which makes dynamic setup quite annoying. This will easily lead to combinatoric explosion
+//              We should implement a d3d11 backend, and then change the way we create a pipeline to allow more dynamic changes.
+//              Having blend on every call is quite expensive:(
 _create_imdraw_pipeline :: proc(shader: Shader) -> (pipeline: gpu.Pipeline) {
     info: gpu.Pipeline_Info
     blend: core.Blend_State
