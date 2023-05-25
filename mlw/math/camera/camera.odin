@@ -17,3 +17,7 @@ camera2d_to_vp_matrix :: proc(c: Camera2D) -> (view_projection: Mat4f) {
     projection := linalg.matrix_ortho3d_f32(-rect.size.x, rect.size.x, rect.size.y, -rect.size.y, -1, 1, false) // maybe this too..
     return projection * view
 }
+
+to_vp_matrix :: proc {
+    camera2d_to_vp_matrix,
+}
