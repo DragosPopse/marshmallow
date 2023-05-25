@@ -98,7 +98,7 @@ eval_uniform_dist :: proc(d: Uniform_Distribution($T), r: ^Generator) -> (result
         result.y = cast(type_of(result.y))(rect.y + rect.size.y * float(r))
         return result
     } else when intrinsics.type_is_float(T) || intrinsics.type_is_integer(T) {
-        return cast(T)(f64(d.max - d.min) * double(r)) + d.max 
+        return cast(T)(f64(d.max - d.min) * double(r)) + d.min 
     } else {
         fmt.panicf("The type %v is not implemented in eval_uniform_distribution.", T)
     }
