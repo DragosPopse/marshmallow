@@ -97,6 +97,18 @@ angle_rad :: proc(angle: Angle) -> (rad: Rad) {
     return
 }
 
+direction_to_angle :: proc(direction: Vec2f) -> (angle: Angle) {
+    rads := cast(f32)cmath.atan2(direction.y, direction.x)
+    return cast(Rad)rads
+}
+
+angle_to_direction :: proc(angle: Angle) -> (direction: Vec2f) {
+    rads := cast(f32)angle_rad(angle)
+    direction.x = cmath.cos(rads)
+    direction.y = cmath.sin(rads)
+    return direction
+}
+
 vec2i_to_vec2f :: proc(val: Vec2i) -> (res: Vec2f) {
     res.x = cast(f32)val.x
     res.y = cast(f32)val.y
