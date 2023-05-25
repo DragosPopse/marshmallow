@@ -10,7 +10,7 @@ package mlw_storage
     - fast element deletion
 */
 Dynamic_Storage :: struct($SIZE: int, $T: typeid) {
-    data: #soa [SIZE]Dynamic_Storage_Data,
+    data: #soa [SIZE]Dynamic_Storage_Data(T),
     length: int,
     next_key: Key,
 }
@@ -25,7 +25,7 @@ Dynamic_Storage_Data :: struct($T: typeid) {
 
 // This is an unstable slice. Removing elements will invalidate it
 dynamic_storage_slice :: proc(store: ^Dynamic_Storage($SIZE, $T)) -> (slice: []T) {
-    return store.data[:store.length]
+    return store.data.data[:store.length]
 }
 
 // Returns the next uninitialized element in the storage

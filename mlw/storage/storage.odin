@@ -14,17 +14,17 @@ push :: proc {
 
 slice :: proc {
     persistent_storage_slice,
-    dynamic_storage_emplace,
+    dynamic_storage_slice,
 }
 
 get_ptr :: proc {
     persistent_storage_get_ptr,
-    dynamic_storage_emplace,
+    dynamic_storage_get_ptr,
 }
 
 get_copy :: proc {
     persistent_storage_get_copy,
-    dynamic_storage_emplace,
+    dynamic_storage_get_copy,
 }
 
 remove :: proc {
