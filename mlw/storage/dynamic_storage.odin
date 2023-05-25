@@ -51,6 +51,7 @@ dynamic_storage_push :: proc(store: ^Dynamic_Storage($SIZE, $T), val: T) -> (res
     return &store.data[idx].data, key
 }
 
+// This can be made more performant with a sparse set data structure. Later.
 dynamic_storage_get_ptr :: proc(store: ^Dynamic_Storage($SIZE, $T), key: Key) -> (val: ^T) {
     for elem, i in &store.data {
         if elem.key == key {
