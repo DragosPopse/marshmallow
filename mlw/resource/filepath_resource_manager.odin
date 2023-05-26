@@ -30,7 +30,7 @@ loader_destroy :: proc(loader: ^Loader($Resource)) {
     delete(loader.resources, loader.allocator)
 }
 
-loader_load :: proc(loader: ^Loader($Resource), path: string) -> ^Resource {
+loader_load :: proc(loader: ^Loader($Resource), path: string) -> Resource {
     fullpath := filepath.abs(path, context.temp_allocator)
     assert(!(fullpath in resources), "Resource is already loaded.")
     fullpath = strings.clone(fullpath, loader.filepath_allocator) // make it official
@@ -38,13 +38,13 @@ loader_load :: proc(loader: ^Loader($Resource), path: string) -> ^Resource {
     return res
 }
 
-loader_get :: proc(loader: ^Loader($Resource), path: string) -> ^Resource {
+loader_get :: proc(loader: ^Loader($Resource), path: string) -> Resource {
     fullpath := filepath.abs(path, context.temp_allocator)
     assert(fullpath in loader.resources, "Resource not found.")
-    return &loader.resources[fullpath] 
+    return loader.resources[fullpath] 
 }
 
-loader_load_or_get :: proc(loader: ^Loader($Resource), path: string) -> ^Resource {
+loader_load_or_get :: proc(loader: ^Loader($Resource), path: string) -> Resource {
     fullpath := filepath.abs(path, context.temp_allocator)
     if fullpath in loader.resources {
         return loader_get(loader, path)
