@@ -19,10 +19,15 @@ Loader :: struct($Resource: typeid) {
 
 loader_init :: proc(loader: ^Loader($Resource), allocator: mem.Allocator, load_proc: proc(path: string) -> Resource, free_proc: proc(r: ^Resource), filepath_arena_size := LOADER_DEFAULT_FILEPATH_ARENA_SIZE) {
     loader.arena_backing = make([]byte, filepath_arena_size, allocator)
-    mem.arena_init(&loader.filepath_arena, arena_data)
+    mem.arena_init(&loader.filepath_arena, loader.arena_backing)
     loader.allocator = allocator
     loader.filepath_allocator = mem.arena_allocator(&loader.filepath_arena)
-    loader.resources = make(map[string]Filepath_Resource, loader.allocator)
+    loader.load_proc = load_proc
+    loader.free_proc = free_proc
+    {
+        context.allocator = loader.allocator
+        loader.resources = make(map[string]Resource)
+    }
 }
 
 loader_destroy :: proc(loader: ^Loader($Resource)) {
@@ -31,21 +36,24 @@ loader_destroy :: proc(loader: ^Loader($Resource)) {
 }
 
 loader_load :: proc(loader: ^Loader($Resource), path: string) -> Resource {
-    fullpath := filepath.abs(path, context.temp_allocator)
-    assert(!(fullpath in resources), "Resource is already loaded.")
+    fullpath, ok := filepath.abs(path, context.temp_allocator)
+    assert(ok, "Fullpath creation failed")
+    assert(!(fullpath in loader.resources), "Resource is already loaded.")
     fullpath = strings.clone(fullpath, loader.filepath_allocator) // make it official
     res := map_insert(&loader.resources, fullpath, loader.load_proc(fullpath))
-    return res
+    return res^
 }
 
 loader_get :: proc(loader: ^Loader($Resource), path: string) -> Resource {
-    fullpath := filepath.abs(path, context.temp_allocator)
+    fullpath, ok := filepath.abs(path, context.temp_allocator)
+    assert(ok, "Fullpath creation failed")
     assert(fullpath in loader.resources, "Resource not found.")
     return loader.resources[fullpath] 
 }
 
 loader_load_or_get :: proc(loader: ^Loader($Resource), path: string) -> Resource {
-    fullpath := filepath.abs(path, context.temp_allocator)
+    fullpath, ok := filepath.abs(path, context.temp_allocator)
+    assert(ok, "Fullpath creation failed")
     if fullpath in loader.resources {
         return loader_get(loader, path)
     }
