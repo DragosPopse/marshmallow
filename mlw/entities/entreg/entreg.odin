@@ -31,9 +31,11 @@ remove_pending_destroy :: proc(reg: ^Registry($SIZE, $Entity_Type)) -> (destroye
             pos := sparse[entity]
             packed[pos] = packed[last]
             entities[pos] = entities[last]
-            sparse[entity] = sparse[last]
+            sparse[entity] = sparse[packed[pos]] // this could be wrong?
+            pending_destroy[i] = false
             pending_destroy[i] = pending_destroy[last]
             count -= 1
+            destroyed_count += 1
             append(&free_list, packed[i])
             continue
         } else {
