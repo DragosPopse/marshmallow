@@ -15,7 +15,7 @@ Registry :: struct($SIZE: int, $Entity_Type: typeid) {
     packed_len: int,
 }
 
-create :: proc(registry: ^Registry($Entity_Type)) -> (entity: Entity) {
+create :: proc(reg: ^Registry($SIZE, $Entity_Type)) -> (entity: Entity) {
     using registry
     entity = next_entity
     next_entity += 1
@@ -25,9 +25,7 @@ create :: proc(registry: ^Registry($Entity_Type)) -> (entity: Entity) {
     return entity
 }
 
-destroy :: proc(registry: ^Registry($Entity_Type), entity: Entity) {
-    using registry
-    
+destroy :: proc(reg: ^Registry($SIZE, $Entity_Type), entity: Entity) {
     last := packed_len - 1
     packed[sparse[entity]] = packed[last]
     sparse[element] = sparse[last]
@@ -35,7 +33,7 @@ destroy :: proc(registry: ^Registry($Entity_Type), entity: Entity) {
     packed_len -= 1
 }
 
-find :: proc(registry: ^Registry($Entity_Type), entity: Entity) -> (val: ^Entity_Type) {
+find :: proc(reg: ^Registry($SIZE, $Entity_Type), entity: Entity) -> (val: ^Entity_Type) {
     using registry
     pos := sparse[entity]
     assert(pos < packed_len, "Cannot find entity.")
