@@ -28,7 +28,7 @@ create :: proc(reg: ^Registry($SIZE, $Entity_Type)) -> (entity: Entity) {
 destroy :: proc(reg: ^Registry($SIZE, $Entity_Type), entity: Entity) {
     last := packed_len - 1
     packed[sparse[entity]] = packed[last]
-    sparse[element] = sparse[last]
+    sparse[entity] = sparse[last]
 
     packed_len -= 1
 }
