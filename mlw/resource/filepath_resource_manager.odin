@@ -1,5 +1,7 @@
 package mlw_resource
 
+// Note(Dragos): I'm still not entirely happy with this...
+
 import "core:mem"
 import "core:runtime"
 import "core:path/filepath"
