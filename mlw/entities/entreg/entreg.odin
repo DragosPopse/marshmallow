@@ -1,5 +1,7 @@
 package mlw_entreg
 
+import "core:fmt"
+
 Entity :: distinct int
 
 Entity_Storage :: struct($Entity_Type: typeid) {
@@ -26,22 +28,31 @@ remove_pending_destroy :: proc(reg: ^Registry($SIZE, $Entity_Type)) -> (destroye
     using reg
     for i := 0; i < count; {
         if pending_destroy[i] {
-            last := count - 1
-            entity := packed[i] // This good? If yes, we can simplify this
-            pos := sparse[entity]
-            packed[pos] = packed[last]
-            entities[pos] = entities[last]
-            sparse[entity] = sparse[packed[pos]] // this could be wrong?
-            pending_destroy[i] = false
-            pending_destroy[i] = pending_destroy[last]
-            count -= 1
-            destroyed_count += 1
+            last_packed := count - 1
             append(&free_list, packed[i])
+            deleted_entity := packed[i]
+            moved_entity := packed[last_packed]
+            //fmt.printf("packed[%v](%v) = packed[%v](%v)\n", i, packed[deleted_entity], last_packed, packed[moved_entity])
+            packed[i] = packed[last_packed]
+            //fmt.printf("entities[%v](%v) = entities[%v](%v)\n", i, entities[deleted_entity], last_packed, entities[moved_entity])
+            entities[i] = entities[last_packed]
+            pending_destroy[i] = false
+            //fmt.printf("pending_destroy[%v](%v) = pending_destroy[%v](%v)\n", i, pending_destroy[deleted_entity], last_packed, pending_destroy[moved_entity])
+            pending_destroy[i] = pending_destroy[last_packed]
+            //fmt.printf("sparse[%v](%v) = sparse[%v](%v)\n", deleted_entity, sparse[deleted_entity], moved_entity, sparse[moved_entity])
+            //sparse[deleted_entity] = sparse[moved_entity]
+            sparse[moved_entity] = sparse[deleted_entity]
+            //fmt.printf("\n")
+            //sparse[moved_entity] = -1 // ?
+            //
+            destroyed_count += 1
+            count -= 1
             continue
         } else {
             i += 1
         }
     }
+
     return destroyed_count
 }
 
@@ -50,14 +61,17 @@ create :: proc(reg: ^Registry($SIZE, $Entity_Type)) -> (entity: Entity) {
     if len(free_list) == 0 {
         entity = next_entity
         next_entity += 1
+        fmt.printf("Creating entity with next: %v\n", entity)
     } else {
-        entity = pop(&free_list)
+        entity = pop(&free_list) // This might be the problemo
+        fmt.printf("Creating entity with free list: %v\n", entity)
     }
     
     val_pos := count
     packed[val_pos] = entity
     sparse[entity] = val_pos
-    count += 1 
+    count += 1
+    
     return entity
 }
 
@@ -66,15 +80,16 @@ destroy :: proc(reg: ^Registry($SIZE, $Entity_Type), entity: Entity) {
     /*
     last := count - 1
     pos := sparse[entity]
-    asset(pos < count, "Cannot find entity.")
+    assert(pos < count, "Cannot find entity.")
     packed[pos] = packed[last]
     sparse[entity] = sparse[last]
 
     count -= 1
     */
     pos := sparse[entity]
-    assert(pos < count, "Cannot find entity.")
+    fmt.assertf(pos < count, "Cannot find entity %v at position %v. Count: %v.", entity, pos, count) // This assert could be wrongm, or I'm setting things up bad
     pending_destroy[pos] = true
+    fmt.printf("Marking entity %v at position %v for destroy\n", entity, pos)
 }
 
 find :: proc(reg: ^Registry($SIZE, $Entity_Type), entity: Entity) -> (val: ^Entity_Type) {
