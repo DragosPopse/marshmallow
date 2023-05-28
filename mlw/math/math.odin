@@ -170,6 +170,20 @@ to_recti :: proc {
     rectf_to_recti,
 }
 
+/*
+    Resize the rect with a new width, keeping the ratio
+*/
+rectf_resize_width :: proc(rect: Rectf, width: f32) -> (result: Rectf) {
+    ratio := rect.size.y / rect.size.x
+    result.pos = rect.pos
+    result.size.x = width
+    result.size.y = ratio * width
+    return result
+}
+
+rect_resize_width :: proc {
+    rectf_resize_width,
+}
 
 minmax_t :: proc(val, min, max: $T) -> (min_result, max_result: T) {
     min_result, max_result = min, max
