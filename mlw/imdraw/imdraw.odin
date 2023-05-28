@@ -7,6 +7,7 @@ import "../math"
 import "core:slice"
 import "core:math/linalg"
 import "core:fmt"
+import "../math/camera"
 
 Vertex :: struct {
     pos: math.Vec3f,
@@ -156,8 +157,8 @@ end :: proc() {
     }
 }
 
-apply_camera :: proc(cam: math.Camera) {
-    append(&_state.cameras, math.camera_to_vp_matrix(cam)) 
+apply_camera :: proc(cam: camera.Camera2D) {
+    append(&_state.cameras, camera.to_vp_matrix(cam)) 
     _state.current_camera_index = len(_state.cameras) - 1
 }
 
