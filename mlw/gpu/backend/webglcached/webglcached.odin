@@ -1,4 +1,3 @@
-
 package webglcached
 
 import gl "vendor:wasm/WebGL"
@@ -225,17 +224,17 @@ BindFramebuffer :: proc(target: Framebuffer_Target, framebuffer: gl.Framebuffer)
 
     switch target {
         case .FRAMEBUFFER: if cache.draw_framebuffer != framebuffer || cache.read_framebuffer != framebuffer {
-            gl.BindFramebuffer(cast(gl.Enum)target, cast(gl.Buffer)framebuffer)
+            gl.BindFramebuffer(cast(gl.Enum)target, cast(gl.Framebuffer)framebuffer)
             cache.draw_framebuffer, cache.read_framebuffer = framebuffer, framebuffer
         }
 
         case .DRAW_FRAMEBUFFER: if cache.draw_framebuffer != framebuffer {
-            gl.BindFramebuffer(cast(gl.Enum)target, cast(gl.Buffer)framebuffer)
+            gl.BindFramebuffer(cast(gl.Enum)target, cast(gl.Framebuffer)framebuffer)
             cache.draw_framebuffer = framebuffer
         }
 
         case .READ_FRAMEBUFFER: if cache.read_framebuffer != framebuffer {
-            gl.BindFramebuffer(cast(gl.Enum)target, cast(gl.Buffer)framebuffer)
+            gl.BindFramebuffer(cast(gl.Enum)target, cast(gl.Framebuffer)framebuffer)
             cache.read_framebuffer = framebuffer
         }
     }
