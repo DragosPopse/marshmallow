@@ -65,6 +65,7 @@ add_targets :: proc(project: ^Project) {
     add_sample_target(project, "samp.planeteer", "samples/planeteer", "out/samples/planeteer")
     add_wasm_target(project, "wasm.planeteer", "samples/planeteer", "out/samples/wasm_planeteer")
     add_sample_target(project, "samp.imdraw.sprites", "samples/imdraw/sprites", "out/samples/imdraw/sprites")
+    add_sample_target(project, "samp.platformer", "samples/platformer", "out/samples/platformer")
 }
 
 configure_target :: proc(project: Project, target: Target) -> (config: build.Config) {
