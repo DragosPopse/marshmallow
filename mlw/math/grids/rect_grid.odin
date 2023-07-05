@@ -1,55 +1,63 @@
 package mlw_grids
 
 import "../../math"
+import "core:fmt"
 
-Rect_Grid :: struct($Cell_Type: typeid) {
+/*
+    Grid where each cell is a rectangle
+
+*/
+Rect_Grid :: struct($Tile: typeid) {
     cell_size: math.Vec2f,
     size: math.Vec2i,
     position: math.Vec2f,
-    cells: []Cell_Type,
+    tiles: []Tile,
 }
 
-Rect_Cell_Relative_Position :: enum {
-    Top_Left,
-    Top_Center,
-    Top_Right,
-    Center_Left,
-    Center_Center,
-    Center_Right,
-    Bottom_Left,
-    Bottom_Center,
-    Bottom_Right,
+rect_grid_make_tiles :: proc(grid: ^Rect_Grid($Tile), allocator := context.allocator) {
+    assert(size.x != 0 && size.y != 0, "Cannot create tiles with the current size. Did you forget to set it?")
+    grid.tiles = make([]Tile, grid.size.x * grid.size.y, allocator)
 }
 
-rect_grid_init_with_cells :: proc(grid: ^Rect_Grid($Cell_Type), position: math.Vec2f, size: math.Vec2i, cell_size: math.Vec2f, allocator := context.allocator) {
-    rect_grid_init_without_cells(grid, position, size, cell_size)
-    grid.cells = make([]Cell_Type, grid.size.x * grid.size.y, allocator)
+rect_grid_delete_tiles :: proc(grid: ^Rect_Grid($Tile), allocator := context.allocator) {
+    delete(grid.tiles, allocator)
 }
 
-rect_grid_init_without_cells :: proc(grid: ^Rect_Grid($Cell_Type), position: math.Vec2f, size: math.Vec2i, cell_size: math.Vec2f) {
-    grid.position = position
-    grid.size = size
-    grid.cell_size = cell_size
+is_cell_on_rect_grid :: #force_inline proc(grid: Rect_Grid($Tile), cell: math.Vec2i) -> bool {
+    return cell.x > 0 && cell.x < grid.size.x && cell.y > 0 && cell.y < grid.size.y
 }
 
-rect_grid_cell :: proc(grid: Rect_Grid($Cell_Type), grid_pos: math.Vec2i) -> Cell_Type {
-    return grid.cells[grid_pos.y * grid.size.x + grid_pos.x]
+rect_grid_set_tile :: proc(grid: ^Rect_Grid($Tile), cell: math.Vec2i, tile: Tile) {
+    fmt.assertf(is_cell_on_rect_grid(grid), "Cell [%v, %v] is outside of the grid of size [%v, %v]", cell.x, cell.y, grid.size.x, grid.size.y)
+    #no_bounds_check grid.tiles[cell.y * grid.size.x + cell.x] = tile
 }
 
-rect_grid_cell_ptr :: proc(grid: ^Rect_Grid($Cell_Type), grid_pos: math.Vec2i) -> ^Cell_Type {
-    return &grid.cells[grid_pos.y * grid.size.x + grid_pos.x]
+rect_grid_world_to_cell :: proc(grid: Rect_Grid($Tile), world_position: math.Vec2f) -> (cell: math.Vec2i) {
+    cell.x = math.floor_to_int((world_position.x - grid.position.x) / grid.cell_size.x)
+    cell.y = math.floor_to_int((world_position.y - grid.position.y) / grid.cell_size.y)
+    return cell
 }
 
-rect_grid_set_cell :: proc(grid: ^Rect_Grid($Cell_Type), grid_pos: math.Vec2i, cell: Cell_Type) {
-    grid.cells[grid_pos.y * grid.size.x + grid_pos.x] = cell
+rect_grid_cell_to_world :: proc(grid: Rect_Grid($Tile), cell: math.Vec2i) -> (pos: math.Vec2f) {
+    return grid.position + math.to_vec2f(cell) * grid.cell_size
 }
 
-rect_grid_world_to_grid_position :: proc(grid: Rect_Grid($Cell_Type), world_position: math.Vec2f) -> (grid_position: math.Vec2i) {
-    grid_position.x = math.floor_to_int((world_position.x - grid.position.x) / grid.cell_size.x)
-    grid_position.y = math.floor_to_int((world_position.y - grid.position.y) / grid.cell_size.y)
-    return grid_position
+rect_grid_index_to_cell :: #force_inline proc(grid: Rect_Grid($Tile), index: int) -> (cell: math.Vec2i) {
+    cell.x = index % grid.size.x
+    cell.y = index / grid.size.x
+    return cell
 }
 
-rect_grid_grid_to_world_position :: proc(grid: Rect_Grid($Cell_Type), grid_pos: math.Vec2i) -> (pos: math.Vec2f) {
-    return grid.position + math.to_vec2f(grid_pos) * grid.cell_size
+rect_grid_cell_to_index :: #force_inline proc(grid: Rect_Grid($Tile), cell: math.Vec2i) -> (index: int) {
+    return cell.y * grid.size.x + cell.x
+}
+
+rect_grid_cell_to_tile :: proc(grid: Rect_Grid($Tile), cell: math.Vec2i) -> Tile {
+    fmt.assertf(is_cell_on_rect_grid(grid), "Cell [%v, %v] is outside of the grid of size [%v, %v]", cell.x, cell.y, grid.size.x, grid.size.y)
+    #no_bounds_check return grid.tiles[cell.y * grid.size.x + cell.x]
+}
+
+rect_grid_cell_to_tile_ptr :: proc(grid: ^Rect_Grid($Tile), cell: math.Vec2i) -> ^Tile {
+    fmt.assertf(is_cell_on_rect_grid(grid), "Cell [%v, %v] is outside of the grid of size [%v, %v]", cell.x, cell.y, grid.size.x, grid.size.y)
+    #no_bounds_check return &grid.tiles[cell.y * grid.size.x + cell.x]
 }
