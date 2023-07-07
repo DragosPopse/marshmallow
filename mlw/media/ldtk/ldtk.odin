@@ -14,7 +14,8 @@ import "core:mem"
 
 Tile :: struct {
     pos: math.Vec2f,
-    tex_pos: math.Vec2i, 
+    tex_pos: math.Vec2i,
+    index: int,
 }
 
 Layer_Def :: struct {
@@ -43,7 +44,9 @@ Any_Layer_Def :: union {
 
 Tileset :: struct {
     is_loaded: bool,
-    texture_path: string,
+    identifier: string,
+    uid: int,
+    path: string,
     texture: imdraw.Texture,
     px_size: math.Vec2i,
     tile_grid_size: int,
@@ -88,6 +91,7 @@ World :: struct {
     levels: map[string]Level_Def,
     layers: map[string]Any_Layer_Def,
     dir_path: string, // all relative paths are relative to this
+    tilesets: map[int]Tileset,
 }
 
 create_level :: proc(world: ^World, id: string, allocator := context.allocator) -> (level: Level) {
@@ -95,7 +99,7 @@ create_level :: proc(world: ^World, id: string, allocator := context.allocator) 
     assert(level_exists, "Level does not exist")
     level.def = level_def
     level.world = world
-    level.layers = make([]Any_Layer, len(level.layers), allocator)
+    level.layers = make([]Any_Layer, len(world.layers), allocator)
 
     data, read_success := os.read_entire_file(level_def.path, context.temp_allocator)
     assert(read_success, "Failed to read ldtkl file")
@@ -117,6 +121,7 @@ create_level :: proc(world: ^World, id: string, allocator := context.allocator) 
         switch var in layer_def {
         case Int_Layer_Def:
             int_layer: Int_Layer
+            int_layer.def = &layer_def.(Int_Layer_Def)
             auto_tiles := layer["autoLayerTiles"].(json.Array)
             int_layer.auto_layer_tiles = make([]Tile, len(auto_tiles), allocator)
             for at, tile_i in auto_tiles {
@@ -129,7 +134,9 @@ create_level :: proc(world: ^World, id: string, allocator := context.allocator) 
                 tile.pos.y = cast(f32)px[1].(json.Float)
                 tile.tex_pos.x = cast(int)src[0].(json.Float)
                 tile.tex_pos.y = cast(int)src[1].(json.Float)
+                tile.index = cast(int)d[1].(json.Float)
                 int_layer.auto_layer_tiles[tile_i] = tile
+                int_layer.tileset = &world.tilesets[cast(int)layer["__tilesetDefUid"].(json.Float)]
             }
             level.layers[i] = int_layer
         
@@ -191,10 +198,13 @@ world_init :: proc(world: ^World, ldtk_file: string, allocator := context.alloca
             tileset: Tileset
             tileset.is_loaded = false
             rel_path := ts["relPath"].(json.String)
-            tileset.texture_path = filepath.join({world.dir_path, rel_path}, allocator)
+            tileset.path = filepath.join({world.dir_path, rel_path}, allocator)
             tileset.px_size.x = cast(int)ts["pxWid"].(json.Float)
             tileset.px_size.y = cast(int)ts["pxHei"].(json.Float)
             tileset.tile_grid_size = cast(int)ts["tileGridSize"].(json.Float)
+            tileset.identifier = strings.clone(ts["identifier"].(json.String))
+            tileset.uid = cast(int)ts["uid"].(json.Float)
+            world.tilesets[tileset.uid] = tileset
         }
     }
 
