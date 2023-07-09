@@ -5,23 +5,40 @@ import "core:math/linalg"
 
 // Maybe scale of camera is more useful than a rect. Or rect + scale?
 Camera2D :: struct {
-    pos: math.Vec2f,
-    size: math.Vec2f,
-    zoom: f32,
+    using rect: math.Rectf,
+    origin: math.Vec2f,
+    scale: math.Vec2f,
     rot: math.Angle,
 }
 
-@(require_results)
+ortho :: proc(left, right, bottom, top, near, far: f32) -> (result: math.Mat4f) {
+    result = math.Mat4f(0)
+    result[0, 0] = 2.0 / (right - left)
+    result[1, 1] = 2.0 / (top - bottom)
+    result[2, 2] = 2.0 / (near - far)
+    result[3, 3] = 1.0
+
+    result[0, 3] = (left + right) / (left - right)
+    result[1, 3] = (bottom + top) / (bottom - top)
+    result[2, 3] = (far + near) / (near - far)
+
+    return result
+}
+
+
+@(require_results, optimization_mode = "speed")
 camera2d_to_vp_matrix :: proc(c: Camera2D) -> (view_projection: math.Mat4f) {
-    assert(c.zoom != 0, "Cannot have 0 as zoom level")
-    scale := 1 / c.zoom
-    left := -c.size.x * 0.5  * scale
-    right := c.size.x * 0.5  * scale
-    bottom := c.size.y * 0.5  * scale
-    top := -c.size.y * 0.5 * scale 
+    rot := cast(f32)math.angle_rad(c.rot)
+    c := c
+    c.rect.size *= c.scale
+    left := 0 - c.size.x * c.origin.x
+    right := c.size.x - c.size.x * c.origin.x
+    bottom := c.size.y - c.size.y * c.origin.y
+    top := 0 - c.size.y * c.origin.y
     projection := linalg.matrix_ortho3d_f32(left, right, bottom, top, -1, 1, true)
-    view := linalg.matrix4_translate_f32({-c.pos.x, -c.pos.y, 0})
-    view *= linalg.matrix4_rotate_f32(cast(f32)math.angle_rad(c.rot), {0, 0, 1})
+    view := math.Mat4f(1)
+    view *= linalg.matrix4_translate_f32({-c.pos.x, -c.pos.y, 0})
+    view *= linalg.matrix4_rotate_f32(rot, {0, 0, 1})
     return projection * view
 }
 
