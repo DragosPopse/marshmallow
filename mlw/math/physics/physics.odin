@@ -3,16 +3,34 @@ package mlw_physics
 import "../../math"
 import "../../math/grids"
 
-AABB_Collider :: struct {
-    using rect: math.Rectf,
+
+Box_Collider :: struct {
+    offset: math.Vec2f,
+    size: math.Vec2f,
+}
+
+Circle_Collider :: struct {
+    offset: math.Vec2f,
+    radius: f32,
+}
+
+Capsule_Collider :: struct {
+    offset: math.Vec2f,
+    size: math.Vec2f,
+    radius: f32,
 }
 
 Collider :: union {
-    AABB_Collider,
+    Box_Collider,
+    Circle_Collider,
+    Capsule_Collider,
 }
 
 Trace_Info :: struct {
     normal: math.Vec2f,
 }
 
-
+Body :: struct {
+    pos: math.Vec2f,
+    colliders: []Collider,
+}
