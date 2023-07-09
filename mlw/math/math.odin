@@ -259,13 +259,45 @@ check_collision_rectf_rectf :: proc(a, b: Rectf) -> bool {
     return false
 }
 
-solve_collision_rectf_rectf :: proc(a, b: Rectf) -> (penetration_vector: Maybe(Vec2f)) {
+check_collision_side_rectf_rectf :: proc(a, b: Rectf) -> (side: Vec2f) {
+    ca := a.pos + a.size / 2
+    cb := b.pos + b.size / 2
+    if ca.x > cb.x do return {1, 0}
+    if ca.x < cb.x do return {-1, 0}
+    if ca.y > cb.y do return {0, 1}
+    if ca.y < cb.y do return {0, -1}
+    return {0, 0}
+}
+
+Trace_Info :: struct {
+    normal: Vec2f,
+
+}
+
+trace_line :: proc(start: Vec2f, delta: Vec2f, )
+
+trace_rectf :: proc(start, end: Vec2f, rect: Rectf) -> Maybe(Trace_Info) {
+    unimplemented()
+}
+
+solve_collision_rectf_rectf :: proc(a, b: Rectf) -> (penetration_vector: Maybe(Vec2f), normal: Vec2f) {
     diff := minkowski_diff(a, b)
     diff_min, diff_max := minmax(diff)
     if diff_min.x <= 0 && diff_max.x >= 0 && diff_min.y <= 0 && diff_max.y >= 0 {
-        return rectf_closest_point_on_bounds_to_point(diff, {0, 0})
+        closest_point := rectf_closest_point_on_bounds_to_point(diff, {0, 0})
+        ca := a.pos + a.size / 2
+        cb := b.pos + b.size / 2
+        delta := ca - cb
+        intersect := (a.size + b.size) / 2 - {abs(delta.x), abs(delta.y)}
+        if intersect.x < intersect.y {
+            if delta.x < 0 do return closest_point, {-1, 0}
+            return closest_point, {1, 0} 
+        } else {
+            if delta.y < 0 do return closest_point, {0, 1}
+            return closest_point, {0, -1}
+        }
     }
-    return nil
+    return nil, {}
 }
 
 solve_collision :: proc {
