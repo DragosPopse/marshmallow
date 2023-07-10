@@ -109,7 +109,7 @@ step :: proc(using world: ^World, dt: f32) {
         // Todo(Dragos): Optimize this with a broad-phase data structure
         for db in dynamic_bodies { 
             // gravity 
-            body_add_force(db, gravity, .Force)
+            body_add_force(db, gravity * db.gravity_scale, .Force)
 
             // air drag
             if linalg.length2(db.velocity) > 0 {
