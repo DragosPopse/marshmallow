@@ -42,8 +42,15 @@ camera2d_to_vp_matrix :: proc(c: Camera2D) -> (view_projection: math.Mat4f) {
     return projection * view
 }
 
-camera2d_screen_to_world_position :: proc(c: Camera2D, pos: math.Vec2f) -> (result: math.Vec2f) {
-    unimplemented()
+camera2d_screen_to_world_position :: proc(c: Camera2D, window_size: math.Vec2i, pos: math.Vec2f) -> (result: math.Vec2f) {
+    vp := camera2d_to_vp_matrix(c)
+    window_size := math.to_vec2f(window_size)
+    // note(Dragos): I believe this is only for opengl. Need something else for Direct3D since their NDC is [0, 1]
+    x := 2.0 * pos.x / window_size.x - 1
+    y := 2.0 * pos.y / window_size.y - 1
+    pos := math.Vec4f{x, -y, -1, 1}
+    vp_inv := inverse(vp)
+    return (vp_inv * pos).xy
 }
 
 screen_to_world_position :: proc {

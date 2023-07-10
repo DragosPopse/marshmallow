@@ -32,5 +32,8 @@ Trace_Info :: struct {
 
 Body :: struct {
     pos: math.Vec2f,
-    colliders: []Collider,
+    collider: Collider,
+    user_index: int,
+    user_data: rawptr,
 }
+
