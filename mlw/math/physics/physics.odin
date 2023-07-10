@@ -96,6 +96,7 @@ solve_collision_dynamic_static :: proc(db: ^Body, sb: ^Body) -> Maybe(Collision_
         cinfo.penetration = penetration.?
         cinfo.normal = normal
         cinfo.impulse = -linalg.dot(sb.velocity, normal) / 2
+        return cinfo
     }
     return nil
 }
