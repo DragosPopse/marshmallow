@@ -166,13 +166,21 @@ apply_camera :: proc(cam: camera.Camera2D) {
     Rendering
 */
 
-sprite :: proc(texture: Texture, dst_rect: math.Rectf, dst_origin: math.Vec2f, tex_rect: math.Recti, rotation: math.Angle = math.Rad(0), color := math.WHITE_4f) {
+Render_Flag :: enum {
+    Flip_X,
+    Flip_Y,
+}
+
+Render_Flags :: bit_set[Render_Flag]
+
+sprite :: proc(texture: Texture, dst_rect: math.Rectf, dst_origin: math.Vec2f, tex_rect: math.Recti, rotation: math.Angle = math.Rad(0), color := math.WHITE_4f, flags: Render_Flags = {}) {
     state: Draw_State
     state.camera_index = _state.current_camera_index
     state.shader = _state.default_shader
     state.texture = texture
     view := reserve_buffer(1, state)
-    set_quad(&view, 0, dst_rect, tex_rect, color, dst_origin, rotation)
+
+    set_quad(&view, 0, dst_rect, tex_rect, color, dst_origin, rotation, flags)
     return // debug
 }
 
@@ -396,9 +404,18 @@ state_init :: proc(state: ^State) {
 
 
 // Todo(Dragos): remove #no_bounds_check in many places in favor of referencing things
-set_quad :: proc(view: ^Render_Buffer_View, idx: int, dst: math.Rectf, src: math.Recti, color: math.Color4f, origin: math.Vec2f, rotation: math.Angle) #no_bounds_check {
+set_quad :: proc(view: ^Render_Buffer_View, idx: int, dst: math.Rectf, src: math.Recti, color: math.Color4f, origin: math.Vec2f, rotation: math.Angle, flags := Render_Flags{}) #no_bounds_check {
     assert(idx >= 0 && idx < view.length, "Index out of bounds")
     dst := math.rect_align_with_origin(dst, origin)
+
+    if .Flip_X in flags {
+        dst.size.x = -dst.size.x
+        dst.pos.x -= dst.size.x
+    }
+    if .Flip_Y in flags {
+        dst.size.y = -dst.size.y
+        dst.pos.y -= dst.size.y
+    }
 
     element_idx := (view.parent_length + idx) * 4 // should this be idx + 1??
     quad := &view.buffer.quads[view.start + idx]
