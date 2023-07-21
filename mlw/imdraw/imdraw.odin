@@ -173,7 +173,7 @@ Render_Flag :: enum {
 
 Render_Flags :: bit_set[Render_Flag]
 
-sprite :: proc(texture: Texture, dst_rect: math.Rectf, dst_origin: math.Vec2f, tex_rect: math.Recti, rotation: math.Angle = math.Rad(0), color := math.WHITE_4f, flags: Render_Flags = {}) {
+sprite :: proc(texture: Texture, tex_rect: math.Recti, dst_rect: math.Rectf, dst_origin: math.Vec2f, rotation: math.Angle = math.Rad(0), color := math.WHITE_4f, flags: Render_Flags = {}) {
     state: Draw_State
     state.camera_index = _state.current_camera_index
     state.shader = _state.default_shader

@@ -121,7 +121,7 @@ update :: proc(ps: ^Particle_System, dt: f32, r: ^random.Generator) {
 
 draw :: proc(ps: Particle_System) {
     if ps.texture != nil do for particle in ps._particles {
-        imdraw.sprite(ps.texture.(imdraw.Texture), particle.rect, particle.origin, ps.texture_rects[particle.tex_index], particle.rotation, particle.color)
+        imdraw.sprite(ps.texture.(imdraw.Texture), ps.texture_rects[particle.tex_index], particle.rect, particle.origin, particle.rotation, particle.color)
     } else do for particle in ps._particles {
         imdraw.quad(particle.rect, particle.origin, particle.rotation, particle.color)
     }     
