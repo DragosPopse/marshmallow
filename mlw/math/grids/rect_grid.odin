@@ -15,7 +15,7 @@ Rect_Grid :: struct($Tile: typeid) {
 }
 
 rect_grid_make_tiles :: proc(grid: ^Rect_Grid($Tile), allocator := context.allocator) {
-    assert(size.x != 0 && size.y != 0, "Cannot create tiles with the current size. Did you forget to set it?")
+    assert(grid.size.x != 0 && grid.size.y != 0, "Cannot create tiles with the current size. Did you forget to set it?")
     grid.tiles = make([]Tile, grid.size.x * grid.size.y, allocator)
 }
 
