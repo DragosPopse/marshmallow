@@ -61,6 +61,11 @@ to_color3f :: proc {
 
 to_color4f :: proc {
     color4b_to_color4f,
+    color3b_to_color4f,
+}
+
+color3b_to_color4f :: proc(color: Color3b) -> (result: Color4f) {
+    return color4b_to_color4f({color.r, color.g, color.b, 255})
 }
 
 color3f_to_color3b :: proc(color: Color3f) -> (result: Color3b) {
