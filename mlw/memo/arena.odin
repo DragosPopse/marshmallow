@@ -41,6 +41,7 @@ arena_from_slice :: proc(data: []byte) -> (arena: Arena) {
 
 varena_init :: proc(arena: ^VArena, reserved: uint = virtual.DEFAULT_ARENA_GROWING_MINIMUM_BLOCK_SIZE) {
     err := virtual.arena_init_growing(&arena.arena, reserved)
+    arena.allocator = virtual.arena_allocator(&arena.arena)
     assert(err == nil, "Virtual arena creation failure")
 }
 
