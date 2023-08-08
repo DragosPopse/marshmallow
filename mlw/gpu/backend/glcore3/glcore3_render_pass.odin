@@ -4,8 +4,7 @@ package mmlow_gpu_backend_glcore3
 import "../../../core"
 import "../../../math"
 
-import gl "vendor:OpenGL"
-import glcache "../glcached"
+import gl "../../gl"
 
 Render_Pass :: struct {
     id: core.Render_Pass,
@@ -28,7 +27,7 @@ create_pass :: proc(info: core.Render_Pass_Info) -> (pass: core.Render_Pass) {
     fb_size: [2]int
 
     gl.GenFramebuffers(1, &glpass.framebuffer)
-    last_fb, _ := glcache.BindFramebuffer(.FRAMEBUFFER, glpass.framebuffer)
+    gl.BindFramebuffer(gl.FRAMEBUFFER, glpass.framebuffer)
     for attach, i in info.colors do if attach.texture != 0 {
         glpass.num_colors += 1
         assert(attach.texture in _textures, "Texture was not found")
@@ -53,7 +52,6 @@ create_pass :: proc(info: core.Render_Pass_Info) -> (pass: core.Render_Pass) {
         gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.TEXTURE_2D, gltex.handle, 0)
     }
     assert(gl.CheckFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE, "Framebuffer creation failed.")
-    glcache.BindFramebuffer(.FRAMEBUFFER, last_fb)
     glpass.fb_size.x = cast(i32)fb_size.x
     glpass.fb_size.y = cast(i32)fb_size.y
     _passes[pass] = glpass
@@ -73,7 +71,7 @@ begin_default_pass :: proc(action: core.Render_Pass_Action, width, height: int) 
     w, h := cast(i32)width, cast(i32)height
     _current_pass = &_default_pass
     
-    glcache.BindFramebuffer(.FRAMEBUFFER, 0)
+    gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
 
     gl.Viewport(0, 0, w, h)
     gl.Scissor(0, 0, w, h)
@@ -109,7 +107,7 @@ begin_pass :: proc(pass: core.Render_Pass, action: core.Render_Pass_Action) {
 
     _current_pass = &_passes[pass]
 
-    glcache.BindFramebuffer(.FRAMEBUFFER, _current_pass.framebuffer)
+    gl.BindFramebuffer(gl.FRAMEBUFFER, _current_pass.framebuffer)
 
     gl.Viewport(0, 0, _current_pass.fb_size.x, _current_pass.fb_size.y)
     gl.Scissor(0, 0, _current_pass.fb_size.x, _current_pass.fb_size.y)
@@ -135,5 +133,5 @@ begin_pass :: proc(pass: core.Render_Pass, action: core.Render_Pass_Action) {
 end_pass :: proc() {
     assert(_current_pass != nil, "No current pass")
     _current_pass = nil
-    glcache.BindFramebuffer(.FRAMEBUFFER, 0)
+    gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
 }

@@ -1,13 +1,11 @@
 //+build !js
 package mmlow_gpu_backend_glcore3
 
-import gl "vendor:OpenGL"
-import glgen "../../gl"
+import gl "../../gl"
 import "../../../core"
 import "../../../math"
 import "core:fmt"
 
-import glcache "../glcached"
 
 _BUFFER_USAGE_CONV := [core.Buffer_Usage_Hint]u32 {
     .Immutable = gl.STATIC_DRAW,
@@ -36,10 +34,10 @@ create_buffer :: proc(desc: core.Buffer_Info) ->(buffer: core.Buffer) {
     usage := _BUFFER_USAGE_CONV[desc.usage_hint]
     type := _BUFFER_TYPE_CONV[desc.type]
     data := raw_data(desc.data) if len(desc.data) != 0 else nil
-    glgen.GenBuffers(1, &vbo)
+    gl.GenBuffers(1, &vbo)
     //last_buffer := glcache.BindBuffer(cast(glcache.Buffer_Target)type, vbo)
-    glgen.BindBuffer(type, vbo)
-    glgen.BufferData(type, cast(int)desc.size, data, usage)
+    gl.BindBuffer(type, vbo)
+    gl.BufferData(type, cast(int)desc.size, data, usage)
     //glcache.BindBuffer(cast(glcache.Buffer_Target)type, last_buffer) 
 
     glbuf: GLCore3_Buffer
@@ -65,17 +63,17 @@ use_indexed: bool
 apply_input_buffers :: proc(buffers: core.Input_Buffers) {
     assert(_current_pipeline != nil, "Invalid pipeline.")
 
-    glgen.BindVertexArray(_naked_vao)
+    gl.BindVertexArray(_naked_vao)
     
     layout := &_current_pipeline.layout
 
     // Bind index buffer if it exists
     if index, found := buffers.index.?; found {
         assert(index in _buffers, "Cannot find index buffer.")
-        glgen.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, _buffers[index].handle)
+        gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, _buffers[index].handle)
         use_indexed = true
     } else {
-        glgen.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
+        gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
         use_indexed = true
     }
 
@@ -97,7 +95,7 @@ apply_input_buffers :: proc(buffers: core.Input_Buffers) {
                 divisor = 1
                 _instanced_call = true
         }
-        glcache.BindBuffer(.ARRAY_BUFFER, vbo)
+        gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
         current_vbo = vbo
         /*
         gl.VertexAttribPointer(
@@ -106,13 +104,13 @@ apply_input_buffers :: proc(buffers: core.Input_Buffers) {
             gl.FALSE, 
             cast(i32)buffer_layout.stride, attr.offset)
 */
-        glgen.VertexAttribPointer(
+        gl.VertexAttribPointer(
             u32(i), 
             _ATTR_SIZE_CONV[attr.format], _ATTR_TYPE_CONV[attr.format], 
             gl.FALSE, 
             cast(i32)buffer_layout.stride, attr.offset)
-        glgen.EnableVertexAttribArray(u32(i)) // Note(Dragos): This call should also be cached
-        glgen.VertexAttribDivisor(u32(i), divisor)
+        gl.EnableVertexAttribArray(u32(i)) // Note(Dragos): This call should also be cached
+        gl.VertexAttribDivisor(u32(i), divisor)
     } else do break
 
 
@@ -126,10 +124,11 @@ buffer_data :: proc(buffer: core.Buffer, data: []byte) {
     assert(len(data) <= glbuf.size, "Data size exceeds the buffer size.")
     // Yet another glcache error???
     
-    last_buf := glcache.BindBuffer(cast(glcache.Buffer_Target)glbuf.target, glbuf.handle)
+    //last_buf := glcache.BindBuffer(cast(glcache.Buffer_Target)glbuf.target, glbuf.handle)
+    //gl.BufferSubData(glbuf.target, 0, len(data), raw_data(data))
+    //glcache.BindBuffer(auto_cast(glbuf.target), last_buf)
+    gl.BindBuffer(glbuf.target, glbuf.handle)
     gl.BufferSubData(glbuf.target, 0, len(data), raw_data(data))
-    glcache.BindBuffer(auto_cast(glbuf.target), last_buf)
-    
     
     //gl.BindBuffer(glbuf.target, glbuf.handle)
     //gl.BufferSubData(glbuf.target, 0, len(data), raw_data(data))

@@ -7,13 +7,13 @@ import "core:c"
 import "core:runtime"
 import "core:strings"
 import intr "core:intrinsics"
-import gl "vendor:OpenGL"
+import gl "../../gl"
 import smolarr "core:container/small_array"
 
 import "../../../core"
 import "../../../math"
 
-import glcache "../glcached"
+
 
 
 _ATTR_SIZE_CONV := [core.Attr_Format]i32 {
@@ -94,14 +94,14 @@ _get_or_configure_vao :: proc(key: core.Input_Buffers) -> (vao: u32, instanced: 
     
     layout := &_current_pipeline.layout
 
-    last_vao := glcache.BindVertexArray(vao)
+    gl.BindVertexArray(vao)
 
     // Bind index buffer if it exists
     if index, found := key.index.?; found {
         assert(index in _buffers, "Cannot find index buffer.")
-        glcache.BindBuffer(.ELEMENT_ARRAY_BUFFER, _buffers[index].handle)
+        gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, _buffers[index].handle)
     } else {
-        glcache.BindBuffer(.ELEMENT_ARRAY_BUFFER, 0)
+        gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
     }
 
     // Note(Dragos): check the usage and optimization of this loop format
@@ -122,7 +122,7 @@ _get_or_configure_vao :: proc(key: core.Input_Buffers) -> (vao: u32, instanced: 
                 divisor = 1
                 instanced = true
         }
-        glcache.BindBuffer(.ARRAY_BUFFER, vbo)
+        gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
         current_vbo = vbo
         gl.VertexAttribPointer(
             u32(i), 
@@ -134,7 +134,7 @@ _get_or_configure_vao :: proc(key: core.Input_Buffers) -> (vao: u32, instanced: 
         gl.VertexAttribDivisor(u32(i), divisor)
     } else do break
 
-    glcache.BindVertexArray(last_vao)
+    
 
     return vao, instanced
 }

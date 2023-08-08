@@ -1,57 +1,55 @@
 //+build !js
 package mmlow_gpu_backend_glcore3
 
-import gl "vendor:OpenGL"
-import glgen "../../gl"
+import gl "../../gl"
 import "../../../core"
 import "../../../math"
 
-import glcache "../glcached"
 
 _CULL_CONV := [core.Cull_Mode]u32 {
     .None = 0,
-    .Front = glgen.FRONT,
-    .Back = glgen.BACK,
+    .Front = gl.FRONT,
+    .Back = gl.BACK,
 }
 
 _BLEND_OP_CONV := [core.Blend_Op]u32 {
-    .Add = glgen.FUNC_ADD,
-    .Subtract = glgen.FUNC_SUBTRACT,
-    .Reverse_Subtract = glgen.FUNC_REVERSE_SUBTRACT,
+    .Add = gl.FUNC_ADD,
+    .Subtract = gl.FUNC_SUBTRACT,
+    .Reverse_Subtract = gl.FUNC_REVERSE_SUBTRACT,
 }
 
 _BLEND_FACTOR_CONV := [core.Blend_Factor]u32 {
-    .Zero = glgen.ZERO,
-    .One = glgen.ONE,
-    .Src_Color = glgen.SRC_COLOR,
-    .One_Minus_Src_Color = glgen.ONE_MINUS_SRC_COLOR,
-    .Src_Alpha = glgen.SRC_ALPHA,
-    .One_Minus_Src_Alpha = glgen.ONE_MINUS_SRC_ALPHA,
-    .Dst_Color = glgen.DST_COLOR,
-    .One_Minus_Dst_Color = glgen.ONE_MINUS_DST_COLOR,
-    .Src_Alpha_Saturated = glgen.SRC_ALPHA_SATURATE,
-    .Blend_Color = glgen.BLEND_COLOR,
-    .Blend_Src_Alpha = glgen.BLEND_SRC_ALPHA,
-    .Blend_Dst_Alpha = glgen.BLEND_DST_ALPHA,
-    .Dst_Alpha = glgen.DST_ALPHA,
-    .One_Minus_Dst_Alpha = glgen.ONE_MINUS_DST_ALPHA,
+    .Zero = gl.ZERO,
+    .One = gl.ONE,
+    .Src_Color = gl.SRC_COLOR,
+    .One_Minus_Src_Color = gl.ONE_MINUS_SRC_COLOR,
+    .Src_Alpha = gl.SRC_ALPHA,
+    .One_Minus_Src_Alpha = gl.ONE_MINUS_SRC_ALPHA,
+    .Dst_Color = gl.DST_COLOR,
+    .One_Minus_Dst_Color = gl.ONE_MINUS_DST_COLOR,
+    .Src_Alpha_Saturated = gl.SRC_ALPHA_SATURATE,
+    .Blend_Color = gl.BLEND_COLOR,
+    .Blend_Src_Alpha = gl.BLEND_SRC_ALPHA,
+    .Blend_Dst_Alpha = gl.BLEND_DST_ALPHA,
+    .Dst_Alpha = gl.DST_ALPHA,
+    .One_Minus_Dst_Alpha = gl.ONE_MINUS_DST_ALPHA,
 }
 
 _POLYGON_CONV := [core.Polygon_Mode]u32 {
-    .Fill = glgen.FILL,
-    .Line = glgen.LINE,
-    .Point = glgen.POINT,
+    .Fill = gl.FILL,
+    .Line = gl.LINE,
+    .Point = gl.POINT,
 }
 
 _PRIMITIVE_CONV := [core.Primitive_Type]u32 {
-    .Triangles = glgen.TRIANGLES,
-    .Lines = glgen.LINES,
-    .Line_Strip = glgen.LINE_STRIP,
+    .Triangles = gl.TRIANGLES,
+    .Lines = gl.LINES,
+    .Line_Strip = gl.LINE_STRIP,
 }
 
 _INDEX_CONV := [core.Index_Type]u32 {
-    .u16 = glgen.UNSIGNED_SHORT,
-    .u32 = glgen.UNSIGNED_INT,
+    .u16 = gl.UNSIGNED_SHORT,
+    .u32 = gl.UNSIGNED_INT,
 }
 
 GLCore3_Blend :: struct {
@@ -113,32 +111,37 @@ apply_pipeline :: proc(pipeline: core.Pipeline) {
     assert(pipeline != 0, "Invalid pipeline ID.")
     assert(pipeline in _pipelines, "Pipeline was not found.")
     _current_pipeline = &_pipelines[pipeline]
-    glcache.UseProgram(cast(u32)_current_pipeline.shader.program)
+    gl.UseProgram(cast(u32)_current_pipeline.shader.program)
 
 
     if _current_pipeline.cull_mode_enabled {
-        glcache.Enable(.CULL_FACE)
-        glcache.CullFace(cast(glcache.Face)_current_pipeline.cull_mode)
+        gl.Enable(gl.CULL_FACE)
+        gl.CullFace(_current_pipeline.cull_mode)
     } else {
-        glcache.Disable(.CULL_FACE)
+        gl.Disable(gl.CULL_FACE)
     }
 
     // Note(Dragos): This can be split into front and back polygon modes
-    glcache.PolygonMode(.FRONT_AND_BACK, cast(glcache.Polygon_Mode)_current_pipeline.polygon_mode)
+    gl.PolygonMode(gl.FRONT_AND_BACK, _current_pipeline.polygon_mode)
 
     if blend, found := _current_pipeline.blend.?; found {
-        glcache.Enable(.BLEND)
-        glcache.BlendFuncSeparate(
+        gl.Enable(gl.BLEND)
+        gl.BlendFuncSeparate(
             auto_cast(blend.rgb_src),
             auto_cast(blend.rgb_dst),
             auto_cast(blend.alpha_src),
             auto_cast(blend.alpha_dst),
         )
-        glcache.BlendEquationSeparate(auto_cast(blend.rgb_op), auto_cast(blend.alpha_op))
+        gl.BlendEquationSeparate(auto_cast(blend.rgb_op), auto_cast(blend.alpha_op))
     } else {
-        glcache.Disable(.BLEND)
+        gl.Disable(gl.BLEND)
     }
-    glcache.enable_or_disable(.DEPTH_TEST, _current_pipeline.depth != nil)
+    if _current_pipeline.depth != nil {
+        gl.Enable(gl.DEPTH_TEST)
+    } else {
+        gl.Disable(gl.DEPTH_TEST)
+    }
+    //gl.enable_or_disable(gl.DEPTH_TEST, )
 }
 
 destroy_pipeline :: proc(pipeline: core.Pipeline) {

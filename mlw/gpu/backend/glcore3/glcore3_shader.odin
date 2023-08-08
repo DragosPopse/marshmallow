@@ -1,13 +1,14 @@
 //+build !js
 package mmlow_gpu_backend_glcore3
 
-import gl "vendor:OpenGL"
+import gl "../../gl"
 import "../../../core"
 import "../../../math"
 import "core:strings"
 import "core:fmt"
+import "core:slice"
 
-import glcache "../glcached"
+
 
 _SHADER_STAGE_TYPE_CONV := [core.Shader_Stage_Type]u32 {
     .Vertex = gl.VERTEX_SHADER,
@@ -91,11 +92,12 @@ create_shader_stage :: proc(desc: core.Shader_Stage_Info) -> (stage: core.Shader
     gl.CompileShader(shader)
     
     success: i32 
-    log: [512]u8
+    log: [512]i8
     gl.GetShaderiv(shader, gl.COMPILE_STATUS, &success)
     if success == 0 {
         logLength: i32
         gl.GetShaderInfoLog(shader, size_of(log), &logLength, &log[0])
+        log := slice.reinterpret([]u8, log[:logLength])
         logstr := strings.string_from_ptr(&log[0], cast(int)logLength)
         gl.DeleteShader(shader)
         return 0, fmt.tprint(logstr)
@@ -164,12 +166,13 @@ create_shader :: proc(desc: core.Shader_Info, destroy_stages_on_success: bool) -
     gl.LinkProgram(program)
 
     success: i32 
-    log: [512]u8 
+    log: [512]i8 
     gl.GetProgramiv(program, gl.LINK_STATUS, &success)
     
     if cast(bool)success != gl.TRUE {
         logLength: i32 
         gl.GetProgramInfoLog(program, size_of(log), &logLength, &log[0])
+        log := slice.reinterpret([]u8, log[:logLength])
         logstr := strings.string_from_ptr(&log[0], cast(int)logLength)
         gl.DeleteProgram(program)
         return 0, fmt.tprintf("%s", logstr)
@@ -178,7 +181,7 @@ create_shader :: proc(desc: core.Shader_Info, destroy_stages_on_success: bool) -
     shader = core.new_shader_id()
     gl_shader.id = shader
     gl_shader.program = program
-    last_program := glcache.UseProgram(program) 
+    gl.UseProgram(program) 
     current_tex_unit := i32(0)
     for stage, type in gl_shader.stages {
         if stage_info, ok := stage.?; ok {
@@ -202,7 +205,7 @@ create_shader :: proc(desc: core.Shader_Info, destroy_stages_on_success: bool) -
             gl_shader.stages[type] = stage_info
         }
     }
-    glcache.UseProgram(last_program)
+
 
     _shaders[shader] = gl_shader
 

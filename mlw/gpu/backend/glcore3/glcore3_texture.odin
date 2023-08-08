@@ -1,10 +1,10 @@
 //+build !js
 package mmlow_gpu_backend_glcore3
 
-import gl "vendor:OpenGL"
+import gl "../../gl"
 import "../../../core"
 import "../../../math"
-import glcache "../glcached"
+
 import "core:strings"
 import "core:fmt"
 
@@ -105,7 +105,7 @@ create_texture :: proc(desc: core.Texture_Info) -> (texture: core.Texture) {
     handle: u32
     target := _TEXTURE_TARGET_CONV[desc.type]
     gl.GenTextures(1, &handle)
-    last_texture := glcache.BindTexture(cast(glcache.Texture_Target)target, handle)
+    gl.BindTexture(target, handle)
     
     // Note(Dragos): Implement the other types
     assert(desc.type == .Texture2D, "Only Texture2D implemented.")
@@ -154,7 +154,7 @@ create_texture :: proc(desc: core.Texture_Info) -> (texture: core.Texture) {
     gl.TexParameteri(target, gl.TEXTURE_MIN_FILTER, _MINFILTER_CONV[desc.min_filter])
     gl.TexParameteri(target, gl.TEXTURE_MAG_FILTER, _MAGFILTER_CONV[desc.mag_filter])
     
-    glcache.BindTexture(cast(glcache.Texture_Target)target, last_texture)
+    
     gltex: GLCore3_Texture
     gltex.handle = handle
     gltex.id = core.new_texture_id()
