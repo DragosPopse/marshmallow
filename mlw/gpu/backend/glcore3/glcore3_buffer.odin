@@ -60,6 +60,8 @@ destroy_buffer :: proc(buffer: core.Buffer) {
     core.delete_buffer_id(buffer)
 }
 
+use_indexed: bool
+
 apply_input_buffers :: proc(buffers: core.Input_Buffers) {
     assert(_current_pipeline != nil, "Invalid pipeline.")
 
@@ -70,9 +72,11 @@ apply_input_buffers :: proc(buffers: core.Input_Buffers) {
     // Bind index buffer if it exists
     if index, found := buffers.index.?; found {
         assert(index in _buffers, "Cannot find index buffer.")
-        glcache.BindBuffer(.ELEMENT_ARRAY_BUFFER, _buffers[index].handle)
+        glgen.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, _buffers[index].handle)
+        use_indexed = true
     } else {
-        glcache.BindBuffer(.ELEMENT_ARRAY_BUFFER, 0)
+        glgen.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
+        use_indexed = true
     }
 
     // Note(Dragos): check the usage and optimization of this loop format

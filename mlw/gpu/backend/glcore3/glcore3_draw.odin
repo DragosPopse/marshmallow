@@ -13,7 +13,8 @@ draw :: proc(base_elem: int, elem_count: int, instance_count: int) {
 
     if instance_count <= 0 do return
 
-    use_indexed := glcache.cache.buffers[.ELEMENT_ARRAY_BUFFER] != 0 // Note(Dragos): This can be cached as a bool locally. But it's good for cache testing
+    //use_indexed := glcache.cache.buffers[.ELEMENT_ARRAY_BUFFER] != 0 // Note(Dragos): This can be cached as a bool locally. But it's good for cache testing
+    
     use_instanced := _instanced_call || instance_count > 1 // Is this chill?
     
     if use_indexed { 
