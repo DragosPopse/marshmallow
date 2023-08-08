@@ -2,6 +2,7 @@
 package mmlow_gpu_backend_glcore3
 
 import gl "vendor:OpenGL"
+import glgen "../../gl"
 import "../../../core"
 import "../../../math"
 import "core:fmt"
@@ -35,10 +36,11 @@ create_buffer :: proc(desc: core.Buffer_Info) ->(buffer: core.Buffer) {
     usage := _BUFFER_USAGE_CONV[desc.usage_hint]
     type := _BUFFER_TYPE_CONV[desc.type]
     data := raw_data(desc.data) if len(desc.data) != 0 else nil
-    gl.GenBuffers(1, &vbo)
-    last_buffer := glcache.BindBuffer(cast(glcache.Buffer_Target)type, vbo)
-    gl.BufferData(type, cast(int)desc.size, data, usage)
-    glcache.BindBuffer(cast(glcache.Buffer_Target)type, last_buffer) 
+    glgen.GenBuffers(1, &vbo)
+    //last_buffer := glcache.BindBuffer(cast(glcache.Buffer_Target)type, vbo)
+    glgen.BindBuffer(type, vbo)
+    glgen.BufferData(type, cast(int)desc.size, data, usage)
+    //glcache.BindBuffer(cast(glcache.Buffer_Target)type, last_buffer) 
 
     glbuf: GLCore3_Buffer
     glbuf.handle = vbo
@@ -61,7 +63,7 @@ destroy_buffer :: proc(buffer: core.Buffer) {
 apply_input_buffers :: proc(buffers: core.Input_Buffers) {
     assert(_current_pipeline != nil, "Invalid pipeline.")
 
-    glcache.BindVertexArray(_naked_vao)
+    glgen.BindVertexArray(_naked_vao)
     
     layout := &_current_pipeline.layout
 
@@ -93,14 +95,20 @@ apply_input_buffers :: proc(buffers: core.Input_Buffers) {
         }
         glcache.BindBuffer(.ARRAY_BUFFER, vbo)
         current_vbo = vbo
+        /*
         gl.VertexAttribPointer(
             u32(i), 
             _ATTR_SIZE_CONV[attr.format], _ATTR_TYPE_CONV[attr.format], 
             gl.FALSE, 
             cast(i32)buffer_layout.stride, attr.offset)
-
-        gl.EnableVertexAttribArray(u32(i)) // Note(Dragos): This call should also be cached
-        gl.VertexAttribDivisor(u32(i), divisor)
+*/
+        glgen.VertexAttribPointer(
+            u32(i), 
+            _ATTR_SIZE_CONV[attr.format], _ATTR_TYPE_CONV[attr.format], 
+            gl.FALSE, 
+            cast(i32)buffer_layout.stride, attr.offset)
+        glgen.EnableVertexAttribArray(u32(i)) // Note(Dragos): This call should also be cached
+        glgen.VertexAttribDivisor(u32(i), divisor)
     } else do break
 
 

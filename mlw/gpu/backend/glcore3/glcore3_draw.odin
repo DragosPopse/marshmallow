@@ -2,6 +2,7 @@
 package mmlow_gpu_backend_glcore3
 
 import gl "vendor:OpenGL"
+import glgen "../../gl"
 import "../../../core"
 import "../../../math"
 
@@ -17,15 +18,15 @@ draw :: proc(base_elem: int, elem_count: int, instance_count: int) {
     
     if use_indexed { 
         if use_instanced {
-            gl.DrawElementsInstancedBaseVertex(_current_pipeline.primitive_type, cast(i32)elem_count, _current_pipeline.index_type, nil, cast(i32)instance_count, cast(i32)base_elem)
+            glgen.DrawElementsInstancedBaseVertex(_current_pipeline.primitive_type, cast(i32)elem_count, _current_pipeline.index_type, nil, cast(i32)instance_count, cast(i32)base_elem)
         } else {
-            gl.DrawElementsBaseVertex(_current_pipeline.primitive_type, cast(i32)elem_count, _current_pipeline.index_type, nil, cast(i32)base_elem)
+            glgen.DrawElementsBaseVertex(_current_pipeline.primitive_type, cast(i32)elem_count, _current_pipeline.index_type, nil, cast(i32)base_elem)
         }
     } else {
         if use_instanced {
-            gl.DrawArraysInstanced(_current_pipeline.primitive_type, cast(i32)base_elem, cast(i32)elem_count, cast(i32)instance_count)
+            glgen.DrawArraysInstanced(_current_pipeline.primitive_type, cast(i32)base_elem, cast(i32)elem_count, cast(i32)instance_count)
         } else {
-            gl.DrawArrays(_current_pipeline.primitive_type, cast(i32)base_elem, cast(i32)elem_count)
+            glgen.DrawArrays(_current_pipeline.primitive_type, cast(i32)base_elem, cast(i32)elem_count)
         }
     }
 }

@@ -2,6 +2,7 @@
 package mmlow_gpu_backend_glcore3
 
 import gl "vendor:OpenGL"
+import glgen "../../gl"
 import "../../../core"
 import "../../../math"
 
@@ -9,48 +10,48 @@ import glcache "../glcached"
 
 _CULL_CONV := [core.Cull_Mode]u32 {
     .None = 0,
-    .Front = gl.FRONT,
-    .Back = gl.BACK,
+    .Front = glgen.FRONT,
+    .Back = glgen.BACK,
 }
 
 _BLEND_OP_CONV := [core.Blend_Op]u32 {
-    .Add = gl.FUNC_ADD,
-    .Subtract = gl.FUNC_SUBTRACT,
-    .Reverse_Subtract = gl.FUNC_REVERSE_SUBTRACT,
+    .Add = glgen.FUNC_ADD,
+    .Subtract = glgen.FUNC_SUBTRACT,
+    .Reverse_Subtract = glgen.FUNC_REVERSE_SUBTRACT,
 }
 
 _BLEND_FACTOR_CONV := [core.Blend_Factor]u32 {
-    .Zero = gl.ZERO,
-    .One = gl.ONE,
-    .Src_Color = gl.SRC_COLOR,
-    .One_Minus_Src_Color = gl.ONE_MINUS_SRC_COLOR,
-    .Src_Alpha = gl.SRC_ALPHA,
-    .One_Minus_Src_Alpha = gl.ONE_MINUS_SRC_ALPHA,
-    .Dst_Color = gl.DST_COLOR,
-    .One_Minus_Dst_Color = gl.ONE_MINUS_DST_COLOR,
-    .Src_Alpha_Saturated = gl.SRC_ALPHA_SATURATE,
-    .Blend_Color = gl.BLEND_COLOR,
-    .Blend_Src_Alpha = gl.BLEND_SRC_ALPHA,
-    .Blend_Dst_Alpha = gl.BLEND_DST_ALPHA,
-    .Dst_Alpha = gl.DST_ALPHA,
-    .One_Minus_Dst_Alpha = gl.ONE_MINUS_DST_ALPHA,
+    .Zero = glgen.ZERO,
+    .One = glgen.ONE,
+    .Src_Color = glgen.SRC_COLOR,
+    .One_Minus_Src_Color = glgen.ONE_MINUS_SRC_COLOR,
+    .Src_Alpha = glgen.SRC_ALPHA,
+    .One_Minus_Src_Alpha = glgen.ONE_MINUS_SRC_ALPHA,
+    .Dst_Color = glgen.DST_COLOR,
+    .One_Minus_Dst_Color = glgen.ONE_MINUS_DST_COLOR,
+    .Src_Alpha_Saturated = glgen.SRC_ALPHA_SATURATE,
+    .Blend_Color = glgen.BLEND_COLOR,
+    .Blend_Src_Alpha = glgen.BLEND_SRC_ALPHA,
+    .Blend_Dst_Alpha = glgen.BLEND_DST_ALPHA,
+    .Dst_Alpha = glgen.DST_ALPHA,
+    .One_Minus_Dst_Alpha = glgen.ONE_MINUS_DST_ALPHA,
 }
 
 _POLYGON_CONV := [core.Polygon_Mode]u32 {
-    .Fill = gl.FILL,
-    .Line = gl.LINE,
-    .Point = gl.POINT,
+    .Fill = glgen.FILL,
+    .Line = glgen.LINE,
+    .Point = glgen.POINT,
 }
 
 _PRIMITIVE_CONV := [core.Primitive_Type]u32 {
-    .Triangles = gl.TRIANGLES,
-    .Lines = gl.LINES,
-    .Line_Strip = gl.LINE_STRIP,
+    .Triangles = glgen.TRIANGLES,
+    .Lines = glgen.LINES,
+    .Line_Strip = glgen.LINE_STRIP,
 }
 
 _INDEX_CONV := [core.Index_Type]u32 {
-    .u16 = gl.UNSIGNED_SHORT,
-    .u32 = gl.UNSIGNED_INT,
+    .u16 = glgen.UNSIGNED_SHORT,
+    .u32 = glgen.UNSIGNED_INT,
 }
 
 GLCore3_Blend :: struct {
