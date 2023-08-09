@@ -31,6 +31,8 @@ poll_event: Backend_Poll_Event : backend.poll_event
 
 get_backend_window: Backend_Get_Backend_Window : backend.get_backend_window
 
+get_mouse_position: Backend_Get_Mouse_Position : backend.get_mouse_position
+
 key_down: Backend_Key_Down : backend.key_down
 
 when ODIN_OS == .JS {

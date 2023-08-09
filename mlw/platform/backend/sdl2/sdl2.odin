@@ -3,6 +3,7 @@ package highland_platform_backend_sdl2
 import sdl "vendor:sdl2"
 import "../../../core"
 import "core:strings"
+import "../../../math"
 
 when ODIN_OS == .Windows {
     import win32 "core:sys/windows"
@@ -33,6 +34,12 @@ _GL_PROFILE_CONV := [core.OpenGL_Profile]i32 {
 
 get_backend_window :: proc() -> rawptr {
     return &_window
+}
+
+get_mouse_position :: proc() -> (position: math.Vec2f) {
+    x, y: i32
+    sdl.GetMouseState(&x, &y)
+    return {f32(x), f32(y)}
 }
 
 init :: proc(info: core.Platform_Info) {
