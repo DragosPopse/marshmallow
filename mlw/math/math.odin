@@ -350,3 +350,40 @@ vec2f_slope :: proc(a, b: Vec2f) -> f32 {
 slope :: proc {
     vec2f_slope,
 }
+
+Raycast_Info :: struct {
+    entry: Vec2f,
+    exit: Vec2f,
+    penetration: Vec2f, // how much to move to exit
+    normal: Vec2f,
+}
+
+raycast_rectf :: proc(rect: Rectf, ray_orig: Vec2f, ray_dir: Vec2f) -> Maybe(Raycast_Info) {
+    rmin, rmax := minmax(rect)
+    t1 := (rmin.x - ray_orig.x) / ray_dir.x
+    t2 := (rmax.x - ray_orig.x) / ray_dir.x
+    t3 := (rmin.y - ray_orig.y) / ray_dir.y
+    t4 := (rmax.y - ray_orig.y) / ray_dir.y
+
+    tmin := max(min(t1, t2), min(t3, t4))
+    tmax := min(max(t1, t2), max(t3, t4))
+
+    if tmax < 0 { // Ray goes the other way
+        return nil
+    }
+
+    if tmin < 0 { // Ray intersects, but origin is inside aabb
+        
+    }
+
+    if tmin > tmax { // Ray doesn't intersect
+        return nil
+    }
+    
+    // From here on, we intersect
+    info: Raycast_Info
+    info.entry = tmin
+    info.exit = tmax
+
+    return info
+}
