@@ -245,9 +245,10 @@ line_quad :: proc(dst: math.Rectf, origin: math.Vec2f, line_width: f32, rotation
 }
 
 line :: proc(begin: math.Vec2f, end: math.Vec2f, width: f32, color := math.WHITE_4f) {
-    slope := math.slope(begin, end)
-    rads := cast(math.Rad)math.atan(slope)
+    l := end - begin
+    rads := cast(math.Rad)math.atan2(l.y, l.x)
     length := math.length(end - begin)
+    //fmt.printf("%v %v\n", math.rad_to_deg(rads), slope)
     dst: math.Rectf
     dst.pos = begin
     dst.size.x = length
