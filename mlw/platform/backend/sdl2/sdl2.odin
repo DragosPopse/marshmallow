@@ -5,9 +5,7 @@ import "../../../core"
 import "core:strings"
 import "../../../math"
 
-when ODIN_OS == .Windows {
-    import win32 "core:sys/windows"
-}
+import win32 "core:sys/windows"
 
 GL_Context :: struct {
     handle: rawptr,

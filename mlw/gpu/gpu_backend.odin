@@ -4,10 +4,14 @@ import "../core"
 
 BACKEND :: core.GPU_BACKEND
 BACKEND_FAMILY :: core.GPU_BACKEND_FAMILY
+
+import "backend/glcore3"
+import "backend/webgl2"
+
 when BACKEND == .glcore3 {
-    import backend "backend/glcore3"
+    backend :: glcore3
 } else when BACKEND == .webgl2 {
-    import backend "backend/webgl2"
+    backend :: webgl2
 } else {
     #panic("Unsupported GPU_BACKEND")
 }
@@ -15,38 +19,106 @@ when BACKEND == .glcore3 {
 default_pass_action :: core.default_pass_action
 
 // Procedures 
-init     : Backend_Init     : backend.init
-teardown : Backend_Teardown : backend.teardown
+init :: proc() {
+    backend.init()
+}
 
-create_shader_stage  : Backend_Create_Shader_Stage : backend.create_shader_stage
-destroy_shader_stage : Backend_Destroy_Shader_Stage : backend.destroy_shader_stage
+teardown :: proc() {
+    backend.teardown()
+}
 
-create_shader  : Backend_Create_Shader : backend.create_shader
-destroy_shader : Backend_Destroy_Shader : backend.destroy_shader
+create_shader_stage :: proc(info: Shader_Stage_Info) -> (stage: Shader_Stage, err: Maybe(string)) {
+    return backend.create_shader_stage(info)
+}
 
-apply_uniforms_raw : Backend_Apply_Uniforms_Raw : backend.apply_uniforms_raw
+destroy_shader_stage :: proc(stage: Shader_Stage) {
+    backend.destroy_shader_stage(stage)
+}
 
-create_buffer  : Backend_Create_Buffer  : backend.create_buffer
-destroy_buffer : Backend_Destroy_Buffer : backend.destroy_buffer
-buffer_data : Backend_Buffer_Data : backend.buffer_data
-apply_input_buffers : Backend_Apply_Input_Buffers : backend.apply_input_buffers
+create_shader :: proc(info: Shader_Info, destroy_stages_on_success: bool) -> (shader: Shader, err: Maybe(string)){
+    return backend.create_shader(info, destroy_stages_on_success)
+}
 
-create_texture  : Backend_Create_Texture : backend.create_texture
-destroy_texture : Backend_Destroy_Texture : backend.destroy_texture
-texture_data : Backend_Texture_Data : backend.texture_data
-texture_info : Backend_Texture_Info : backend.texture_info
-apply_input_textures : Backend_Apply_Input_Textures : backend.apply_input_textures
+destroy_shader :: proc(shader: Shader) {
+    backend.destroy_shader(shader)
+}
 
-create_pass: Backend_Create_Pass : backend.create_pass
-destroy_pass: Backend_Destroy_Pass : backend.destroy_pass
-begin_default_pass: Backend_Begin_Default_Pass : backend.begin_default_pass
-begin_pass: Backend_Begin_Pass : backend.begin_pass
-end_pass: Backend_End_Pass : backend.end_pass 
+apply_uniforms_raw :: proc(stage: Shader_Stage_Type, block_index: int, data: rawptr, size: int) {
+    backend.apply_uniforms_raw(stage, block_index, data, size)
+}
 
-create_pipeline  : Backend_Create_Pipeline : backend.create_pipeline
-destroy_pipeline : Backend_Destroy_Pipeline : backend.destroy_pipeline
-apply_pipeline : Backend_Apply_Pipeline : backend.apply_pipeline
+create_buffer :: proc(info: Buffer_Info) -> Buffer {
+    return backend.create_buffer(info)
+}
 
-draw : Backend_Draw : backend.draw
+destroy_buffer :: proc(buffer: Buffer) {
+    backend.destroy_buffer(buffer)
+}
 
-default_graphics_info: Backend_Default_Graphics_Info : backend.default_graphics_info
+buffer_data :: proc(buffer: Buffer, data: []byte) {
+    backend.buffer_data(buffer, data)
+}
+
+apply_input_buffers :: proc(buffers: Input_Buffers) {
+    backend.apply_input_buffers(buffers)
+}
+
+create_texture :: proc(info: Texture_Info) -> Texture {
+    return backend.create_texture(info)
+}
+
+destroy_texture :: proc(texture: Texture) {
+    backend.destroy_texture(texture)
+}
+
+texture_data :: proc(texture: Texture, data: []byte) {
+    backend.texture_data(texture, data)
+}
+
+texture_info :: proc(texture: Texture) -> Texture_Info {
+    return backend.texture_info(texture)
+}
+
+apply_input_textures :: proc(textures: Input_Textures) {
+    backend.apply_input_textures(textures)
+}
+
+create_pass :: proc(info: Pass_Info) -> Pass {
+    return backend.create_pass(info)
+}
+
+destroy_pass :: proc(pass: Pass) {
+    backend.destroy_pass(pass)
+}
+
+begin_default_pass :: proc(action: Pass_Action, width, height: int) {
+    backend.begin_default_pass(action, width, height)
+}
+
+begin_pass :: proc(pass: Pass, action: Pass_Action) {
+    backend.begin_pass(pass, action)
+}
+
+end_pass :: proc() {
+    backend.end_pass()
+} 
+
+create_pipeline :: proc(info: Pipeline_Info) -> Pipeline {
+    return backend.create_pipeline(info)
+}
+
+destroy_pipeline :: proc(pipeline: Pipeline) {
+    backend.destroy_pipeline(pipeline)
+}
+
+apply_pipeline :: proc(pipeline: Pipeline) {
+    backend.apply_pipeline(pipeline)
+}
+
+draw :: proc(base_elem, elem_count, instance_count: int) {
+    backend.draw(base_elem, elem_count, instance_count)
+}
+
+default_graphics_info :: proc() -> core.Graphics_Info {
+    return backend.default_graphics_info()
+}
