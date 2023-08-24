@@ -4,10 +4,6 @@ import "core:fmt"
 
 Entity :: distinct int
 
-Entity_Storage :: struct($Entity_Type: typeid) {
-    info: Entity_Info,
-    entity: Entity_Type,
-}
 
 // This entire goof is O(N) everything, but we'll see how it behaves in practice
 Registry :: struct($SIZE: int, $Entity_Type: typeid) {
@@ -16,7 +12,7 @@ Registry :: struct($SIZE: int, $Entity_Type: typeid) {
     packed: [SIZE]Entity,
     entities: [SIZE]Entity_Type,
     pending_destroy: [SIZE]bool,
-    free_list: [dynamic]Entity,
+    free_list: [dynamic]Entity, // Todo: Fix possible memory leak
     count: int,
 }
 
@@ -48,7 +44,7 @@ remove_pending_destroy :: proc(reg: ^Registry($SIZE, $Entity_Type)) -> (destroye
     return destroyed_count
 }
 
-create :: proc(reg: ^Registry($SIZE, $Entity_Type)) -> (entity: Entity) {
+create :: proc(reg: ^Registry($SIZE, $Entity_Type)) -> (entity: Entity, entity_type: ^Entity_Type) {
     using reg
     if len(free_list) == 0 {
         entity = next_entity
@@ -62,7 +58,7 @@ create :: proc(reg: ^Registry($SIZE, $Entity_Type)) -> (entity: Entity) {
     sparse[entity] = val_pos
     count += 1
     
-    return entity
+    return entity, find(reg, entity)
 }
 
 destroy :: proc(reg: ^Registry($SIZE, $Entity_Type), entity: Entity) {

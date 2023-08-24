@@ -66,6 +66,10 @@ Vertex_Uniforms :: struct {
 
 DEFAULT_BUFFER_SIZE :: 16384 * 4
 
+Draw_Camera :: struct {
+    camera: camera.Camera2D,
+    mat: math.Mat4f,
+}
 
 // We can implement a stack-state API
 State :: struct {
@@ -74,7 +78,7 @@ State :: struct {
     default_shader: Shader,
     empty_texture: Texture,
     draw_states: [dynamic]Internal_Draw_State,
-    cameras: [dynamic]math.Mat4f,
+    cameras: [dynamic]Draw_Camera,
     current_camera_index: int,
 }
 
@@ -149,7 +153,7 @@ end :: proc() {
         gpu.apply_input_textures(in_tex)
         
         vert_uniforms: Vertex_Uniforms
-        vert_uniforms.imdraw_MVP = _state.cameras[state.camera_index]
+        vert_uniforms.imdraw_MVP = _state.cameras[state.camera_index].mat
         gpu.apply_uniforms_raw(.Vertex, 0, &vert_uniforms, size_of(vert_uniforms))
         
         
@@ -157,9 +161,16 @@ end :: proc() {
     }
 }
 
-apply_camera :: proc(cam: camera.Camera2D) {
-    append(&_state.cameras, camera.to_vp_matrix(cam)) 
+apply_camera :: proc(cam: camera.Camera2D) -> (last_camera: Maybe(camera.Camera2D)) {
+    if len(_state.cameras) > 0 { 
+        last_camera = _state.cameras[len(_state.cameras) - 1].camera
+    }
+    draw_camera: Draw_Camera
+    draw_camera.camera = cam
+    draw_camera.mat = camera.to_vp_matrix(cam)
+    append(&_state.cameras, draw_camera) 
     _state.current_camera_index = len(_state.cameras) - 1
+    return last_camera
 }
 
 /*
