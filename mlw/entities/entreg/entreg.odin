@@ -58,7 +58,9 @@ create :: proc(reg: ^Registry($SIZE, $Entity_Type)) -> (entity: Entity, entity_t
     sparse[entity] = val_pos
     count += 1
     
-    return entity, find(reg, entity)
+    entity_type = find(reg, entity)
+    entity_type^ = {}
+    return entity, entity_type
 }
 
 destroy :: proc(reg: ^Registry($SIZE, $Entity_Type), entity: Entity) {
