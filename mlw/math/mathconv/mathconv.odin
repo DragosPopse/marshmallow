@@ -18,17 +18,17 @@ rect_itof :: proc(rect: mathi.Rect) -> (result: mathf.Rect) {
 }
 
 col3_btof :: proc(c: mathi.Col3) -> (result: mathf.Col3) {
-    result.r = cast(f32)c.r / 255
-    result.g = cast(f32)c.g / 255
-    result.b = cast(f32)c.b / 255
+    result.r = f32(c.r) / 255
+    result.g = f32(c.g) / 255
+    result.b = f32(c.b) / 255
     return result
 }
 
 col4_btof :: proc(c: mathi.Col4) -> (result: mathf.Col4) {
-    result.r = cast(f32)c.r / 255
-    result.g = cast(f32)c.g / 255
-    result.b = cast(f32)c.b / 255
-    result.a = cast(f32)c.a / 255
+    result.r = f32(c.r) / 255
+    result.g = f32(c.g) / 255
+    result.b = f32(c.b) / 255
+    result.a = f32(c.a) / 255
     return result
 }
 
