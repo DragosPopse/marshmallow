@@ -1,9 +1,9 @@
 package mlw_mathf
 
-// The anchor is relative to the size. an origin of {0.5, 0.5} will mean the center of the rectangle, while {1, 1} would mean bottom right
-rect_align_with_anchor :: proc(rect: Rect, anchor: Vec2) -> (result: Rect) {
+// The origin is relative to the size. an origin of {0.5, 0.5} will mean the center of the rectangle, while {1, 1} would mean bottom right
+rect_align_with_relative_origin :: proc(rect: Rect, origin: Vec2) -> (result: Rect) {
     rect := rect
-    rect.pos -= anchor * rect.size
+    rect.pos -= origin * rect.size
     return rect
 }
 
@@ -22,6 +22,10 @@ rect_align_with_world_origin :: proc(rect: Rect, origin: Vec2) -> (result: Rect)
 
 rect_minmax :: proc(rect: Rect) -> (min, max: Vec2) {
     return rect.pos, rect.pos + rect.size
+}
+
+rect_minmax_n :: proc(rect: ..Rect) -> (min, max: Vec2) {
+    unimplemented()
 }
 
 // Set new width, keeping the ratio

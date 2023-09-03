@@ -5,6 +5,11 @@ import "core:math/linalg"
 
 Vec2 :: linalg.Vector2f32
 Vec3 :: linalg.Vector3f32
+Vec4 :: linalg.Vector4f32
+
+
+Col3 :: distinct Vec3 // RGB floating point color
+Col4 :: distinct Vec4 // RGBA floating point color
 
 Mat3 :: linalg.Matrix3f32
 Mat4 :: linalg.Matrix4f32
@@ -25,7 +30,7 @@ Angle :: union {
 }
 
 Rect :: struct {
-    pos: Vec2,
+    using pos: Vec2,
     size: Vec2,
 }
 
