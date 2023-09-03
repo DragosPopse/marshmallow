@@ -37,3 +37,33 @@ rect_ratio_resize_width :: proc(rect: Rect, width: f32) -> (result: Rect) {
     return result
 }
 
+minkowski_diff_rect_rect :: proc(a, b: Rect) -> (result: Rect) {
+    result.pos = a.pos - b.pos - b.size
+    result.size = a.size + b.size
+    return result
+}
+
+minkowski_diff :: proc {
+    minkowski_diff_rect_rect,
+}
+
+rect_closest_point_on_bounds_to_point :: proc(r: Rect, point: Vec2) -> (bounds_point: Vec2) {
+    topleft, bottomright := minmax(r)
+    min_dist := abs(point.x - topleft.x)
+    bounds_point = {topleft.x, point.y}
+
+    if m := abs(bottomright.x - point.x); m < min_dist {
+        min_dist = m
+        bounds_point = {bottomright.x, point.y}
+    }
+    if m := abs(bottomright.y - point.y); m < min_dist {
+        min_dist = m
+        bounds_point = {point.x, bottomright.y}
+    }
+    if m := abs(topleft.y - point.y); m < min_dist {
+        min_dist = m
+        bounds_point = {point.x, topleft.y}
+    }
+
+    return bounds_point
+}
