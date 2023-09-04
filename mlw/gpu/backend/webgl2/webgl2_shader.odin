@@ -2,7 +2,7 @@ package mmlow_gpu_backend_webgl2
 
 import gl "vendor:wasm/WebGL"
 import "../../../core"
-import "../../../math"
+import "../../../math/mathf"
 import "core:strings"
 import "core:fmt"
 import "core:math/linalg/glsl"
@@ -18,11 +18,11 @@ _UNIFORM_SIZES := [core.Uniform_Type]int {
     .i32 = size_of(i32),
     .u32 = size_of(u32),
     .f32 = size_of(f32),
-    .vec2f32 = size_of(math.Vec2f),
-    .vec3f32 = size_of(math.Vec3f),
-    .vec4f32 = size_of(math.Vec4f),
-    .mat3f32 = size_of(math.Mat3f),
-    .mat4f32 = size_of(math.Mat4f),
+    .vec2f32 = size_of(mathf.Vec2),
+    .vec3f32 = size_of(mathf.Vec3),
+    .vec4f32 = size_of(mathf.Vec4),
+    .mat3f32 = size_of(mathf.Mat3),
+    .mat4f32 = size_of(mathf.Mat4),
 }
 
 WebGL2_Uniform_Block :: struct {

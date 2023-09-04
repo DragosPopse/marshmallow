@@ -8,7 +8,7 @@ import "core:c"
 import "core:slice" 
 import "core:strings"
 import "core:bytes"
-import "../../math"
+import "../../math/mathi"
 
 import "core:image"
 import "core:image/png"
@@ -18,8 +18,8 @@ Error :: image.Error
 Image :: struct {
     using image: ^image.Image,
     using conversion: struct #raw_union {
-        rgba_pixels: []math.Color4b,
-        rgb_pixels: []math.Color3b,
+        rgba_pixels: []mathi.Col4,
+        rgb_pixels: []mathi.Col3,
     },
 }
 
@@ -32,11 +32,11 @@ load_from_file :: proc(path: string, opts := image.Options{}, allocator := conte
     pixels_slice := bytes.buffer_to_bytes(&img.pixels)
     switch img.channels {
         case 3: {
-            img.rgb_pixels = slice.reinterpret([]math.Color3b, pixels_slice) 
+            img.rgb_pixels = slice.reinterpret([]mathi.Col3, pixels_slice) 
         }
 
         case 4: {
-            img.rgba_pixels = slice.reinterpret([]math.Color4b, pixels_slice)
+            img.rgba_pixels = slice.reinterpret([]mathi.Col4, pixels_slice)
         }
     }
     return img, err
@@ -50,11 +50,11 @@ load_from_bytes :: proc(data: []byte, opts := image.Options{}, allocator := cont
     pixels_slice := bytes.buffer_to_bytes(&img.pixels)
     switch img.channels {
         case 3: {
-            img.rgb_pixels = slice.reinterpret([]math.Color3b, pixels_slice) 
+            img.rgb_pixels = slice.reinterpret([]mathi.Col3, pixels_slice) 
         }
 
         case 4: {
-            img.rgba_pixels = slice.reinterpret([]math.Color4b, pixels_slice)
+            img.rgba_pixels = slice.reinterpret([]mathi.Col4, pixels_slice)
         }
     }
     return img, err

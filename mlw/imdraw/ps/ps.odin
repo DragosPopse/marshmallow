@@ -1,7 +1,8 @@
 package mlw_ps
 
 import "../../core"
-import "../../math"
+import "../../math/mathf"
+import "../../math/mathi"
 import "../../imdraw"
 import "../../math/random"
 
@@ -17,12 +18,12 @@ import "core:runtime"
 
 
 Particle :: struct {
-    rect: math.Rectf,
-    origin: math.Vec2f,
-    color: math.Color4f,
+    rect: mathf.Rect,
+    origin: mathf.Vec2,
+    color: mathf.Col4,
     tex_index: int,
-    rotation: math.Angle,
-    velocity: math.Vec2f,
+    rotation: mathf.Angle,
+    velocity: mathf.Vec2,
     remaining_life: f32,
 }
 
@@ -37,9 +38,9 @@ Stream_Emitter :: struct {
 }
 
 Particle_System :: struct {
-    position: math.Vec2f,
+    position: mathf.Vec2,
     texture: Maybe(imdraw.Texture),
-    texture_rects: []math.Recti,
+    texture_rects: []mathi.Rect,
     
     _particles: [dynamic]Particle,
     _emitters: map[Emitter_Connection]Stream_Emitter, // These will be stream emitters
@@ -47,14 +48,14 @@ Particle_System :: struct {
 }
 
 Emitter :: struct {
-    part_position: random.Distribution(math.Vec2f),
+    part_position: random.Distribution(mathf.Vec2),
     part_size: random.Distribution(f32),
-    part_origin: math.Vec2f,
+    part_origin: mathf.Vec2,
     emission_rate: int,
-    part_velocity: random.Distribution(math.Vec2f),
+    part_velocity: random.Distribution(mathf.Vec2),
     part_lifetime: random.Distribution(f32),
     part_tex_index: random.Distribution(int),
-    part_color: math.Color4f,
+    part_color: mathf.Col4,
 }
 
 particle_update :: proc(particle: ^Particle, dt: f32, r: ^random.Generator) {
@@ -67,7 +68,7 @@ emit_create_particle :: proc(em: Emitter, r: ^random.Generator) -> (particle: Pa
     particle.origin = em.part_origin
     particle.color = em.part_color // Todo(Dragos): this should also be some sort of distribution. Maybe a gradient
     particle.tex_index = random.eval(em.part_tex_index, r)
-    particle.rotation = math.Rad(0) // Todo(Dragos): distribution this
+    particle.rotation = mathf.Rad(0) // Todo(Dragos): distribution this
     particle.velocity = random.eval(em.part_velocity, r)
     particle.remaining_life = random.eval(em.part_lifetime, r)
     return particle

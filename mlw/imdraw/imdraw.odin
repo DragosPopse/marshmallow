@@ -3,17 +3,18 @@ package mlw_imdraw
 import "../gpu"
 import "../core"
 import "../media/image"
-import "../math"
+import "../math/mathf"
+import "../math/mathi"
 import "core:slice"
 import "core:math/linalg"
 import "core:fmt"
 import "../math/camera"
 
 Vertex :: struct {
-    pos: math.Vec3f,
-    col: math.Color4f,
-    tex: math.Vec2f,
-    center: math.Vec2f,
+    pos: mathf.Vec3,
+    col: mathf.Col4,
+    tex: mathf.Vec2,
+    center: mathf.Vec2,
 }
 
 Quad :: struct {
@@ -61,14 +62,14 @@ Draw_State :: struct {
 
 
 Vertex_Uniforms :: struct {
-    imdraw_MVP: math.Mat4f,
+    imdraw_MVP: mathf.Mat4,
 }
 
 DEFAULT_BUFFER_SIZE :: 16384 * 4
 
 Draw_Camera :: struct {
     camera: camera.Camera2D,
-    mat: math.Mat4f,
+    mat: mathf.Mat4,
 }
 
 // We can implement a stack-state API
@@ -184,7 +185,7 @@ Render_Flag :: enum {
 
 Render_Flags :: bit_set[Render_Flag]
 
-sprite :: proc(texture: Texture, tex_rect: math.Recti, dst_rect: math.Rectf, dst_origin: math.Vec2f, rotation: math.Angle = math.Rad(0), color := math.WHITE_4f, flags: Render_Flags = {}) {
+sprite :: proc(texture: Texture, tex_rect: mathi.Rect, dst_rect: mathf.Rect, dst_origin: mathf.Vec2, rotation: mathf.Angle = mathf.Rad(0), color := mathf.Col4_White, flags: Render_Flags = {}) {
     state: Draw_State
     state.camera_index = _state.current_camera_index
     state.shader = _state.default_shader
@@ -195,7 +196,7 @@ sprite :: proc(texture: Texture, tex_rect: math.Recti, dst_rect: math.Rectf, dst
     return // debug
 }
 
-quad :: proc(dst: math.Rectf, origin: math.Vec2f = {0, 0}, rotation: math.Angle = math.Rad(0), color := math.WHITE_4f) {
+quad :: proc(dst: mathf.Rect, origin: mathf.Vec2 = {0, 0}, rotation: mathf.Angle = mathf.Rad(0), color := mathf.Col4_White) {
     //using _state
     //_apply_texture(empty_texture, true)
     //_push_quad(dst, {{0, 0}, {1, 1}}, color, origin, rotation)
@@ -208,43 +209,43 @@ quad :: proc(dst: math.Rectf, origin: math.Vec2f = {0, 0}, rotation: math.Angle 
     return // debug
 }
 
-line_quad :: proc(dst: math.Rectf, origin: math.Vec2f, line_width: f32, rotation: math.Angle, color := math.WHITE_4f) {
-    dst := math.rect_align_with_origin(dst, origin)
+line_quad :: proc(dst: mathf.Rect, origin: mathf.Vec2, line_width: f32, rotation: mathf.Angle, color := mathf.Col4_White) {
+    dst := mathf.rect_align_with_relative_origin(dst, origin)
     //dst := dst
     
 
     topleft := dst.pos
-    topright := math.Vec2f{dst.pos.x + dst.size.x, dst.pos.y}
-    bottomright := math.Vec2f{dst.pos.x + dst.size.x, dst.pos.y + dst.size.y}
-    bottomleft := math.Vec2f{dst.pos.x, dst.pos.y + dst.size.y}
+    topright := mathf.Vec2{dst.pos.x + dst.size.x, dst.pos.y}
+    bottomright := mathf.Vec2{dst.pos.x + dst.size.x, dst.pos.y + dst.size.y}
+    bottomleft := mathf.Vec2{dst.pos.x, dst.pos.y + dst.size.y}
     
     
-    top, left, right, bottom: math.Rectf
-    line_size := math.Vec2f{line_width, dst.size.y}
+    top, left, right, bottom: mathf.Rect
+    line_size := mathf.Vec2{line_width, dst.size.y}
     
-    center := math.rect_center(dst, origin)
+    center := mathf.rect_center(dst, origin)
 
     top.size = {dst.size.x, line_width}
     top.pos = topleft
-    to := math.rectf_origin_from_world_point(top, center)
+    to := mathf.rect_origin_from_world_point(top, center)
     top.pos = topleft + to * top.size
     
     left.size = {line_width, dst.size.y}
     left.pos = topleft
-    lo := math.rectf_origin_from_world_point(left, center)
+    lo := mathf.rect_origin_from_world_point(left, center)
     left.pos = topleft + lo * left.size
     
 
     bottom.size = {dst.size.x + line_width, line_width}
     bottom.pos = bottomleft
-    bo := math.rectf_origin_from_world_point(bottom, center)
+    bo := mathf.rect_origin_from_world_point(bottom, center)
     //bo.y = -bo.y
     bottom.pos = bottomleft + bo * bottom.size
     
 
     right.size = {line_width, dst.size.y}
     right.pos = topright
-    ro := math.rectf_origin_from_world_point(right, center)
+    ro := mathf.rect_origin_from_world_point(right, center)
     //ro.x = -ro.x
     right.pos = topright + ro * right.size
     
@@ -255,12 +256,12 @@ line_quad :: proc(dst: math.Rectf, origin: math.Vec2f, line_width: f32, rotation
     quad(right, ro, rotation, color)
 }
 
-line :: proc(begin: math.Vec2f, end: math.Vec2f, width: f32, color := math.WHITE_4f) {
+line :: proc(begin: mathf.Vec2, end: mathf.Vec2, width: f32, color := mathf.Col4_White) {
     l := end - begin
-    rads := cast(math.Rad)math.atan2(l.y, l.x)
-    length := math.length(end - begin)
+    rads := cast(mathf.Rad)mathf.atan2(l.y, l.x)
+    length := mathf.magnitude(end - begin)
     //fmt.printf("%v %v\n", math.rad_to_deg(rads), slope)
-    dst: math.Rectf
+    dst: mathf.Rect
     dst.pos = begin
     dst.size.x = length
     dst.size.y = width
@@ -416,9 +417,9 @@ state_init :: proc(state: ^State) {
 
 
 // Todo(Dragos): remove #no_bounds_check in many places in favor of referencing things
-set_quad :: proc(view: ^Render_Buffer_View, idx: int, dst: math.Rectf, src: math.Recti, color: math.Color4f, origin: math.Vec2f, rotation: math.Angle, flags := Render_Flags{}) #no_bounds_check {
+set_quad :: proc(view: ^Render_Buffer_View, idx: int, dst: mathf.Rect, src: mathi.Rect, color: mathf.Col4, origin: mathf.Vec2, rotation: mathf.Angle, flags := Render_Flags{}) #no_bounds_check {
     assert(idx >= 0 && idx < view.length, "Index out of bounds")
-    dst := math.rect_align_with_origin(dst, origin)
+    dst := mathf.rect_align_with_relative_origin(dst, origin)
 
     if .Flip_X in flags {
         dst.size.x = -dst.size.x
@@ -444,7 +445,7 @@ set_quad :: proc(view: ^Render_Buffer_View, idx: int, dst: math.Rectf, src: math
     quad.vert[2].tex = {x, y + h}
     quad.vert[3].tex = {x + w, y + h}
 
-    rads := cast(f32)math.angle_rad(rotation)
+    rads := cast(f32)mathf.angle_rad(rotation)
     quad.vert[0].pos = {f32(dst.x), f32(dst.y), rads}
     quad.vert[1].pos = {f32(dst.x + dst.size.x), f32(dst.y), rads}
     quad.vert[2].pos = {f32(dst.x), f32(dst.y + dst.size.y), rads}
@@ -455,7 +456,7 @@ set_quad :: proc(view: ^Render_Buffer_View, idx: int, dst: math.Rectf, src: math
     quad.vert[2].col = color
     quad.vert[3].col = color
 
-    center := math.rect_center(dst, origin)
+    center := mathf.rect_center(dst, origin)
     quad.vert[0].center = center
     quad.vert[1].center = center
     quad.vert[2].center = center
@@ -473,7 +474,7 @@ set_quad :: proc(view: ^Render_Buffer_View, idx: int, dst: math.Rectf, src: math
 _create_empty_texture :: proc() -> (texture: Texture) {
     info: gpu.Texture_Info
     info.size.xy = {1, 1}
-    white := math.WHITE_4b
+    white := mathi.Col4_White
     info.format = .RGBA8
     info.type = .Texture2D
     info.min_filter = .Nearest

@@ -1,11 +1,11 @@
 package mlw_core
 
-import "../math"
+import "../math/mathf"
 
 Render_Pass :: distinct u32
 
 MAX_COLOR_ATTACHMENTS :: 4
-DEFAULT_CLEAR_COLOR :: math.FRGBA_BLACK
+DEFAULT_CLEAR_COLOR :: mathf.Col4_Black
 DEFAULT_CLEAR_DEPTH :: 1
 DEFAULT_CLEAR_STENCIL :: 0
 
@@ -17,7 +17,7 @@ Attachment_Info :: struct {
 
 Color_Action :: struct {
     action: Render_Pass_Action_Type,
-    value: math.Color4f,
+    value: mathf.Col4,
 }
 
 Depth_Action :: struct {

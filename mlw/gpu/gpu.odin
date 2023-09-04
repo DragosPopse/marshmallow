@@ -1,10 +1,10 @@
 package mmlow_gpu
 
 import "../core"
-import "../math"
+import "../math/mathf"
 import "core:slice"
 
-make_texture_data_from_gradient :: proc(gradient: math.Gradient, width: int, allocator := context.allocator) -> (data: []byte) {
+make_texture_data_from_gradient :: proc(gradient: mathf.Gradient, width: int, allocator := context.allocator) -> (data: []byte) {
     Pixel :: [4]byte
     pixels := make([]Pixel, width, allocator)
     for pixel, i in &pixels {
@@ -14,7 +14,7 @@ make_texture_data_from_gradient :: proc(gradient: math.Gradient, width: int, all
     return slice.to_bytes(pixels)
 }
 
-create_texture_from_gradient :: proc(gradient: math.Gradient, width: int) -> (texture: Texture) { 
+create_texture_from_gradient :: proc(gradient: mathf.Gradient, width: int) -> (texture: Texture) { 
     info: Texture_Info
     info.format = .RGBA8
     info.type = .Texture2D

@@ -3,6 +3,8 @@ package mlw_mathf
 import "core:math"
 import "core:math/linalg"
 
+normalize :: linalg.normalize
+
 vec2_magnitude :: proc(v: Vec2) -> f32 {
     return math.sqrt(v.x * v.x + v.y * v.y)
 }

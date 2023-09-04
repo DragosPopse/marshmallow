@@ -3,7 +3,8 @@ package highland_platform_backend_sdl2
 import sdl "vendor:sdl2"
 import "../../../core"
 import "core:strings"
-import "../../../math"
+import "../../../math/mathf"
+import "../../../math/mathi"
 
 import win32 "core:sys/windows"
 
@@ -34,7 +35,7 @@ get_backend_window :: proc() -> rawptr {
     return &_window
 }
 
-get_mouse_position :: proc() -> (position: math.Vec2f) {
+get_mouse_position :: proc() -> (position: mathf.Vec2) {
     x, y: i32
     sdl.GetMouseState(&x, &y)
     return {f32(x), f32(y)}

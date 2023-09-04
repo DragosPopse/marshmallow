@@ -1,6 +1,7 @@
 package mlw_random
 
-import "../../math"
+import "../../math/mathf"
+import "../../math/mathi"
 import "core:fmt"
 import "core:intrinsics"
 import cmath "core:math"
@@ -41,13 +42,13 @@ uniform_float :: proc "contextless" (min, max: f32) -> (result: Uniform_Distribu
     return result
 }
 
-uniform_rect :: proc "contextless" (rect: math.Rectf) -> (result: Uniform_Distribution(math.Vec2f)) {
+uniform_rect :: proc "contextless" (rect: mathf.Rect) -> (result: Uniform_Distribution(mathf.Vec2)) {
     result.min = rect.pos
     result.max = rect.pos + rect.size
     return result
 }
 
-uniform_vec2f :: proc "contextless" (min, max: math.Vec2f) -> (result: Uniform_Distribution(math.Vec2f)) {
+uniform_vec2f :: proc "contextless" (min, max: mathf.Vec2) -> (result: Uniform_Distribution(mathf.Vec2)) {
     result.min = min
     result.max = max
     return result
@@ -60,13 +61,13 @@ uniform_dist :: proc {
     uniform_vec2f,
 }
 
-circle_dist :: proc "contextless" (pos: math.Vec2f, radius: f32) -> (result: Circle_Distribution(math.Vec2f)) {
+circle_dist :: proc "contextless" (pos: mathf.Vec2, radius: f32) -> (result: Circle_Distribution(mathf.Vec2)) {
     result.pos = pos
     result.radius = radius
     return result
 }
 
-annulus_dist :: proc "contextless" (pos: math.Vec2f, inner, outer: f32) -> (result: Annulus_Distribution(math.Vec2f)) {
+annulus_dist :: proc "contextless" (pos: mathf.Vec2, inner, outer: f32) -> (result: Annulus_Distribution(mathf.Vec2)) {
     result.pos = pos
     result.inner = inner
     result.outer = outer
@@ -89,7 +90,7 @@ eval :: proc {
 
 eval_uniform_dist :: proc(d: Uniform_Distribution($T), r: ^Generator) -> (result: T) {
     when intrinsics.type_is_array(T) {
-        rect: math.Rectf
+        rect: mathf.Rect
         rect.x = cast(f32)d.min.x
         rect.y = cast(f32)d.min.y
         rect.size.x = f32(d.max.x - d.min.x) 
@@ -121,10 +122,10 @@ eval_circle_dist :: proc(d: Circle_Distribution($T), r: ^Generator) -> (result: 
 
 eval_annulus_dist :: proc(d: Annulus_Distribution($T), r: ^Generator) -> (result: T) {
     when intrinsics.type_is_array(T) {
-        theta := float(r) * 2 * math.PI
+        theta := float(r) * 2 * mathf.PI
         distance := cmath.sqrt_f32(float(r) * (d.inner * d.inner - d.outer * d.outer) + d.outer * d.outer)
-        result.x = distance * math.cos(theta)
-        result.y = distance * math.sin(theta)
+        result.x = distance * mathf.cos(theta)
+        result.y = distance * mathf.sin(theta)
         result += d.pos
     }
 

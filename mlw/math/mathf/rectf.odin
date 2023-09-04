@@ -63,3 +63,18 @@ rect_closest_point_on_bounds_to_point :: proc(r: Rect, point: Vec2) -> (bounds_p
 
     return bounds_point
 }
+
+// Todo(Dragos): Rename this as `rect_origin_point`. The center is just a center
+rect_center :: proc(r: Rect, origin: Vec2) -> (res: Vec2) {
+    return r.pos + r.size * origin
+}
+
+
+rect_origin_from_world_point :: proc(r: Rect, point: Vec2) -> (origin: Vec2) {
+    return (point - r.pos) / r.size
+}
+
+rect_origin_from_relative_point :: proc(r: Rect, point: Vec2) -> (origin: Vec2) {
+    origin = point / r.size 
+    return origin
+}

@@ -2,7 +2,8 @@ package mmlow_third_microui
 
 import mu "vendor:microui"
 import "../../platform/event"
-import "../../math"
+import "../../math/mathf"
+import "../../math/mathi"
 import "core:fmt"
 import "../../gpu"
 
@@ -26,7 +27,7 @@ init :: proc() -> ^mu.Context {
     mu_ctx.text_width, mu_ctx.text_height = mu.default_atlas_text_width, mu.default_atlas_text_height
     _vert_buf, _ind_buf = _create_microui_buffers()
     _atlas_texture = _create_atlas_texture()
-    _uniforms.modelview = math.Mat4f(1)
+    _uniforms.modelview = mathf.Mat4(1)
     // Todo(Dragos): Make a way to get width and height of the viewport inside gpu
     
     _input_textures.textures[.Fragment][0] = _atlas_texture

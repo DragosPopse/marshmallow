@@ -4,7 +4,9 @@
 package mmlow_third_microui
 
 import "../../core"
-import "../../math" 
+import "../../math/mathf"
+import "../../math/mathi"
+import "../../math/mathconv"
 import "../../gpu"
 import "../../platform"
 import "../../platform/event"
@@ -14,14 +16,14 @@ import "core:fmt"
 import linalg "core:math/linalg"
 
 Vertex :: struct {
-    pos: math.Vec2f,
-    col: math.Color4f,
-    tex: math.Vec2f,
+    pos: mathf.Vec2,
+    col: mathf.Col4,
+    tex: mathf.Vec2,
 }
 
 Vertex_Uniforms :: struct {
-    modelview: math.Mat4f,
-    projection: math.Mat4f,
+    modelview: mathf.Mat4,
+    projection: mathf.Mat4,
 }
 
 
@@ -81,7 +83,7 @@ _push_quad :: proc(dst, src: mu.Rect, color: mu.Color) {
     _vertices[vert_idx + 2].pos = {f32(dst.x), f32(dst.y + dst.h)}
     _vertices[vert_idx + 3].pos = {f32(dst.x + dst.w), f32(dst.y + dst.h)}
 
-    colorf := math.to_color4f(math.Color4b{color.r, color.g, color.b, color.a})
+    colorf := mathconv.btof(mathi.Col4{color.r, color.g, color.b, color.a})
     _vertices[vert_idx + 0].col = colorf
     _vertices[vert_idx + 1].col = colorf
     _vertices[vert_idx + 2].col = colorf
