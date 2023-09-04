@@ -62,3 +62,7 @@ minmax :: proc {
 slope :: proc {
     vec2_slope,
 }
+
+minkowski_diff :: proc {
+    minkowski_diff_rect_rect,
+}

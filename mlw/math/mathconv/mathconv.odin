@@ -82,3 +82,10 @@ ftob :: proc {
     col3_ftob,
     col4_ftob,
 }
+
+array_cast :: proc(v: $Array_Type/[$Array_Len]$Elem_Type, $Cast_Elem_Type: typeid) -> (res: [Array_Len]Cast_Elem_Type) {
+    for i in 0..<Array_Len {
+        res[i] = cast(Cast_Elem_Type)v[i]
+    }
+    return res
+}

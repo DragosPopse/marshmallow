@@ -43,10 +43,6 @@ minkowski_diff_rect_rect :: proc(a, b: Rect) -> (result: Rect) {
     return result
 }
 
-minkowski_diff :: proc {
-    minkowski_diff_rect_rect,
-}
-
 rect_closest_point_on_bounds_to_point :: proc(r: Rect, point: Vec2) -> (bounds_point: Vec2) {
     topleft, bottomright := minmax(r)
     min_dist := abs(point.x - topleft.x)

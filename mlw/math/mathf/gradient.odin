@@ -1,10 +1,12 @@
-package mlw_math
+package mlw_mathf
 
 import "core:math/linalg"
 import "core:fmt"
 import cmath "core:math"
 import "core:math/rand"
 import "core:intrinsics"
+
+// This part is deprecated. Will be refactored
 
 Gradient_Color_Key :: struct($Color_Type: typeid) {
     color: Color_Type,
@@ -15,8 +17,8 @@ Gradient :: struct($Color_Type: typeid) where intrinsics.type_is_array(Color_Typ
     color_keys: []Gradient_Color_Key(Color_Type),
 }
 
-Gradient4f :: Gradient(Color4f)
-Gradient4f_Color_Key :: Gradient_Color_Key(Color4f)
+Gradient4f :: Gradient(Col4)
+Gradient4f_Color_Key :: Gradient_Color_Key(Col4)
 
 gradient_eval_gradient :: proc(gradient: Gradient($Color_Type), time: f32) -> (result: Color_Type) {
     if len(gradient.color_keys) == 0 do return Color_Type{}
