@@ -33,8 +33,7 @@ loader_init :: proc(loader: ^Loader($Resource), allocator: mem.Allocator, load_p
 }
 
 loader_destroy :: proc(loader: ^Loader($Resource)) {
-    delete(arena_backing, loader.allocator)
-    delete(loader.resources, loader.allocator)
+    unimplemented()
 }
 
 loader_load :: proc(loader: ^Loader($Resource), path: string) -> Resource {
