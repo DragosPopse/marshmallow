@@ -185,10 +185,10 @@ Render_Flag :: enum {
 
 Render_Flags :: bit_set[Render_Flag]
 
-sprite :: proc(texture: Texture, tex_rect: mathi.Rect, dst_rect: mathf.Rect, dst_origin: mathf.Vec2, rotation: mathf.Angle = mathf.Rad(0), color := mathf.Col4_White, flags: Render_Flags = {}) {
+sprite :: proc(texture: Texture, tex_rect: mathi.Rect, dst_rect: mathf.Rect, dst_origin: mathf.Vec2, rotation: mathf.Angle = mathf.Rad(0), color := mathf.Col4_White, flags: Render_Flags = {}, shader := _state.default_shader) {
     state: Draw_State
     state.camera_index = _state.current_camera_index
-    state.shader = _state.default_shader
+    state.shader = shader
     state.texture = texture
     view := reserve_buffer(1, state)
 
