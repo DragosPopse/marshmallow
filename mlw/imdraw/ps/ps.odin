@@ -47,6 +47,7 @@ Particle_System :: struct {
     _em_connection_index: Emitter_Connection,
 }
 
+// Note(Dragos): IDEA - just allow the user to slice the active particles, so they can implement affectors themselves
 Emitter :: struct {
     part_position: random.Distribution(mathf.Vec2),
     part_size: random.Distribution(f32),
